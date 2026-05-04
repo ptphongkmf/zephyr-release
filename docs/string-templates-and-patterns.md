@@ -162,6 +162,12 @@ Usage: [`release-section-entry-template`](./config-options.md#changelog--release
 - `{{ footer }}`: string; commit footer
 - `{{ breakingDesc }}`: string; breaking change description. It is the text of the last breaking change footer, or falls back to the commit description if none exist
 - `{{ isBreaking }}`: boolean
+- `{{ authorName }}`: string; the name of the author
+- `{{ authorEmail }}`: string; the email of the author
+- `{{ authorDate }}`: string; the date the author made the commit in ISO format
+- `{{ committerName }}`: string; the name of the committer
+- `{{ committerEmail }}`: string; the email of the committer
+- `{{ committerDate }}`: string; the date the committer applied the commit in ISO format
 
 ## Transformers
 

@@ -130,7 +130,6 @@ export const ChangelogConfigSchema = v.pipe(
           `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
       }),
     ),
-
     releaseSectionHeadingTemplate: v.pipe(
       v.optional(
         v.pipe(v.string(), v.nonEmpty()),
@@ -164,7 +163,8 @@ export const ChangelogConfigSchema = v.pipe(
           "String template for each entries in the changelog release sections. " +
           "Allowed patterns to use are: all fixed and dynamic string patterns.\n" +
           "Additionally, you can use a special set of dynamic patterns which are:\n" +
-          "{{ hash }}, {{ type }}, {{ scope }}, {{ desc }}, {{ body }}, {{ footer }}, {{ breakingDesc }}, {{ isBreaking }}.\n" +
+          "{{ hash }}, {{ type }}, {{ scope }}, {{ desc }}, {{ body }}, {{ footer }}, {{ breakingDesc }}, {{ isBreaking }}, " +
+          "{{ authorName }}, {{ authorEmail }}, {{ authorDate }}, {{ committerName }}, {{ committerEmail }}, {{ committerDate }}.\n" +
           `About special patterns: ${DOCS_EXT_REF_TOKEN}/docs/config-options.md#changelog--release-section-entry-template-optional\n` +
           `Default: ${JSON.stringify(DEFAULT_RELEASE_SECTION_ENTRY_TEMPLATE)}`,
       }),
@@ -223,7 +223,6 @@ export const ChangelogConfigSchema = v.pipe(
           `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
       }),
     ),
-
     releaseFooterTemplate: v.pipe(
       v.optional(v.string()),
       v.metadata({

@@ -686,6 +686,12 @@ function createCommitExtraPatterns(
     footer: commit.footer,
     breakingDesc,
     isBreaking: commit.isBreaking,
+    authorName: commit.author.name,
+    authorEmail: commit.author.email,
+    authorDate: commit.author.date.toString(),
+    committerName: commit.committer.name,
+    committerEmail: commit.committer.email,
+    committerDate: commit.committer.date.toString(),
   };
 }
 

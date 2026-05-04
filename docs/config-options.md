@@ -976,6 +976,12 @@ Additionally, you can use a special set of dynamic patterns (see [patterns docs]
 - `{{ footer }}`: string
 - `{{ breakingDesc }}`: string
 - `{{ isBreaking }}`: boolean
+- `{{ authorName }}`: string
+- `{{ authorEmail }}`: string
+- `{{ authorDate }}`: string
+- `{{ committerName }}`: string
+- `{{ committerEmail }}`: string
+- `{{ committerDate }}`: string
 
 [⬆ Back to top](#table-of-content)
 

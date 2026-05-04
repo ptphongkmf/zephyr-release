@@ -95,6 +95,12 @@ const ChangelogReleaseEntryPatterns = {
   footer: "footer",
   breakingDesc: "breakingDesc",
   isBreaking: "isBreaking",
+  authorName: "authorName",
+  authorEmail: "authorEmail",
+  authorDate: "authorDate",
+  committerName: "committerName",
+  committerEmail: "committerEmail",
+  committerDate: "committerDate",
 } as const;
 
 export type ChangelogReleaseEntryPattern = typeof ChangelogReleaseEntryPatterns[
