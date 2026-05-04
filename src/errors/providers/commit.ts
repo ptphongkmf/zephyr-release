@@ -1,10 +1,7 @@
 export class NoCommitFoundError extends Error {
-  constructor(
-    message = "No commit found.",
-    opts?: ErrorOptions,
-  ) {
-    super(message, opts);
+  public override readonly name = "NoCommitFoundError";
 
-    this.name = NoCommitFoundError.name;
+  constructor(message = "No commit found", opts?: ErrorOptions) {
+    super(message, opts);
   }
 }

@@ -12,6 +12,10 @@ import { CHANGELOG_MARKERS } from "../constants/markers.ts";
 import { failedNonCriticalTasks } from "../main.ts";
 import { taskLogger } from "./logger.ts";
 import { breakingChangeKeywords } from "../constants/conventional-commit-parser-options.ts";
+import {
+  CommitGroupModes,
+  CommitSortOrders,
+} from "../constants/changelog-commit-options.ts";
 
 type GenerateChangelogReleaseInputsParams = Pick<
   InputsOutput,
@@ -23,6 +27,8 @@ type GenerateChangelogReleaseConfigParams =
   & {
     changelog: Pick<
       ChangelogConfigOutput,
+      | "commitGroupMode"
+      | "commitSortOrder"
       | "releaseHeaderTemplate"
       | "releaseHeaderTemplatePath"
       | "releaseSectionHeadingTemplate"
@@ -357,6 +363,8 @@ async function generateReleaseBodyBasedOnCommits(
   const {
     commitTypes,
     changelog: {
+      commitGroupMode,
+      commitSortOrder,
       releaseSectionHeadingTemplate,
       releaseSectionHeadingTemplatePath,
       releaseSectionEntryTemplate,
@@ -528,8 +536,36 @@ async function generateReleaseBodyBasedOnCommits(
     breakingEntryTemplateAlt = resolvedBreakingEntryAltTemplate;
   }
 
+  const sortedCommits = [...resolvedCommits].sort((a, b) => {
+    if (commitGroupMode !== CommitGroupModes.none) {
+      const scopeA = a.scope ? a.scope.toLowerCase() : "";
+      const scopeB = b.scope ? b.scope.toLowerCase() : "";
+
+      if (scopeA !== scopeB) {
+        if (commitGroupMode === CommitGroupModes.scopeFirst) {
+          if (!scopeA && scopeB) return 1;
+          if (scopeA && !scopeB) return -1;
+        } else if (commitGroupMode === CommitGroupModes.scopeLast) {
+          if (!scopeA && scopeB) return -1;
+          if (scopeA && !scopeB) return 1;
+        }
+        if (scopeA && scopeB) {
+          return scopeA.localeCompare(scopeB);
+        }
+      }
+    }
+
+    if (commitSortOrder === CommitSortOrders.oldestFirst) {
+      return Temporal.Instant.compare(a.committer.date, b.committer.date);
+    } else if (commitSortOrder === CommitSortOrders.newestFirst) {
+      return Temporal.Instant.compare(b.committer.date, a.committer.date);
+    } else {
+      return a.subject.localeCompare(b.subject);
+    }
+  });
+
   // Process Commits
-  for (const commit of resolvedCommits) {
+  for (const commit of sortedCommits) {
     const typeInfo = typeToSection.get(commit.type);
     if (!typeInfo) continue;
 
@@ -606,7 +642,7 @@ async function generateReleaseBodyBasedOnCommits(
       );
 
     finalReleaseBodyBase.push(heading);
-    finalReleaseBodyBase.push(group.entries.sort().join("\n"));
+    finalReleaseBodyBase.push(group.entries.join("\n"));
   }
 
   const finalReleaseBodyAlt: string[] = [];
@@ -621,7 +657,7 @@ async function generateReleaseBodyBasedOnCommits(
       );
 
     finalReleaseBodyAlt.push(heading);
-    finalReleaseBodyAlt.push(group.entries.sort().join("\n"));
+    finalReleaseBodyAlt.push(group.entries.join("\n"));
   }
 
   return {

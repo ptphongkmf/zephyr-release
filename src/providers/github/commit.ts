@@ -5,10 +5,10 @@ import type { GetOctokitFn, OctokitClient } from "./octokit.ts";
 import { githubGetNamespace, githubGetRepositoryName } from "./repository.ts";
 import type {
   ProviderCommit,
-  ProviderCommitDetails,
   ProviderCompareCommits,
 } from "../../types/providers/commit.ts";
 import { parseLooseSemVer } from "../../utils/parsers/semver.ts";
+import { safeParseTemporalInstant } from "../../utils/parsers/datetime.ts";
 
 /** @throws */
 async function githubListCommitsFromGivenToLastRelease(
@@ -130,6 +130,18 @@ async function githubListCommitsFromGivenToLastRelease(
         body: commit.commit.message.split("\n").slice(1).join("\n").trim(),
         message: commit.commit.message,
         treeHash: commit.commit.tree.sha,
+        author: {
+          name: commit.commit.author?.name ?? "",
+          email: commit.commit.author?.email ?? "",
+          date: safeParseTemporalInstant(commit.commit.author?.date) ??
+            Temporal.Instant.fromEpochMilliseconds(0),
+        },
+        committer: {
+          name: commit.commit.committer?.name ?? "",
+          email: commit.commit.committer?.email ?? "",
+          date: safeParseTemporalInstant(commit.commit.committer?.date) ??
+            Temporal.Instant.fromEpochMilliseconds(0),
+        },
       });
 
       if (collectedCommits.length >= maxCommitsToResolve) {
@@ -252,6 +264,18 @@ async function githubCreateCommitOnBranch(
     body: message.split("\n").slice(1).join("\n").trim(),
     message,
     treeHash: createTreeRes.data.sha,
+    author: {
+      name: createCommitRes.data.author.name,
+      email: createCommitRes.data.author.email,
+      date: safeParseTemporalInstant(createCommitRes.data.author.date) ??
+        Temporal.Instant.fromEpochMilliseconds(0),
+    },
+    committer: {
+      name: createCommitRes.data.committer.name,
+      email: createCommitRes.data.committer.email,
+      date: safeParseTemporalInstant(createCommitRes.data.committer.date) ??
+        Temporal.Instant.fromEpochMilliseconds(0),
+    },
   };
 }
 
@@ -259,7 +283,7 @@ async function githubCreateCommitOnBranch(
 async function githubGetCommit(
   octokit: OctokitClient,
   hash: string,
-): Promise<ProviderCommitDetails> {
+): Promise<ProviderCommit> {
   const res = await octokit.rest.git.getCommit({
     owner: githubGetNamespace(),
     repo: githubGetRepositoryName(),
@@ -276,12 +300,14 @@ async function githubGetCommit(
     author: {
       name: res.data.author.name,
       email: res.data.author.email,
-      date: new Date(res.data.author.date),
+      date: safeParseTemporalInstant(res.data.author.date) ??
+        Temporal.Instant.fromEpochMilliseconds(0),
     },
     committer: {
       name: res.data.committer.name,
       email: res.data.committer.email,
-      date: new Date(res.data.committer.date),
+      date: safeParseTemporalInstant(res.data.committer.date) ??
+        Temporal.Instant.fromEpochMilliseconds(0),
     },
   };
 }

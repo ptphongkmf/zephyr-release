@@ -9,7 +9,6 @@ import type { ProviderInputLabel, ProviderLabel } from "./label.ts";
 import type { CoreLogger } from "../logger.ts";
 import type {
   ProviderCommit,
-  ProviderCommitDetails,
   ProviderCompareCommits,
 } from "./commit.ts";
 import type { ProviderInputs } from "./inputs.ts";
@@ -77,7 +76,7 @@ export interface PlatformProvider {
     head: string,
   ) => Promise<ProviderCompareCommits>;
   /** @throws */
-  getCommit: (hash: string) => Promise<ProviderCommitDetails>;
+  getCommit: (hash: string) => Promise<ProviderCommit>;
   /** @throws */
   createCommitOnBranch: (
     triggerCommitHash: string,

@@ -126,6 +126,8 @@ export type ResolvedCommit = CommitBase & {
   subject: string;
   breaking?: string; // This is the "!" char
   isBreaking: boolean;
+  author: ProviderCommit["author"];
+  committer: ProviderCommit["committer"];
 };
 
 interface WorkingCommitEntry {
@@ -133,6 +135,8 @@ interface WorkingCommitEntry {
   message: string;
   isVirtual: boolean;
   isIgnored: boolean;
+  author: ProviderCommit["author"];
+  committer: ProviderCommit["committer"];
 }
 
 export interface ResolvedCommitsResult {
@@ -213,6 +217,8 @@ export async function resolveCommitsFromTriggerToLastRelease(
       type,
       subject,
       isBreaking,
+      author: entry.author,
+      committer: entry.committer,
     });
   }
 
@@ -251,6 +257,8 @@ function processRawCommits(rawCommits: ProviderCommit[]): WorkingCommitEntry[] {
       message: cleanedOriginalMessage,
       isVirtual: false,
       isIgnored: overrides.length > 0, // Ignore if user provided an override
+      author: raw.author,
+      committer: raw.committer,
     });
 
     const nestedEntries = overrides.length > 0 ? overrides : appends;
@@ -260,6 +268,8 @@ function processRawCommits(rawCommits: ProviderCommit[]): WorkingCommitEntry[] {
         message: msg,
         isVirtual: true,
         isIgnored: false,
+        author: raw.author,
+        committer: raw.committer,
       });
     }
   }

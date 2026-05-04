@@ -12,11 +12,9 @@ export interface ProviderCommit {
    * Tree hash associated with this commit.
    */
   treeHash: string;
-}
 
-export interface ProviderCommitDetails extends ProviderCommit {
-  author: { name: string; email: string; date: Date };
-  committer: { name: string; email: string; date: Date };
+  author: { name: string; email: string; date: Temporal.Instant };
+  committer: { name: string; email: string; date: Temporal.Instant };
 }
 
 export interface ProviderCompareCommits {

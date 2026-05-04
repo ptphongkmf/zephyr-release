@@ -60,12 +60,12 @@ export async function createTag(
           break;
         case TaggerDateOptions.commitDate: {
           const commitData = await provider.getCommit(targetCommitHash);
-          taggerDate = commitData.committer.date.toISOString();
+          taggerDate = commitData.committer.date.toString();
           break;
         }
         case TaggerDateOptions.authorDate: {
           const commitData = await provider.getCommit(targetCommitHash);
-          taggerDate = commitData.author.date.toISOString();
+          taggerDate = commitData.author.date.toString();
           break;
         }
 

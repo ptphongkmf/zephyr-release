@@ -1,15 +1,19 @@
 import * as v from "@valibot/valibot";
 import { DOCS_EXT_REF_TOKEN } from "../../token.ts";
 import {
-  DEFAULT_RELEASE_BREAKING_SECTION_ENTRY_TEMPLATE,
   DEFAULT_CHANGELOG_FILE_HEADER_TEMPLATE,
-  DEFAULT_RELEASE_HEADER_TEMPLATE,
   DEFAULT_CHANGELOG_RELEASE_TEMPLATE,
+  DEFAULT_RELEASE_BREAKING_SECTION_ENTRY_TEMPLATE,
+  DEFAULT_RELEASE_HEADER_TEMPLATE,
   DEFAULT_RELEASE_SECTION_ENTRY_TEMPLATE,
   DEFAULT_RELEASE_SECTION_HEADING_TEMPLATE,
   DEFAULT_RELEASE_SECTION_HEADING_TEMPLATE_ALT,
 } from "../../../constants/defaults/string-templates.ts";
 import { trimNonEmptyStringSchema } from "../../string.ts";
+import {
+  CommitGroupModes,
+  CommitSortOrders,
+} from "../../../constants/changelog-commit-options.ts";
 
 export const ChangelogConfigSchema = v.pipe(
   v.object({
@@ -29,6 +33,29 @@ export const ChangelogConfigSchema = v.pipe(
           "Path to the file where the generated changelog will be written to, relative to the project root.\n" +
           `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional \n` +
           'Default: "CHANGELOG.md"',
+      }),
+    ),
+
+    commitGroupMode: v.pipe(
+      v.optional(v.enum(CommitGroupModes), CommitGroupModes.none),
+      v.metadata({
+        description:
+          "Defines how commits are sub-grouped within their respective changelog sections (Features, Fixes, etc.).\n" +
+          "- `none`: Commits are rendered as a single flat list.\n" +
+          "- `scope-first`: Commits are grouped by their scope. Scoped groups appear at the top, and unscoped commits fall to the bottom.\n" +
+          "- `scope-last`: Commits are grouped by their scope. Unscoped commits sit at the top, and scoped groups follow below.\n" +
+          `Default: "${CommitGroupModes.none}"`,
+      }),
+    ),
+    commitSortOrder: v.pipe(
+      v.optional(v.enum(CommitSortOrders), CommitSortOrders.alphabetical),
+      v.metadata({
+        description:
+          "Defines the sorting algorithm used to order the commits (and their groups, if a grouping mode is used).\n" +
+          "- `alphabetical`: Sorts alphabetically from A to Z.\n" +
+          "- `oldest-first`: Sorts by commit timestamp, placing the oldest commits at the top.\n" +
+          "- `newest-first`: Sorts by commit timestamp, placing the newest commits at the top.\n" +
+          `Default: "${CommitSortOrders.alphabetical}"`,
       }),
     ),
 
@@ -92,9 +119,7 @@ export const ChangelogConfigSchema = v.pipe(
         description:
           "String template for header of a changelog release, using with string patterns like {{ nextVersion }}.\n" +
           "Allowed patterns to use are: all fixed and dynamic string patterns.\n" +
-          `Default: ${
-            JSON.stringify(DEFAULT_RELEASE_HEADER_TEMPLATE)
-          }`,
+          `Default: ${JSON.stringify(DEFAULT_RELEASE_HEADER_TEMPLATE)}`,
       }),
     ),
     releaseHeaderTemplatePath: v.pipe(
@@ -141,9 +166,7 @@ export const ChangelogConfigSchema = v.pipe(
           "Additionally, you can use a special set of dynamic patterns which are:\n" +
           "{{ hash }}, {{ type }}, {{ scope }}, {{ desc }}, {{ body }}, {{ footer }}, {{ breakingDesc }}, {{ isBreaking }}.\n" +
           `About special patterns: ${DOCS_EXT_REF_TOKEN}/docs/config-options.md#changelog--release-section-entry-template-optional\n` +
-          `Default: ${
-            JSON.stringify(DEFAULT_RELEASE_SECTION_ENTRY_TEMPLATE)
-          }`,
+          `Default: ${JSON.stringify(DEFAULT_RELEASE_SECTION_ENTRY_TEMPLATE)}`,
       }),
     ),
     releaseSectionEntryTemplatePath: v.pipe(
