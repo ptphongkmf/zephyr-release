@@ -16,6 +16,7 @@ import {
   createFixedBaseStringPatternContext,
   createFixedCurrentVersionStringPatternContext,
   createFixedNextVersionStringPatternContext,
+  createFixedTagStringPatternContext,
   stringifyCurrentPatternContext,
 } from "./string-templates-and-patterns/pattern-context.ts";
 import {
@@ -158,10 +159,8 @@ export async function synchronizeRuntimeStateAfterOverride(
   }
 
   if (nextVersion) {
-    await createFixedNextVersionStringPatternContext(
-      nextVersion,
-      config.tag.nameTemplate,
-    );
+    createFixedNextVersionStringPatternContext(nextVersion);
+    await createFixedTagStringPatternContext(config.tag.nameTemplate);
   }
 
   // 5. Re-export the three dynamic variables that become stale after override.

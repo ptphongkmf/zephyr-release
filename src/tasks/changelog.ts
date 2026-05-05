@@ -6,7 +6,7 @@ import type { ConfigOutput } from "../schemas/configs/config.ts";
 import type { ChangelogConfigOutput } from "../schemas/configs/modules/changelog-config.ts";
 import type { InputsOutput } from "../schemas/inputs/inputs.ts";
 import { resolveStringTemplate } from "./string-templates-and-patterns/resolve-template.ts";
-import type { ChangelogReleaseEntryPattern } from "../constants/string-patterns.ts";
+import type { ChangelogReleaseEntryPattern } from "../types/string-patterns.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import { CHANGELOG_MARKERS } from "../constants/markers.ts";
 import { failedNonCriticalTasks } from "../main.ts";
@@ -556,12 +556,12 @@ async function generateReleaseBodyBasedOnCommits(
     }
 
     if (commitSortOrder === CommitSortOrders.oldestFirst) {
-// waiting for temporal support in node
-//       return Temporal.Instant.compare(a.committer.date, b.committer.date);
+      // waiting for temporal support in node
+      //       return Temporal.Instant.compare(a.committer.date, b.committer.date);
       return a.committer.date.getTime() - b.committer.date.getTime();
     } else if (commitSortOrder === CommitSortOrders.newestFirst) {
-// waiting for temporal support in node
-//       return Temporal.Instant.compare(b.committer.date, a.committer.date);
+      // waiting for temporal support in node
+      //       return Temporal.Instant.compare(b.committer.date, a.committer.date);
       return b.committer.date.getTime() - a.committer.date.getTime();
     } else {
       return a.subject.localeCompare(b.subject);

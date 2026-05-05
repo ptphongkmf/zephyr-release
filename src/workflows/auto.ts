@@ -22,6 +22,7 @@ import {
   createDynamicChangelogStringPatternContext,
   createFixedCurrentVersionStringPatternContext,
   createFixedNextVersionStringPatternContext,
+  createFixedTagStringPatternContext,
 } from "../tasks/string-templates-and-patterns/pattern-context.ts";
 import type {
   OperationRunSettings,
@@ -100,15 +101,15 @@ export async function executeAutoStrategy(
   );
 
   logger.debugStepStart(
-    "Starting: Create fixed current version and next version string pattern context",
+    "Starting: Create fixed current version, next version and tag string pattern context",
   );
   createFixedCurrentVersionStringPatternContext(currentVersion);
-  await createFixedNextVersionStringPatternContext(
-    nextVersion,
+  createFixedNextVersionStringPatternContext(nextVersion);
+  await createFixedTagStringPatternContext(
     runSettings.config.tag.nameTemplate,
   );
   logger.debugStepFinish(
-    "Finished: Create fixed current version and next version string pattern context",
+    "Finished: Create fixed current version, next version and tag string pattern context",
   );
 
   logger.debugStepStart("Starting: Export pre prepare operation variables");

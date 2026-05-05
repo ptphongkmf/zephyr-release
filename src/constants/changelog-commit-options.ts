@@ -6,6 +6,6 @@ export const CommitGroupModes = {
 
 export const CommitSortOrders = {
   alphabetical: "alphabetical",
-  oldestFirst: "oldest-first",
   newestFirst: "newest-first",
+  oldestFirst: "oldest-first",
 } as const;

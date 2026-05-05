@@ -834,9 +834,9 @@ Default: `"none"`
 
 Defines how commits are sub-grouped within their respective changelog sections (Features, Fixes, etc.).
 
-- **`"none"`**: Commits are rendered as a single flat list.
-- **`"scope-first"`**: Commits are grouped by their scope. Scoped groups appear at the top, and unscoped commits fall to the bottom.
-- **`"scope-last"`**: Commits are grouped by their scope. Unscoped commits sit at the top, and scoped groups follow below.
+- **"none":** Commits are rendered as a single flat list.
+- **"scope-first":** Commits are grouped by their scope. Scoped groups appear at the top, and unscoped commits fall to the bottom.
+- **"scope-last":** Commits are grouped by their scope. Unscoped commits sit at the top, and scoped groups follow below.
 
 [⬆ Back to top](#table-of-content)
 
@@ -847,9 +847,9 @@ Default: `"alphabetical"`
 
 Defines the sorting algorithm used to order the commits (and their groups, if a grouping mode is used).
 
-- **`"alphabetical"`**: Sorts alphabetically from A to Z.
-- **`"oldest-first"`**: Sorts by commit timestamp, placing the oldest commits at the top.
-- **`"newest-first"`**: Sorts by commit timestamp, placing the newest commits at the top.
+- **"alphabetical":** Sorts alphabetically from A to Z.
+- **"newest-first":** Sorts by commit timestamp, placing the newest commits at the top.
+- **"oldest-first":** Sorts by commit timestamp, placing the oldest commits at the top.
 
 [⬆ Back to top](#table-of-content)
 
@@ -1279,7 +1279,7 @@ Type: `string`
 Default: [`DEFAULT_TAG_NAME_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
 String template for tag name, using with string patterns like `{{ nextVersion }}`. Available in [string templates](./string-templates-and-patterns.md) as `{{ tagName }}`.  
-Allowed patterns to use in template are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns).
+Allowed patterns to use in template are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns) (except `{{ tagName }}` itself).
 
 [⬆ Back to top](#table-of-content)
 

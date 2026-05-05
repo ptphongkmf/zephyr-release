@@ -82,7 +82,7 @@ export async function bootstrapOperation(
 
     if (!triggerContext.commitHasAllowedType && !associatedProposalForCommit) {
       throw new SafeExit(
-        "The trigger commit lacks an allowed type and we verified it is not a merged release proposal",
+        "The trigger commit lacks an allowed type and has been verified not to be a merged release proposal",
       );
     }
 

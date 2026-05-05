@@ -41,9 +41,9 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Defines how commits are sub-grouped within their respective changelog sections (Features, Fixes, etc.).\n" +
-          "- `none`: Commits are rendered as a single flat list.\n" +
-          "- `scope-first`: Commits are grouped by their scope. Scoped groups appear at the top, and unscoped commits fall to the bottom.\n" +
-          "- `scope-last`: Commits are grouped by their scope. Unscoped commits sit at the top, and scoped groups follow below.\n" +
+          '- "none": Commits are rendered as a single flat list.\n' +
+          '- "scope-first": Commits are grouped by their scope. Scoped groups appear at the top, and unscoped commits fall to the bottom.\n' +
+          '- "scope-last": Commits are grouped by their scope. Unscoped commits sit at the top, and scoped groups follow below.\n' +
           `Default: "${CommitGroupModes.none}"`,
       }),
     ),
@@ -52,9 +52,9 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Defines the sorting algorithm used to order the commits (and their groups, if a grouping mode is used).\n" +
-          "- `alphabetical`: Sorts alphabetically from A to Z.\n" +
-          "- `oldest-first`: Sorts by commit timestamp, placing the oldest commits at the top.\n" +
-          "- `newest-first`: Sorts by commit timestamp, placing the newest commits at the top.\n" +
+          '- "alphabetical": Sorts alphabetically from A to Z.\n' +
+          '- "newest-first": Sorts by commit timestamp, placing the newest commits at the top.\n' +
+          '- "oldest-first": Sorts by commit timestamp, placing the oldest commits at the top.\n' +
           `Default: "${CommitSortOrders.alphabetical}"`,
       }),
     ),

@@ -24,7 +24,7 @@ export const TagConfigSchema = v.pipe(
         description:
           "String template for tag name, using with string patterns like {{ nextVersion }}. Available in string templates as " +
           "{{ tagName }}.\n" +
-          "Allowed patterns to use are: all fixed and dynamic string patterns.\n" +
+          "Allowed patterns to use are: all fixed and dynamic string patterns (except {{ tagName }} itself).\n" +
           `Default: ${JSON.stringify(DEFAULT_TAG_NAME_TEMPLATE)}`,
       }),
     ),

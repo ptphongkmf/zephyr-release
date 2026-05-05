@@ -15,6 +15,7 @@ import {
 import {
   createDynamicChangelogStringPatternContext,
   createFixedNextVersionStringPatternContext,
+  createFixedTagStringPatternContext,
 } from "../tasks/string-templates-and-patterns/pattern-context.ts";
 import { createTag } from "../tasks/tag.ts";
 import {
@@ -67,14 +68,14 @@ export async function executeReviewPublishPhase(
   );
 
   logger.debugStepStart(
-    "Starting: Create fixed next version string pattern context",
+    "Starting: Create fixed next version and tag string pattern context",
   );
-  await createFixedNextVersionStringPatternContext(
-    nextVersion,
+  createFixedNextVersionStringPatternContext(nextVersion);
+  await createFixedTagStringPatternContext(
     runSettings.config.tag.nameTemplate,
   );
   logger.debugStepFinish(
-    "Finished: Create fixed next version string pattern context",
+    "Finished: Create fixed next version and tag string pattern context",
   );
 
   logger.debugStepStart(

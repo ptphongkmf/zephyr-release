@@ -16,7 +16,8 @@ import type {
   FixedCurrentVersionStringPattern,
   FixedDatetimeStringPattern,
   FixedNextVersionStringPattern,
-} from "../../constants/string-patterns.ts";
+  FixedTagStringPattern,
+} from "../../types/string-patterns.ts";
 import { resolveStringTemplate } from "./resolve-template.ts";
 import type { ReviewConfigOutput } from "../../schemas/configs/modules/review-config.ts";
 import { jsonValueNormalizer } from "../../utils/transformers/json.ts";
@@ -150,9 +151,8 @@ export function createFixedCurrentVersionStringPatternContext(
   );
 }
 
-export async function createFixedNextVersionStringPatternContext(
+export function createFixedNextVersionStringPatternContext(
   nextVersion: SemVer,
-  tagTemplate: string,
 ) {
   const versionContext = {
     nextVersion: format(nextVersion),
@@ -164,24 +164,30 @@ export async function createFixedNextVersionStringPatternContext(
     nextVersionBld: nextVersion.build?.length
       ? nextVersion.build.join(".")
       : undefined,
-  } satisfies Omit<
-    Record<FixedNextVersionStringPattern, string | undefined>,
-    "tagName"
-  >;
+  } satisfies Record<FixedNextVersionStringPattern, string | undefined>;
 
   Object.assign(BUILT_IN_CONTEXT, versionContext);
   Object.assign(STRING_PATTERN_CONTEXT, CUSTOM_CONTEXT, BUILT_IN_CONTEXT);
 
+  taskLogger.debug(
+    "Fixed next version string pattern context: " +
+      JSON.stringify(versionContext, null, 2),
+  );
+}
+
+export async function createFixedTagStringPatternContext(
+  tagTemplate: string,
+) {
   const tagContext = {
     tagName: await resolveStringTemplate(tagTemplate),
-  } satisfies Pick<Record<FixedNextVersionStringPattern, string>, "tagName">;
+  } satisfies Record<FixedTagStringPattern, string>;
 
   Object.assign(BUILT_IN_CONTEXT, tagContext);
   Object.assign(STRING_PATTERN_CONTEXT, CUSTOM_CONTEXT, BUILT_IN_CONTEXT);
 
   taskLogger.debug(
-    "Fixed next version string pattern context: " +
-      JSON.stringify({ ...versionContext, ...tagContext }, null, 2),
+    "Fixed tag string pattern context: " +
+      JSON.stringify(tagContext, null, 2),
   );
 }
 
