@@ -8,7 +8,6 @@ import type {
   ProviderCompareCommits,
 } from "../../types/providers/commit.ts";
 import { parseLooseSemVer } from "../../utils/parsers/semver.ts";
-import { safeParseTemporalInstant } from "../../utils/parsers/datetime.ts";
 
 /** @throws */
 async function githubListCommitsFromGivenToLastRelease(
@@ -133,14 +132,18 @@ async function githubListCommitsFromGivenToLastRelease(
         author: {
           name: commit.commit.author?.name ?? "",
           email: commit.commit.author?.email ?? "",
-          date: safeParseTemporalInstant(commit.commit.author?.date) ??
-            Temporal.Instant.fromEpochMilliseconds(0),
+          // waiting for temporal support in node
+          //           date: safeParseTemporalInstant(commit.commit.author?.date) ??
+          //             Temporal.Instant.fromEpochMilliseconds(0),
+          date: new Date(commit.commit.author?.date ?? 0),
         },
         committer: {
           name: commit.commit.committer?.name ?? "",
           email: commit.commit.committer?.email ?? "",
-          date: safeParseTemporalInstant(commit.commit.committer?.date) ??
-            Temporal.Instant.fromEpochMilliseconds(0),
+          // waiting for temporal support in node
+          //           date: safeParseTemporalInstant(commit.commit.committer?.date) ??
+          //             Temporal.Instant.fromEpochMilliseconds(0),
+          date: new Date(commit.commit.committer?.date ?? 0),
         },
       });
 
@@ -267,14 +270,18 @@ async function githubCreateCommitOnBranch(
     author: {
       name: createCommitRes.data.author.name,
       email: createCommitRes.data.author.email,
-      date: safeParseTemporalInstant(createCommitRes.data.author.date) ??
-        Temporal.Instant.fromEpochMilliseconds(0),
+      // waiting for temporal support in node
+      //       date: safeParseTemporalInstant(createCommitRes.data.author.date) ??
+      //         Temporal.Instant.fromEpochMilliseconds(0),
+      date: new Date(createCommitRes.data.author.date),
     },
     committer: {
       name: createCommitRes.data.committer.name,
       email: createCommitRes.data.committer.email,
-      date: safeParseTemporalInstant(createCommitRes.data.committer.date) ??
-        Temporal.Instant.fromEpochMilliseconds(0),
+      // waiting for temporal support in node
+      //       date: safeParseTemporalInstant(createCommitRes.data.committer.date) ??
+      //         Temporal.Instant.fromEpochMilliseconds(0),
+      date: new Date(createCommitRes.data.committer.date),
     },
   };
 }
@@ -300,14 +307,18 @@ async function githubGetCommit(
     author: {
       name: res.data.author.name,
       email: res.data.author.email,
-      date: safeParseTemporalInstant(res.data.author.date) ??
-        Temporal.Instant.fromEpochMilliseconds(0),
+      // waiting for temporal support in node
+      //       date: safeParseTemporalInstant(res.data.author.date) ??
+      //         Temporal.Instant.fromEpochMilliseconds(0),
+      date: new Date(res.data.author.date),
     },
     committer: {
       name: res.data.committer.name,
       email: res.data.committer.email,
-      date: safeParseTemporalInstant(res.data.committer.date) ??
-        Temporal.Instant.fromEpochMilliseconds(0),
+      // waiting for temporal support in node
+      //       date: safeParseTemporalInstant(res.data.committer.date) ??
+      //         Temporal.Instant.fromEpochMilliseconds(0),
+      date: new Date(res.data.committer.date),
     },
   };
 }

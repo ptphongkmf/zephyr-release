@@ -13,8 +13,11 @@ export interface ProviderCommit {
    */
   treeHash: string;
 
-  author: { name: string; email: string; date: Temporal.Instant };
-  committer: { name: string; email: string; date: Temporal.Instant };
+// waiting for temporal support in node
+//   author: { name: string; email: string; date: Temporal.Instant };
+//   committer: { name: string; email: string; date: Temporal.Instant };
+  author: { name: string; email: string; date: Date };
+  committer: { name: string; email: string; date: Date };
 }
 
 export interface ProviderCompareCommits {

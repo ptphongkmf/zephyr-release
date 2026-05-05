@@ -556,9 +556,13 @@ async function generateReleaseBodyBasedOnCommits(
     }
 
     if (commitSortOrder === CommitSortOrders.oldestFirst) {
-      return Temporal.Instant.compare(a.committer.date, b.committer.date);
+// waiting for temporal support in node
+//       return Temporal.Instant.compare(a.committer.date, b.committer.date);
+      return a.committer.date.getTime() - b.committer.date.getTime();
     } else if (commitSortOrder === CommitSortOrders.newestFirst) {
-      return Temporal.Instant.compare(b.committer.date, a.committer.date);
+// waiting for temporal support in node
+//       return Temporal.Instant.compare(b.committer.date, a.committer.date);
+      return b.committer.date.getTime() - a.committer.date.getTime();
     } else {
       return a.subject.localeCompare(b.subject);
     }
