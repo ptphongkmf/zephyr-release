@@ -50,9 +50,16 @@ export const baseConventionalCommitParserOptions = {
 
   // --- Flexible Revert Support ---
   // Matches the standard Git format used by most CLI and web tools, with or without a colon
+
+  // --- Flexible Revert Support ---
+  // Matches standard Git revert formats as well as custom trailers (Refs, Reverts, etc.).
+  // Note: We intentionally use a non-capturing group for the original commit's header
+  // and only extract the `hash`. This forces `conventional-commits-filter` to match
+  // revert pairs strictly by their commit hash, bypassing its default behavior which
+  // requires the subject lines to match perfectly.
   revertPattern:
-    /^(?:Revert|revert:?)\s+"?([\s\S]*?)"?\s*This reverts commit (\w+)/,
-  revertCorrespondence: ["header", "hash"],
+    /^(?:Revert|revert)(?:\([^)]+\))?:?\s+[\s\S]*?(?:This reverts commit|This revert commit|Reverts|Revert|Refs:|Ref:)\s+([\w\d]+)/im,
+  revertCorrespondence: ["hash"],
 
   noteKeywords: [
     breakingChangeKeywords.space,

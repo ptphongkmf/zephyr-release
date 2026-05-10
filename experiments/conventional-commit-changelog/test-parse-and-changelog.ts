@@ -11,63 +11,60 @@ type ResolvedCommit = CommitBase & {
   subject: string;
   breaking?: string; // This is the "!" char
   isBreaking: boolean;
+  revert: any;
 };
 
 // Mock raw commits for testing
-const mockRawCommits: ProviderCommit[] = [
+const mockRawCommits: Partial<ProviderCommit>[] = [
+  // 1. STANDARD PAIR: No quotes, standard header match
   {
-    hash: "abc123",
-    header: "feat: add new feature",
-    body: "This is a new feature description",
-    message: `feat: add new feature
-    
-    This is a new feature description
-    
-    Close #3
-    release-as: v10`,
+    hash: "aaa111",
+    message: "feat(ui): add old paper background",
   },
   {
-    hash: "def456",
-    header: "fix: resolve bug in parser",
-    body: "Fixed an issue with commit parsing",
-    message: "fix: resolve bug in parser\n\nFixed an issue with commit parsing",
-  },
-  {
-    hash: "ghi789",
-    header: "feat!: breaking change",
-    body: "This is a breaking change",
-    message: "feat!: breaking change\n\nThis is a breaking change",
-  },
-  {
-    hash: "jkl012",
-    header: "feat(scope): add scoped feature",
-    body: "Added a feature with scope",
-    message: "feat(scope): add scoped feature\n\nAdded a feature with scope",
-  },
-  {
-    hash: "mno345",
-    header: "perf: improve performance",
-    body: "Optimized some code",
-    message: "perf: improve performance\n\nOptimized some code",
-  },
-  {
-    hash: "pqr678",
-    header: "docs: update documentation",
-    body: "Updated README",
-    message: "docs: update documentation\n\nUpdated README",
-  },
-  {
-    hash: "stu901",
-    header: "feat: add feature with breaking note",
-    body: "BREAKING CHANGE: This changes the API",
+    hash: "bbb222",
     message:
-      "feat: add feature with breaking note\n\nBREAKING CHANGE: This changes the API",
+      "revert: feat(ui): add old paper background\n\nThis reverts commit aaa111.",
+  },
+
+  // 2. QUOTED PAIR: Testing if your parser/filter handles the "Quoted" style
+  {
+    hash: "ccc333",
+    message: "fix(api): resolve race condition in sync",
   },
   {
-    hash: "vwx234",
-    header: "revert: revert previous commit",
-    body: "Reverts abc123",
-    message: "revert: revert previous commit\n\nReverts abc123",
+    hash: "ddd444",
+    message:
+      'revert: "fix(api): resolve race condition in sync"\n\nThis reverts commit ccc333.',
+  },
+
+  // 3. MISMATCHED SUBJECT: This SHOULD FAIL to filter (Custom message)
+  // actually, it should be success now if we make it flexible enough
+  {
+    hash: "eee555",
+    message: "refactor(db): simplify indexedDB schema",
+  },
+  {
+    hash: "fff666",
+    message:
+      "revert: oops the schema change broke everything\n\nThis reverts commit eee555.",
+  },
+
+  // 4. FOOTER REFERENCE (Refs: style)
+  {
+    hash: "ggg777",
+    message: "feat(auth): add guest login",
+  },
+  {
+    hash: "hhh888",
+    message:
+      "revert(test-with-scope): feat(auth): add guest login\n\nRevert ggg777",
+  },
+
+  // 5. THE "ORPHAN": A feature that stays (no revert)
+  {
+    hash: "iii999",
+    message: "feat(core): implement byethrow logic",
   },
 ];
 
@@ -85,12 +82,13 @@ const allowedTypes = new Set(commitTypes.map((c) => c.type));
 const parsedFilteredCommits: ResolvedCommit[] = [];
 
 for (const raw of rawCommits) {
-  const commit = commitParser.parse(raw.message);
+  const commit = commitParser.parse(raw.message ?? "");
+  const isRevert = !!commit.revert;
 
   const type = commit.type?.toLowerCase();
   const subject = commit.subject;
 
-  if (!type || !subject || !allowedTypes.has(type)) continue;
+  if (!isRevert && (!type || !allowedTypes.has(type))) continue;
 
   const hasBreakingNote = commit.notes.some(
     (n) => n.title === "BREAKING CHANGE" || n.title === "BREAKING-CHANGE",
@@ -100,24 +98,26 @@ for (const raw of rawCommits) {
   if (isBreaking && !hasBreakingNote) {
     commit.notes.push({
       title: "BREAKING CHANGE",
-      text: subject,
+      text: subject ?? "",
     });
   }
 
   parsedFilteredCommits.push({
     ...commit,
-    hash: raw.hash,
-    type,
-    subject,
+    hash: raw.hash ?? "",
+    type: type ?? "",
+    subject: subject ?? "",
     isBreaking,
+    revert: commit.revert,
   });
 }
 
 const resolvedCommits = Array.from(
-  filterRevertedCommitsSync(parsedFilteredCommits),
+  filterRevertedCommitsSync(parsedFilteredCommits.reverse()),
 );
 
 console.log("Resolved (parsed and filtered) commits:");
+// console.log(JSON.stringify(parsedFilteredCommits, null, 2));
 console.log(JSON.stringify(resolvedCommits, null, 2));
 
 console.log(`\nTotal resolved commits: ${resolvedCommits.length}`);
