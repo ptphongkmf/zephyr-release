@@ -37,14 +37,14 @@ export const ChangelogConfigSchema = v.pipe(
     ),
 
     commitGroupMode: v.pipe(
-      v.optional(v.enum(CommitGroupModes), CommitGroupModes.none),
+      v.optional(v.enum(CommitGroupModes), CommitGroupModes.scopeLast),
       v.metadata({
         description:
           "Defines how commits are sub-grouped within their respective changelog sections (Features, Fixes, etc.).\n" +
           '- "none": Commits are rendered as a single flat list.\n' +
           '- "scope-first": Commits are grouped by their scope. Scoped groups appear at the top, and unscoped commits fall to the bottom.\n' +
           '- "scope-last": Commits are grouped by their scope. Unscoped commits sit at the top, and scoped groups follow below.\n' +
-          `Default: "${CommitGroupModes.none}"`,
+          `Default: "${CommitGroupModes.scopeLast}"`,
       }),
     ),
     commitSortOrder: v.pipe(

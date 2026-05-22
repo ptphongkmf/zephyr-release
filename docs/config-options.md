@@ -830,7 +830,7 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 #### changelog > commit-group-mode (Optional)
 
 Type: `"none" | "scope-first" | "scope-last"`  
-Default: `"none"`
+Default: `"scope-last"`
 
 Defines how commits are sub-grouped within their respective changelog sections (Features, Fixes, etc.).
 
