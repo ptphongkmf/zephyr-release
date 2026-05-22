@@ -1,0 +1,29 @@
+name: Zephyr Release
+
+on:
+  push:
+    branches:
+      - main 
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  zephyr-release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate App Token
+        id: generate-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.WAYFEA_APP_ID }}
+          private-key: ${{ secrets.WAYFEA_PRIVATE_KEY }}
+
+      - name: Run Zephyr Release
+        uses: Pandoriux/zephyr-release@canary
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          config-path: ".zephyr-release/config.json"
+          config-format: "json"
