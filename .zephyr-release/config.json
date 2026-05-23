@@ -2,11 +2,18 @@
   "$schema": "https://raw.githubusercontent.com/Pandoriux/zephyr-release/refs/heads/canary/schemas/v1/config-v1.kebab.json",
 
   "time-zone": "Asia/Ho_Chi_Minh",
-  "review": {
-    "title-template": "release: v{{ nextVersion }}"
-  },
+
+  "review": { "title-template": "release: v{{ nextVersion }}" },
+
   "version-files": {
     "path": "deno.json",
     "selector": "$.version"
-  }
+  },
+
+  "commit": {
+    "local-changes-to-commit": ["dist/*", "schemas/**/*"],
+    "header-template": "release: v{{ nextVersion }}"
+  },
+
+  "command-hooks": { "prepare": { "pre": "deno task build" } }
 }
