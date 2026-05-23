@@ -8,11 +8,10 @@
 
   "tasks": {
     "gen:json-schema": "deno run --allow-env --allow-write scripts/gen-json-schema.ts",
-    "gen:version": "deno run --allow-write scripts/gen-version.ts",
     "prebuild": "deno run --allow-run --allow-read --allow-write scripts/prebuild.ts",
     "build": {
       "command": "deno bundle src/main.ts -o dist/main.mjs",
-      "dependencies": ["gen:json-schema", "gen:version", "prebuild"]
+      "dependencies": ["gen:json-schema", "prebuild"]
     },
 
     "check": "deno check src/**/*.ts"

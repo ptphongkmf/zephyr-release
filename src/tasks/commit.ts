@@ -25,7 +25,7 @@ import { resolveStringTemplate } from "./string-templates-and-patterns/resolve-t
 import type { CommitConfigOutput } from "../schemas/configs/modules/commit-config.ts";
 import { BranchOutOfDateError } from "../errors/providers/branch.ts";
 import { SafeExit } from "../errors/safe-exit.ts";
-import { VERSION } from "../version.generated.ts";
+import { VERSION } from "../version.ts";
 import { breakingChangeKeywords } from "../constants/conventional-commit-parser-options.ts";
 import { NoCommitFoundError } from "../errors/providers/commit.ts";
 import { format, type SemVer } from "@std/semver";

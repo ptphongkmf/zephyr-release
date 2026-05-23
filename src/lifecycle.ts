@@ -1,4 +1,4 @@
-import { VERSION } from "./version.generated.ts";
+import { VERSION } from "./version.ts";
 import { logger } from "./tasks/logger.ts";
 import { failedNonCriticalTasks, startTime } from "./main.ts";
 
