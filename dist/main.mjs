@@ -16334,10 +16334,10 @@ var require_dist2 = __commonJS({
 var FileNotFoundError;
 var init_file3 = __esm({
   "src/errors/file.ts"() {
-    FileNotFoundError = class _FileNotFoundError extends Error {
+    FileNotFoundError = class extends Error {
+      name = "FileNotFoundError";
       constructor(message = "File not found", opts) {
         super(message, opts);
-        this.name = _FileNotFoundError.name;
       }
     };
   }
@@ -20677,9 +20677,14 @@ var init_conventional_commit_parser_options = __esm({
       ],
       // --- Flexible Revert Support ---
       // Matches the standard Git format used by most CLI and web tools, with or without a colon
-      revertPattern: /^(?:Revert|revert:?)\s+"?([\s\S]*?)"?\s*This reverts commit (\w+)/,
+      // --- Flexible Revert Support ---
+      // Matches standard Git revert formats as well as custom trailers (Refs, Reverts, etc.).
+      // Note: We intentionally use a non-capturing group for the original commit's header
+      // and only extract the `hash`. This forces `conventional-commits-filter` to match
+      // revert pairs strictly by their commit hash, bypassing its default behavior which
+      // requires the subject lines to match perfectly.
+      revertPattern: /^(?:Revert|revert)(?:\([^)]+\))?:?\s+[\s\S]*?(?:This reverts commit|This revert commit|Reverts|Revert|Refs:|Ref:)\s+([\w\d]+)/im,
       revertCorrespondence: [
-        "header",
         "hash"
       ],
       noteKeywords: [
@@ -20711,10 +20716,23 @@ var init_conventional_commit_parser_options = __esm({
 var BranchOutOfDateError;
 var init_branch = __esm({
   "src/errors/providers/branch.ts"() {
-    BranchOutOfDateError = class _BranchOutOfDateError extends Error {
-      constructor(message = "Failed to update branch because it is out of date. The branch has moved forward.", opts) {
+    BranchOutOfDateError = class extends Error {
+      name = "BranchOutOfDateError";
+      constructor(message = "Failed to update branch because it is out of date. The branch has moved forward", opts) {
         super(message, opts);
-        this.name = _BranchOutOfDateError.name;
+      }
+    };
+  }
+});
+
+// src/errors/providers/commit.ts
+var NoCommitFoundError;
+var init_commit2 = __esm({
+  "src/errors/providers/commit.ts"() {
+    NoCommitFoundError = class extends Error {
+      name = "NoCommitFoundError";
+      constructor(message = "No commit found", opts) {
+        super(message, opts);
       }
     };
   }
@@ -41522,10 +41540,12 @@ var init_file4 = __esm({
 
 // src/providers/github/pull-request.ts
 async function githubFindMergedProposalPrByCommit(octokit, commitHash, sourceBranch, targetBranch) {
+  const owner = githubGetNamespace();
+  const repo = githubGetRepositoryName();
   try {
     const paginatedIterator = octokit.paginate.iterator(octokit.rest.repos.listPullRequestsAssociatedWithCommit, {
-      owner: githubGetNamespace(),
-      repo: githubGetRepositoryName(),
+      owner,
+      repo,
       commit_sha: commitHash,
       per_page: 100
     });
@@ -41540,6 +41560,28 @@ async function githubFindMergedProposalPrByCommit(octokit, commitHash, sourceBra
             body: pr.body || ""
           };
         }
+      }
+    }
+    const fallbackResponse = await octokit.rest.pulls.list({
+      owner,
+      repo,
+      state: "closed",
+      head: `${owner}:${sourceBranch}`,
+      base: targetBranch,
+      sort: "updated",
+      direction: "desc",
+      per_page: 5
+    });
+    for (const pr of fallbackResponse.data) {
+      if (pr.merged_at !== null && pr.merge_commit_sha === commitHash) {
+        taskLogger.notice(`Retrieved merged PR #${pr.number} via fallback query (bypassing GitHub API indexing delay for commit ${commitHash.substring(0, 7)}).`);
+        return {
+          id: String(pr.number),
+          sourceBranch: pr.head.ref,
+          targetBranch: pr.base.ref,
+          title: pr.title,
+          body: pr.body || ""
+        };
       }
     }
     return void 0;
@@ -41684,11 +41726,11 @@ var init_pull_request = __esm({
 });
 
 // src/providers/github/export.ts
-function githubExportOutputs(k, v) {
+function githubSetOutput(k, v) {
   if (v === null || v === void 0) return;
   core3.setOutput(k, String(v));
 }
-function githubExportEnvVars(k, v) {
+function githubSetEnv(k, v) {
   if (v === null || v === void 0) return;
   core3.exportVariable(k, String(v));
 }
@@ -41750,70 +41792,136 @@ var init_branch2 = __esm({
   }
 });
 
+// src/utils/parsers/semver.ts
+function parseLooseSemVer(version2, includeExtensions = false) {
+  if (version2 === null || version2 === void 0) return void 0;
+  const vStr = String(version2);
+  const regex3 = /(?:^|[^\d])(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([a-zA-Z0-9.-]+))?(?:\+([a-zA-Z0-9.-]+))?/;
+  const match = vStr.match(regex3);
+  if (!match) return void 0;
+  const major = match[1];
+  const minor = match[2] || "0";
+  const patch = match[3] || "0";
+  const prerelease = includeExtensions && match[4] ? `-${match[4]}` : "";
+  const build2 = includeExtensions && match[5] ? `+${match[5]}` : "";
+  const cleanVersion = `${major}.${minor}.${patch}${prerelease}${build2}`;
+  if (canParse(cleanVersion)) {
+    return parse6(cleanVersion);
+  }
+  return void 0;
+}
+var init_semver = __esm({
+  "src/utils/parsers/semver.ts"() {
+    init_mod();
+  }
+});
+
 // src/providers/github/commit.ts
-async function githubFindCommitsFromGivenToPreviousTagged(octokit, commitHash, stopResolvingCommitAt) {
-  const collectedCommits = [];
-  const paginatedIterator = octokit.graphql.paginate.iterator(`
-    query getHistory($owner: String!, $repo: String!, $sha: String!, $cursor: String) {
-      repository(owner: $owner, name: $repo) {
-        object(expression: $sha) {
-          ... on Commit {
-            history(first: 100, after: $cursor, firstParent: true) @paginate {
-              nodes {
-                oid
-                messageHeadline
-                messageBody
-                message
-                tree { oid }
-                refs(refPrefix: "refs/tags/", first: 1) {
-                  nodes { name }
-                }
-              }
-            }
-          }
+async function githubListCommitsFromGivenToLastRelease(octokit, commitHash, maxCommitsToResolve, resolveUntilCommitHash) {
+  const owner = githubGetNamespace();
+  const repo = githubGetRepositoryName();
+  let platformReleaseTargetSha = void 0;
+  const coercedTagMap = /* @__PURE__ */ new Map();
+  if (!resolveUntilCommitHash) {
+    try {
+      const releasesIterator = octokit.paginate.iterator(octokit.rest.repos.listReleases, {
+        owner,
+        repo,
+        per_page: 100
+      });
+      for await (const response of releasesIterator) {
+        const validRelease = response.data.find((r) => r.draft === false);
+        if (validRelease) {
+          const commitRes = await octokit.rest.repos.getCommit({
+            owner,
+            repo,
+            ref: validRelease.tag_name
+          });
+          platformReleaseTargetSha = commitRes.data.sha;
+          break;
         }
       }
+    } catch {
     }
-  `, {
-    owner: githubGetNamespace(),
-    repo: githubGetRepositoryName(),
-    sha: commitHash
+  }
+  if (!resolveUntilCommitHash && !platformReleaseTargetSha) {
+    let tagCount = 0;
+    const TAG_LIMIT = 100;
+    const tagsIterator = octokit.paginate.iterator(octokit.rest.repos.listTags, {
+      owner,
+      repo,
+      per_page: 100
+    });
+    tagsLoop: for await (const response of tagsIterator) {
+      for (const tag of response.data) {
+        if (!coercedTagMap.has(tag.commit.sha)) {
+          const coerced = parseLooseSemVer(tag.name, true);
+          if (coerced) {
+            coercedTagMap.set(tag.commit.sha, tag.name);
+          }
+        }
+        tagCount++;
+        if (tagCount >= TAG_LIMIT) break tagsLoop;
+      }
+    }
+  }
+  const collectedCommits = [];
+  const commitsIterator = octokit.paginate.iterator(octokit.rest.repos.listCommits, {
+    owner,
+    repo,
+    sha: commitHash,
+    per_page: 100
   });
-  for await (const response of paginatedIterator) {
-    const rawNodes = response.repository.object.history.nodes;
-    if (!Array.isArray(rawNodes)) {
-      throw new Error("Failed to retrieve commit history nodes from GitHub");
-    }
-    for (const rawNode of rawNodes) {
-      const commit = parse(RawCommitNodeSchema, rawNode, {
-        message: "Received malformed commit data from GitHub GraphQL API"
-      });
-      const tagName = commit.refs.nodes[0]?.name;
-      if (tagName) {
+  for await (const response of commitsIterator) {
+    for (const commit of response.data) {
+      if (resolveUntilCommitHash && commit.sha === resolveUntilCommitHash) {
+        return collectedCommits;
+      }
+      if (!resolveUntilCommitHash && platformReleaseTargetSha && commit.sha === platformReleaseTargetSha) {
         if (collectedCommits.length === 0) {
-          throw new Error(`No new commits found. The starting commit ${commitHash.substring(0, 7)} is already tagged (${tagName}).`);
+          throw new NoCommitFoundError(`No new commits found. The starting commit is already released.`);
         }
         return collectedCommits;
       }
+      if (!resolveUntilCommitHash && !platformReleaseTargetSha) {
+        const coercedTagName = coercedTagMap.get(commit.sha);
+        if (coercedTagName) {
+          if (collectedCommits.length === 0) {
+            throw new NoCommitFoundError(`No new commits found. The starting commit is already tagged (${coercedTagName}).`);
+          }
+          return collectedCommits;
+        }
+      }
       collectedCommits.push({
-        hash: commit.oid,
-        header: commit.messageHeadline,
-        body: commit.messageBody,
-        message: commit.message,
-        treeHash: commit.tree.oid
+        hash: commit.sha,
+        header: commit.commit.message.split("\n")[0] ?? "",
+        body: commit.commit.message.split("\n").slice(1).join("\n").trim(),
+        message: commit.commit.message,
+        treeHash: commit.commit.tree.sha,
+        author: {
+          name: commit.commit.author?.name ?? "",
+          email: commit.commit.author?.email ?? "",
+          // waiting for temporal support in node
+          //           date: safeParseTemporalInstant(commit.commit.author?.date) ??
+          //             Temporal.Instant.fromEpochMilliseconds(0),
+          date: new Date(commit.commit.author?.date ?? 0)
+        },
+        committer: {
+          name: commit.commit.committer?.name ?? "",
+          email: commit.commit.committer?.email ?? "",
+          // waiting for temporal support in node
+          //           date: safeParseTemporalInstant(commit.commit.committer?.date) ??
+          //             Temporal.Instant.fromEpochMilliseconds(0),
+          date: new Date(commit.commit.committer?.date ?? 0)
+        }
       });
-      if (stopResolvingCommitAt) {
-        if (typeof stopResolvingCommitAt === "number" && collectedCommits.length === stopResolvingCommitAt) {
-          return collectedCommits;
-        }
-        if (typeof stopResolvingCommitAt === "string" && commit.oid === stopResolvingCommitAt) {
-          return collectedCommits;
-        }
+      if (collectedCommits.length >= maxCommitsToResolve) {
+        return collectedCommits;
       }
     }
   }
   if (collectedCommits.length === 0) {
-    throw new Error(`No commits found for hash ${commitHash.substring(0, 7)}`);
+    throw new NoCommitFoundError(`No commits found for hash ${commitHash.substring(0, 7)}`);
   }
   return collectedCommits;
 }
@@ -41886,7 +41994,23 @@ async function githubCreateCommitOnBranch(octokit, data) {
     header: message.split("\n")[0] ?? "",
     body: message.split("\n").slice(1).join("\n").trim(),
     message,
-    treeHash: createTreeRes.data.sha
+    treeHash: createTreeRes.data.sha,
+    author: {
+      name: createCommitRes.data.author.name,
+      email: createCommitRes.data.author.email,
+      // waiting for temporal support in node
+      //       date: safeParseTemporalInstant(createCommitRes.data.author.date) ??
+      //         Temporal.Instant.fromEpochMilliseconds(0),
+      date: new Date(createCommitRes.data.author.date)
+    },
+    committer: {
+      name: createCommitRes.data.committer.name,
+      email: createCommitRes.data.committer.email,
+      // waiting for temporal support in node
+      //       date: safeParseTemporalInstant(createCommitRes.data.committer.date) ??
+      //         Temporal.Instant.fromEpochMilliseconds(0),
+      date: new Date(createCommitRes.data.committer.date)
+    }
   };
 }
 async function githubGetCommit(octokit, hash) {
@@ -41904,17 +42028,23 @@ async function githubGetCommit(octokit, hash) {
     author: {
       name: res.data.author.name,
       email: res.data.author.email,
+      // waiting for temporal support in node
+      //       date: safeParseTemporalInstant(res.data.author.date) ??
+      //         Temporal.Instant.fromEpochMilliseconds(0),
       date: new Date(res.data.author.date)
     },
     committer: {
       name: res.data.committer.name,
       email: res.data.committer.email,
+      // waiting for temporal support in node
+      //       date: safeParseTemporalInstant(res.data.committer.date) ??
+      //         Temporal.Instant.fromEpochMilliseconds(0),
       date: new Date(res.data.committer.date)
     }
   };
 }
-function makeGithubFindCommitsFromGivenToPreviousTagged(getOctokit) {
-  return (commitHash, stopResolvingCommitAt) => githubFindCommitsFromGivenToPreviousTagged(getOctokit(), commitHash, stopResolvingCommitAt);
+function makeGithubListCommitsFromGivenToLastRelease(getOctokit) {
+  return (commitHash, maxCommitsToResolve, resolveUntilCommitHash) => githubListCommitsFromGivenToLastRelease(getOctokit(), commitHash, maxCommitsToResolve, resolveUntilCommitHash);
 }
 function makeGithubCompareCommits(getOctokit) {
   return (base, head) => githubCompareCommits(getOctokit(), base, head);
@@ -41932,27 +42062,13 @@ function makeGithubCreateCommitOnBranch(getOctokit) {
 function makeGithubGetCommit(getOctokit) {
   return (hash) => githubGetCommit(getOctokit(), hash);
 }
-var RawCommitNodeSchema;
-var init_commit2 = __esm({
+var init_commit3 = __esm({
   "src/providers/github/commit.ts"() {
     init_dist_src();
     init_branch();
-    init_src();
+    init_commit2();
     init_repository();
-    RawCommitNodeSchema = object({
-      oid: string(),
-      messageHeadline: string(),
-      messageBody: string(),
-      message: string(),
-      tree: object({
-        oid: string()
-      }),
-      refs: object({
-        nodes: array(object({
-          name: string()
-        }))
-      })
-    });
+    init_semver();
   }
 });
 
@@ -42034,6 +42150,9 @@ async function githubGetCompareTagUrlFromCurrentToLatest(octokit, currentTag, sk
   }
   const targetTag = tags2[skip];
   if (!targetTag) {
+    if (tags2.length === 0) {
+      return currentTag;
+    }
     throw new Error(`Cannot skip ${skip} tag(s) from latest; repository only contains ${tags2.length} tag(s) total`);
   }
   return new URL(joinUrlSegments(githubGetNamespace(), githubGetRepositoryName(), "compare", targetTag + "..." + currentTag), githubGetHost()).href;
@@ -71540,7 +71659,7 @@ function createGitHubProvider() {
     ensureBranchExist: makeGithubEnsureBranchExist(getOctokit),
     findMergedProposalByCommit: makeGithubFindMergedProposalPrByCommit(getOctokit),
     findOpenProposal: makeGithubFindOpenProposalPr(getOctokit),
-    findCommitsFromGivenToPreviousTagged: makeGithubFindCommitsFromGivenToPreviousTagged(getOctokit),
+    listCommitsFromGivenToLastRelease: makeGithubListCommitsFromGivenToLastRelease(getOctokit),
     compareCommits: makeGithubCompareCommits(getOctokit),
     getCommit: makeGithubGetCommit(getOctokit),
     createCommitOnBranch: makeGithubCreateCommitOnBranch(getOctokit),
@@ -71554,8 +71673,8 @@ function createGitHubProvider() {
     createTag: makeGithubCreateTag(getOctokit),
     createRelease: makeGithubCreateRelease(getOctokit),
     attachReleaseAsset: makeGithubAttachReleaseAsset(getOctokit),
-    exportOutputs: githubExportOutputs,
-    exportEnvVars: githubExportEnvVars,
+    setOutput: githubSetOutput,
+    setEnv: githubSetEnv,
     getConventionalCommitParserOptions: githubGetConventionalCommitParserOptions
   };
 }
@@ -71568,7 +71687,7 @@ var init_github_provider = __esm({
     init_repository();
     init_export();
     init_branch2();
-    init_commit2();
+    init_commit3();
     init_conventional_commit();
     init_tag();
     init_octokit();
@@ -83120,8 +83239,74 @@ function autoPlug() {
 MomentZoneRulesProvider.loadTzdbData(latest);
 autoPlug();
 
-// src/version.generated.ts
-var VERSION = "0.9.0";
+// deno.json
+var deno_default = {
+  name: "zephyr-release",
+  version: "0.9.0",
+  description: "Zephyr Release is yet another automated tool for version bumping, changelog generation, and release publishing.",
+  license: "Apache-2.0",
+  exports: "./README.md",
+  tasks: {
+    "gen:json-schema": "deno run --allow-env --allow-write scripts/gen-json-schema.ts",
+    prebuild: "deno run --allow-run --allow-read --allow-write scripts/prebuild.ts",
+    build: {
+      command: "deno bundle src/main.ts -o dist/main.mjs",
+      dependencies: ["gen:json-schema", "prebuild"]
+    },
+    check: "deno check src/**/*.ts"
+  },
+  nodeModulesDir: "auto",
+  imports: {
+    "@std/async": "jsr:@std/async@^1.2.0",
+    "@std/collections": "jsr:@std/collections@^1.1.3",
+    "@std/fmt": "jsr:@std/fmt@^1.0.8",
+    "@std/media-types": "jsr:@std/media-types@^1.1.0",
+    "@std/path": "jsr:@std/path@^1.1.3",
+    "@std/regexp": "jsr:@std/regexp@^1.0.1",
+    "@std/semver": "jsr:@std/semver@^1.0.7",
+    "@std/text": "jsr:@std/text@^1.0.16",
+    "@valibot/valibot": "jsr:@valibot/valibot@^1.2.0",
+    "@eemeli/yaml": "jsr:@eemeli/yaml@^2.8.2",
+    "@actions/core": "npm:@actions/core@^2.0.1",
+    "@octokit/action": "npm:@octokit/action@^8.0.4",
+    "@octokit/plugin-paginate-rest": "npm:@octokit/plugin-paginate-rest@^14.0.0",
+    "@octokit/plugin-rest-endpoint-methods": "npm:@octokit/plugin-rest-endpoint-methods@^17.0.0",
+    "@octokit/plugin-paginate-graphql": "npm:@octokit/plugin-paginate-graphql@^6.0.0",
+    "@octokit/plugin-retry": "npm:@octokit/plugin-retry@^8.0.3",
+    "@octokit/plugin-throttling": "npm:@octokit/plugin-throttling@^11.0.3",
+    "@octokit/request-error": "npm:@octokit/request-error@^7.1.0",
+    "@croct/json5-parser": "npm:@croct/json5-parser@^0.2.2",
+    "@rainbowatcher/toml-edit-js": "npm:@rainbowatcher/toml-edit-js@^0.6.4",
+    "conventional-changelog-conventionalcommits": "npm:conventional-changelog-conventionalcommits@^9.1.0",
+    "conventional-changelog-writer": "npm:conventional-changelog-writer@^8.2.0",
+    "conventional-commits-filter": "npm:conventional-commits-filter@^5.0.0",
+    "conventional-commits-parser": "npm:conventional-commits-parser@^6.2.1",
+    picomatch: "npm:picomatch@^4.0.3",
+    "@types/picomatch": "npm:@types/picomatch@^4.0.2",
+    liquidjs: "npm:liquidjs@^10.24.0",
+    nimma: "npm:nimma@^0.7.2",
+    "obj-walker": "npm:obj-walker@^2.5.0",
+    "@js-joda/core": "npm:@js-joda/core@^5.6.5",
+    "@js-joda/timezone": "npm:@js-joda/timezone@^2.22.0",
+    "@valibot/to-json-schema": "jsr:@valibot/to-json-schema@^1.5.0",
+    "@json-schema-tools/traverse": "npm:@json-schema-tools/traverse@^1.11.0"
+  },
+  exclude: [
+    "dist"
+  ],
+  compilerOptions: {
+    lib: ["dom", "deno.ns"],
+    noUncheckedIndexedAccess: true,
+    noFallthroughCasesInSwitch: true
+  },
+  unstable: ["raw-imports"],
+  lint: {
+    include: ["src", "scripts"]
+  }
+};
+
+// src/version.ts
+var VERSION = deno_default.version;
 
 // src/lifecycle.ts
 init_logger();
@@ -84261,7 +84446,7 @@ async function getTextFile(source, path, opts) {
 
 // src/utils/transformers/json.ts
 function jsonValueNormalizer(k, v) {
-  if (v === null || typeof v === "string" || typeof v === "boolean" || typeof v === "number" && Number.isFinite(v) || Array.isArray(v) || typeof v === "object") {
+  if (v === void 0 || v === null || typeof v === "string" || typeof v === "boolean" || typeof v === "number" && Number.isFinite(v) || Array.isArray(v) || typeof v === "object") {
     return v;
   }
   if (v === Infinity) {
@@ -84279,6 +84464,9 @@ init_src();
 // src/schemas/configs/modules/base-config.ts
 init_src();
 
+// src/schemas/token.ts
+var DOCS_EXT_REF_TOKEN = "<DOCS_EXTERNAL_REF_TOKEN>";
+
 // src/schemas/configs/modules/components/timezone.ts
 init_src();
 var supportedIanaTimeZones = ZoneId.getAvailableZoneIds();
@@ -84292,6 +84480,9 @@ var CommitTypeSchema = object({
   })),
   section: pipe(optional(trimNonEmptyStringSchema), metadata({
     description: "Changelog section heading for this commit type. When not provided, `type` value is used.\n"
+  })),
+  sectionAlt: pipe(optional(trimNonEmptyStringSchema), metadata({
+    description: "Changelog alternative section heading for this commit type. When not provided, `section` value is used.\n"
   })),
   hidden: pipe(optional(boolean(), false), metadata({
     description: "Exclude this commit type from changelog generation (does not affect version bump calculation).\nDefault: false"
@@ -84314,7 +84505,8 @@ var VersionFileExtractorsWithAuto = {
 // src/schemas/configs/modules/components/version-file.ts
 var VersionFileSchema = object({
   path: pipe(trimNonEmptyStringSchema, metadata({
-    description: "Path to the version file, relative to the project root.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+    description: `Path to the version file, relative to the project root.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
   })),
   format: pipe(optional(enum_(FileFormatsWithAuto), "auto"), metadata({
     description: 'Defines the file format. Allowed values: "auto", "json", "jsonc", "json5", "yaml", "toml", "txt".\nDefault: "auto"'
@@ -84377,7 +84569,9 @@ var CommandHookSchema = object({
     ];
     return input;
   }), metadata({
-    description: "Commands to run before the operation.\nList of exposed env variables: https://github.com/Pandoriux/zephyr-release/blob/main/docs/export-variables.md"
+    description: `Commands to run before the operation.
+Can be specified as a single command string, a configuration object (to configure \`timeout\` and \`continueOnError\`), or an array of these.
+List of exposed env variables: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`
   })),
   post: pipe(optional(union([
     CommandSchema,
@@ -84388,7 +84582,9 @@ var CommandHookSchema = object({
     ];
     return input;
   }), metadata({
-    description: "Commands to run after the operation.\nList of exposed env variables: https://github.com/Pandoriux/zephyr-release/blob/main/docs/export-variables.md"
+    description: `Commands to run after the operation.
+Can be specified as a single command string, a configuration object (to configure \`timeout\` and \`continueOnError\`), or an array of these.
+List of exposed env variables: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`
   }))
 });
 
@@ -84412,6 +84608,41 @@ var DEFAULT_COMMIT_TYPES = [
   {
     type: "revert",
     section: "Reverts"
+  },
+  {
+    type: "docs",
+    section: "Documentation",
+    hidden: true
+  },
+  {
+    type: "style",
+    section: "Styles",
+    hidden: true
+  },
+  {
+    type: "chore",
+    section: "Miscellaneous Chores",
+    hidden: true
+  },
+  {
+    type: "refactor",
+    section: "Code Refactoring",
+    hidden: true
+  },
+  {
+    type: "test",
+    section: "Tests",
+    hidden: true
+  },
+  {
+    type: "build",
+    section: "Build System",
+    hidden: true
+  },
+  {
+    type: "ci",
+    section: "Continuous Integration",
+    hidden: true
   }
 ];
 
@@ -84434,18 +84665,21 @@ init_src();
 // src/constants/defaults/string-templates.ts
 var liquid = String.raw;
 var DEFAULT_WORKING_BRANCH_NAME_TEMPLATE = "zephyr-release/{{ triggerBranchName }}";
-var DEFAULT_CHANGELOG_FILE_HEADER_TEMPLATE = "# Changelog\n\n<br/>\n";
-var DEFAULT_CHANGELOG_RELEASE_HEADER_TEMPLATE = liquid`## {{ tagName | wrap_compare_latest_tag }} (
+var DEFAULT_CHANGELOG_FILE_HEADER_TEMPLATE = "# Changelog\n\n<br>";
+var DEFAULT_CHANGELOG_RELEASE_TEMPLATE = "{{ changelogRelease }}";
+var DEFAULT_RELEASE_HEADER_TEMPLATE = liquid`## {{ nextVersion | wrap_compare_latest_tag: tagName }} (
     {{- YYYY }}-{{ MM }}-{{ DD }}) <!-- timezone: {{ timeZone }} -->`;
-var DEFAULT_CHANGELOG_SECTION_ENTRY_TEMPLATE = liquid`- {% if scope %}**{{ scope }}:** {% endif %}{{ desc | format_commit_references: commit }} [{{ hash | slice: 0, 7 }}](
-  {{- host }}/{{ namespace }}/{{ repository }}/{{ commitPathPart }}/{{ hash }})`;
-var DEFAULT_CHANGELOG_BREAKING_SECTION_ENTRY_TEMPLATE = liquid`- {% if scope %}**{{ scope }}:** {% endif %}{{ breakingDesc }}`;
-var DEFAULT_COMMIT_HEADER_TEMPLATE = liquid`chore: release v{{ version }}`;
-var DEFAULT_PROPOSAL_TITLE_TEMPLATE = liquid`chore: release v{{ version }}`;
-var DEFAULT_PROPOSAL_HEADER_TEMPLATE = "\u{1F916} New release prepared. Awaiting approval~";
+var DEFAULT_RELEASE_SECTION_HEADING_TEMPLATE = liquid`### {{ section }}`;
+var DEFAULT_RELEASE_SECTION_ENTRY_TEMPLATE = liquid`- {% if scope %}**{{ scope }}:** {% endif %}{{ desc | format_commit_references: commit }} ([{{ hash | slice: 0, 7 }}](
+  {{- host }}/{{ namespace }}/{{ repository }}/{{ commitPathPart }}/{{ hash }}))`;
+var DEFAULT_RELEASE_BREAKING_SECTION_ENTRY_TEMPLATE = liquid`- {% if scope %}**{{ scope }}:** {% endif %}{{ breakingDesc }}`;
+var DEFAULT_RELEASE_SECTION_HEADING_TEMPLATE_ALT = liquid`### {{ sectionAlt }}`;
+var DEFAULT_COMMIT_HEADER_TEMPLATE = liquid`chore: release v{{ nextVersion }}`;
+var DEFAULT_PROPOSAL_TITLE_TEMPLATE = liquid`chore: release v{{ nextVersion }}`;
+var DEFAULT_PROPOSAL_HEADER_TEMPLATE = "# \u{1F916} Release Proposal";
 var DEFAULT_PROPOSAL_BODY_TEMPLATE = liquid`{{ changelogRelease }}`;
-var DEFAULT_PROPOSAL_FOOTER_TEMPLATE = "Generated with [Zephyr Release](https://github.com/Pandoriux/zephyr-release)";
-var DEFAULT_TAG_NAME_TEMPLATE = liquid`v{{ version }}`;
+var DEFAULT_PROPOSAL_FOOTER_TEMPLATE = "---\n*This proposal was generated with [Zephyr Release](https://github.com/ptphongkmf/zephyr-release)*";
+var DEFAULT_TAG_NAME_TEMPLATE = liquid`v{{ nextVersion }}`;
 var DEFAULT_TAG_MESSAGE_TEMPLATE = liquid`Release {{ tagName }}`;
 var DEFAULT_RELEASE_TITLE_TEMPLATE = liquid`{{ tagName }}`;
 var DEFAULT_RELEASE_BODY_TEMPLATE = liquid`{{ changelogRelease }}`;
@@ -84533,20 +84767,22 @@ Note: This value is immutable at runtime and cannot be changed via \`runtimeConf
 Default: ${JSON.stringify(DEFAULT_WORKING_BRANCH_NAME_TEMPLATE)}`
   })),
   titleTemplate: pipe(optional(trimNonEmptyStringSchema, DEFAULT_PROPOSAL_TITLE_TEMPLATE), metadata({
-    description: `String template for proposal title, using with string patterns like {{ version }}.
+    description: `String template for proposal title, using with string patterns like {{ nextVersion }}.
 Allowed patterns to use are: all fixed and dynamic string patterns.
 Default: ${JSON.stringify(DEFAULT_PROPOSAL_TITLE_TEMPLATE)}`
   })),
   titleTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing proposal title template. Overrides `titleTemplate` when both are provided.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+    description: `Path to text file containing proposal title template. Overrides \`titleTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
   })),
   headerTemplate: pipe(optional(string(), DEFAULT_PROPOSAL_HEADER_TEMPLATE), metadata({
-    description: `String template for proposal header, using with string patterns like {{ version }}.
+    description: `String template for proposal header, using with string patterns like {{ nextVersion }}.
 Allowed patterns to use are: all fixed and dynamic string patterns.
 Default: ${JSON.stringify(DEFAULT_PROPOSAL_HEADER_TEMPLATE)}`
   })),
   headerTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing proposal header template. Overrides `headerTemplate` when both are provided.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+    description: `Path to text file containing proposal header template. Overrides \`headerTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
   })),
   bodyTemplate: pipe(optional(string(), DEFAULT_PROPOSAL_BODY_TEMPLATE), metadata({
     description: `String template for proposal body, using with string patterns like {{ changelogRelease }}.
@@ -84554,7 +84790,8 @@ Allowed patterns to use are: all fixed and dynamic string patterns.
 Default: ${JSON.stringify(DEFAULT_PROPOSAL_BODY_TEMPLATE)}`
   })),
   bodyTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing proposal body template. Overrides `bodyTemplate` when both are provided.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+    description: `Path to text file containing proposal body template. Overrides \`bodyTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
   })),
   footerTemplate: pipe(optional(string(), DEFAULT_PROPOSAL_FOOTER_TEMPLATE), metadata({
     description: `String template for proposal footer, using with string patterns.
@@ -84562,7 +84799,8 @@ Allowed patterns to use are: all fixed and dynamic string patterns.
 Default: ${JSON.stringify(DEFAULT_PROPOSAL_FOOTER_TEMPLATE)}`
   })),
   footerTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing proposal footer template. Overrides `footerTemplate` when both are provided.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+    description: `Path to text file containing proposal footer template. Overrides \`footerTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
   })),
   labels: pipe(optional(ReviewLabelsSchema), metadata({
     description: "Labels to attach and remove from proposals on different stages."
@@ -84671,7 +84909,7 @@ Default: ${JSON.stringify(DEFAULT_AUTO_RELEASE_STRATEGY)}`
 }));
 
 // src/schemas/configs/modules/base-config.ts
-var BaseConfigSchema = object({
+var BaseCoreConfigSchema = object({
   name: pipe(optional(pipe(string(), trim())), metadata({
     description: "Project name, available in string templates as {{ name }}."
   })),
@@ -84686,24 +84924,8 @@ var BaseConfigSchema = object({
   })),
   review: optional(ReviewConfigSchema, {}),
   auto: optional(AutoConfigSchema, {}),
-  commandHooks: pipe(optional(object({
-    base: pipe(optional(CommandHookSchema, {}), metadata({
-      description: "Pre/post commands to run around the main operation. Each command runs from the repository root.\nPost commands will always run regardless of operation outcome (success, skipped or failure). It is recommended to check the outcome export variable if your script should only run under specific conditions.\nAvailable variables that cmds can use: https://github.com/Pandoriux/zephyr-release/blob/main/docs/export-variables.md"
-    })),
-    prepare: pipe(optional(CommandHookSchema, {}), metadata({
-      description: "Pre/post commands to run around the proposal (PR, MR, ...) operation. Each command runs from the repository root.\nAvailable variables that cmds can use: https://github.com/Pandoriux/zephyr-release/blob/main/docs/export-variables.md"
-    })),
-    publish: pipe(optional(CommandHookSchema, {}), metadata({
-      description: "Pre/post commands to run around the release operation. Each command runs from the repository root.\nAvailable variables that cmds can use: https://github.com/Pandoriux/zephyr-release/blob/main/docs/export-variables.md"
-    }))
-  }), {}), metadata({
-    description: "Command hooks to run at different phases of the operation."
-  })),
-  runtimeConfigOverride: pipe(optional(RuntimeConfigOverrideSchema), metadata({
-    description: "A dynamic configuration file to deep merge over the resolved config at runtime, typically generated by a `commandHook` script.\nThis file is always read from the local filesystem. If the file does not exist or empty, it is safely ignored. However, if the file exists but the merged result fails schema validation, the operation will throw an error.\nNote: Some core structural fields (e.g., `review.workingBranchNameTemplate`) are protected and cannot be overridden."
-  })),
   initialVersion: pipe(optional(pipe(string(), regex(SEMVER_REGEX)), "0.1.0"), metadata({
-    description: 'Initial SemVer version applied when no existing version is found.\nDefault: "0.1.0"'
+    description: 'Initial SemVer version used when no existing version is found or the existing one is `0.0.0`.\nYou can still set this to `0.0.0` if you want it as the starting value; looping problems are handled automatically under the hood.\nDefault: "0.1.0"'
   })),
   versionFiles: pipe(union([
     VersionFileSchema,
@@ -84711,17 +84933,18 @@ var BaseConfigSchema = object({
   ]), transform((input) => Array.isArray(input) ? input : [
     input
   ]), metadata({
-    description: "Version file(s). Accepts a single file object or an array of file objects. If a single object, it becomes the primary file. If arrays, the first file with `primary: true` becomes the primary; if none are marked, the first file in the array will be used.\nAbout primary file: https://github.com/Pandoriux/zephyr-release/blob/main/docs/config-options.md#version-files-required"
+    description: `Version file(s). Accepts a single file object or an array of file objects. If a single object, it becomes the primary file. If arrays, the first file with \`primary: true\` becomes the primary; if none are marked, the first file in the array will be used.
+About primary file: ${DOCS_EXT_REF_TOKEN}/docs/config-options.md#version-files-required`
   })),
   commitTypes: pipe(optional(pipe(array(CommitTypeSchema), nonEmpty()), DEFAULT_COMMIT_TYPES), metadata({
     description: `List of commit types used for version calculation and changelog generation.
 Default: ${JSON.stringify(transformObjKeyToKebabCase(DEFAULT_COMMIT_TYPES), null, 2)}`
   })),
-  stopResolvingCommitAt: pipe(optional(union([
-    number(),
-    trimNonEmptyStringSchema
-  ])), metadata({
-    description: "Defines the boundary for resolving Git commit history. Can be a number or a string.\n- Number: The maximum amount of commits to resolve (e.g., 50).\n- String: The specific Git commit hash to stop at."
+  maxCommitsToResolve: pipe(optional(number(), 100), metadata({
+    description: "The maximum number of commits allowed to resolve, the rest will be truncated.\nDefault: 100"
+  })),
+  resolveUntilCommitHash: pipe(optional(trimNonEmptyStringSchema), metadata({
+    description: "Forces the tool to keep resolving commits until it reaches this specific hash, completely bypassing the standard resolve behavior.\nThis still respects the `maxCommitsToResolve` safety limit.\nAvoid hardcoding this in your static config file, set it dynamically."
   })),
   allowedReleaseAsCommitTypes: pipe(optional(union([
     trimNonEmptyStringSchema,
@@ -84731,7 +84954,7 @@ Default: ${JSON.stringify(transformObjKeyToKebabCase(DEFAULT_COMMIT_TYPES), null
   ]), metadata({
     description: `List of commit type(s) allowed to trigger 'release-as'. Accepts single or array of strings.
 Use "<ALL>" to accept any commit type; use "<COMMIT_TYPES>" to use the list defined in \`commitTypes\`. You can combine "<COMMIT_TYPES>" with other types (for example: ["<COMMIT_TYPES>","docs"]).
-About 'release-as': https://github.com/Pandoriux/zephyr-release?tab=readme-ov-file#force-a-specific-version 
+About 'release-as': ${DOCS_EXT_REF_TOKEN}?tab=readme-ov-file#force-a-specific-version 
 Default: "<ALL>"`,
     examples: [
       "<COMMIT_TYPES>",
@@ -84742,6 +84965,28 @@ Default: "<ALL>"`,
         "cd"
       ]
     ]
+  }))
+});
+var BaseLifecycleConfigSchema = object({
+  commandHooks: pipe(optional(object({
+    base: pipe(optional(CommandHookSchema, {}), metadata({
+      description: `Pre/post commands to run around the main operation. Each command runs from the repository root.
+Post commands will always run regardless of operation outcome (success, skipped or failure). It is recommended to check the outcome export variable if your script should only run under specific conditions.
+Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`
+    })),
+    prepare: pipe(optional(CommandHookSchema, {}), metadata({
+      description: `Pre/post commands to run around the proposal (PR, MR, ...) operation. Each command runs from the repository root.
+Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`
+    })),
+    publish: pipe(optional(CommandHookSchema, {}), metadata({
+      description: `Pre/post commands to run around the release operation. Each command runs from the repository root.
+Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`
+    }))
+  }), {}), metadata({
+    description: "Command hooks to run at different phases of the operation."
+  })),
+  runtimeConfigOverride: pipe(optional(RuntimeConfigOverrideSchema), metadata({
+    description: "A dynamic configuration file to deep merge over the resolved config at runtime, typically generated by a `commandHook` script.\nThis file is always read from the local filesystem. If the file does not exist or empty, it is safely ignored. However, if the file exists but the merged result fails schema validation, the operation will throw an error.\nNote: Some core structural fields (e.g., `review.workingBranchNameTemplate`) are protected and cannot be overridden."
   }))
 });
 
@@ -84763,8 +85008,8 @@ var BumpRuleCoreSchema = object({
   types: pipe(optional(pipe(array(trimNonEmptyStringSchema), nonEmpty())), metadata({
     description: "Commit types that count toward version bumping, must be picked from the base `commitTypes` list."
   })),
-  countBreakingAs: pipe(optional(enum_(countBreakingAsOptions), "none"), metadata({
-    description: 'Count a breaking change as none / one commit / one bump directly regardless of current chosen `types`, as long as the commit type exists in base `commitTypes` list.\nDefault: "none"'
+  countBreakingAs: pipe(optional(enum_(countBreakingAsOptions), "commit"), metadata({
+    description: 'Count a breaking change as none, or one commit, or one bump directly regardless of current chosen `types`, as long as the commit type exists in base `commitTypes` list.\nDefault: "commit"'
   })),
   commitsPerBump: pipe(optional(pipe(union([
     pipe(number(), minValue(1), safeInteger()),
@@ -84772,7 +85017,7 @@ var BumpRuleCoreSchema = object({
     literal("Infinity"),
     literal("infinity")
   ]), transform((value) => typeof value === "string" ? Infinity : value)), Infinity), metadata({
-    description: "Number of commits required for additional version bump after the first. Use Infinity to always bump once, even if breaking changes are counted as bumps.\nDefault: Infinity"
+    description: 'Number of commits required for additional version bump after the first. Use Infinity to always bump once, unless `countBreakingAs` is set to "bump".\nDefault: Infinity'
   }))
 });
 
@@ -84889,7 +85134,7 @@ var BumpRuleExtensionSchema = object({
 
 // src/constants/defaults/bump-strategy.ts
 var DEFAULT_MAJOR_BUMP_STRATEGY = {
-  countBreakingAs: "bump"
+  countBreakingAs: "commit"
 };
 var DEFAULT_MINOR_BUMP_STRATEGY = {
   types: [
@@ -84905,6 +85150,12 @@ var DEFAULT_PATCH_BUMP_STRATEGY = {
 
 // src/schemas/configs/modules/bump-strategy-config.ts
 var BumpStrategyConfigSchema = pipe(object({
+  treatMajorAsMinorPreStable: pipe(optional(boolean(), true), metadata({
+    description: "Treats major changes as minor version bumps in pre-1.0 (0.x.x) releases.\nDefault: true"
+  })),
+  treatMinorAsPatchPreStable: pipe(optional(boolean(), true), metadata({
+    description: "Treats minor changes as patch version bumps in pre-1.0 (0.x.x) releases.\nDefault: true"
+  })),
   major: pipe(optional(BumpRuleCoreSchema, DEFAULT_MAJOR_BUMP_STRATEGY), metadata({
     description: `Strategy for bumping major version (x.2.3).
 Default: ${JSON.stringify(transformObjKeyToKebabCase(DEFAULT_MAJOR_BUMP_STRATEGY), null, 2)}`
@@ -84922,12 +85173,6 @@ Default: ${JSON.stringify(transformObjKeyToKebabCase(DEFAULT_PATCH_BUMP_STRATEGY
   })),
   build: pipe(optional(BumpRuleExtensionSchema, {}), metadata({
     description: "Strategy for bumping build metadata (1.2.3+x.x)."
-  })),
-  bumpMinorForMajorPreStable: pipe(optional(boolean(), true), metadata({
-    description: "Redirects major version bumps to minor in pre-1.0 (0.x.3).\nDefault: true"
-  })),
-  bumpPatchForMinorPreStable: pipe(optional(boolean(), false), metadata({
-    description: "Redirects minor version bumps to patch in pre-1.0 (0.2.x).\nDefault: false"
   }))
 }), metadata({
   description: "Configuration options to calculate the next version number."
@@ -84954,7 +85199,15 @@ Allowed patterns to use are: all fixed and dynamic string patterns.
 Default: ${JSON.stringify(DEFAULT_RELEASE_TITLE_TEMPLATE)}`
   })),
   titleTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing release title template. Overrides `titleTemplate` when both are provided.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+    description: `Path to text file containing release title template. Overrides \`titleTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
+  })),
+  headerTemplate: pipe(optional(string()), metadata({
+    description: "String template for release note header, using with string patterns.\nAllowed patterns to use are: all fixed and dynamic string patterns."
+  })),
+  headerTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
+    description: `Path to text file containing release header template. Overrides \`headerTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
   })),
   bodyTemplate: pipe(optional(string(), DEFAULT_RELEASE_BODY_TEMPLATE), metadata({
     description: `String template for release note body, using with string patterns like {{ changelogRelease }}.
@@ -84962,7 +85215,15 @@ Allowed patterns to use are: all fixed and dynamic string patterns.
 Default: ${JSON.stringify(DEFAULT_RELEASE_BODY_TEMPLATE)}`
   })),
   bodyTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing release body template. Overrides `bodyTemplate` when both are provided.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+    description: `Path to text file containing release body template. Overrides \`bodyTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
+  })),
+  footerTemplate: pipe(optional(string()), metadata({
+    description: "String template for release note footer, using with string patterns.\nAllowed patterns to use are: all fixed and dynamic string patterns."
+  })),
+  footerTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
+    description: `Path to text file containing release footer template. Overrides \`footerTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
   })),
   assets: pipe(optional(union([
     trimNonEmptyStringSchema,
@@ -84981,67 +85242,169 @@ Default: ${JSON.stringify(DEFAULT_RELEASE_BODY_TEMPLATE)}`
 
 // src/schemas/configs/modules/changelog-config.ts
 init_src();
+
+// src/constants/changelog-commit-options.ts
+var CommitGroupModes = {
+  none: "none",
+  scopeFirst: "scope-first",
+  scopeLast: "scope-last"
+};
+var CommitSortOrders = {
+  alphabetical: "alphabetical",
+  newestFirst: "newest-first",
+  oldestFirst: "oldest-first"
+};
+
+// src/schemas/configs/modules/changelog-config.ts
 var ChangelogConfigSchema = pipe(object({
   writeToFile: pipe(optional(boolean(), true), metadata({
     description: "Enable/disable writing changelog to file. When disabled, changelogs are still generated for proposals, releases and string templates.\nDefault: true"
   })),
   path: pipe(optional(trimNonEmptyStringSchema, "CHANGELOG.md"), metadata({
-    description: 'Path to the file where the generated changelog will be written to, relative to the project root.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional \nDefault: "CHANGELOG.md"'
+    description: `Path to the file where the generated changelog will be written to, relative to the project root.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional 
+Default: "CHANGELOG.md"`
+  })),
+  commitGroupMode: pipe(optional(enum_(CommitGroupModes), CommitGroupModes.scopeLast), metadata({
+    description: `Defines how commits are sub-grouped within their respective changelog sections (Features, Fixes, etc.).
+- "none": Commits are rendered as a single flat list.
+- "scope-first": Commits are grouped by their scope. Scoped groups appear at the top, and unscoped commits fall to the bottom.
+- "scope-last": Commits are grouped by their scope. Unscoped commits sit at the top, and scoped groups follow below.
+Default: "${CommitGroupModes.scopeLast}"`
+  })),
+  commitSortOrder: pipe(optional(enum_(CommitSortOrders), CommitSortOrders.alphabetical), metadata({
+    description: `Defines the sorting algorithm used to order the commits (and their groups, if a grouping mode is used).
+- "alphabetical": Sorts alphabetically from A to Z.
+- "newest-first": Sorts by commit timestamp, placing the newest commits at the top.
+- "oldest-first": Sorts by commit timestamp, placing the oldest commits at the top.
+Default: "${CommitSortOrders.alphabetical}"`
   })),
   fileHeaderTemplate: pipe(optional(string(), DEFAULT_CHANGELOG_FILE_HEADER_TEMPLATE), metadata({
-    description: `String template for changelog file header, using with string patterns like {{ version }}. Placed above any changelog content.
+    description: `String template for changelog file header, using with string patterns like {{ nextVersion }}. Placed above any changelog content.
 Allowed patterns to use are: all fixed and dynamic string patterns.
 Default: ${JSON.stringify(DEFAULT_CHANGELOG_FILE_HEADER_TEMPLATE)}`
   })),
   fileHeaderTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing changelog file header. Overrides `fileHeaderTemplate` when both are provided.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+    description: `Path to text file containing changelog file header. Overrides \`fileHeaderTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
+  })),
+  fileReleaseTemplate: pipe(optional(string(), DEFAULT_CHANGELOG_RELEASE_TEMPLATE), metadata({
+    description: `String template for the individual release block inserted into the changelog file.
+To use your alternative configuration, set this to "{{ changelogReleaseAlt }}".
+Default: ${JSON.stringify(DEFAULT_CHANGELOG_RELEASE_TEMPLATE)}`
+  })),
+  fileReleaseTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
+    description: `Path to text file containing changelog release template. Overrides \`fileReleaseTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
   })),
   fileFooterTemplate: pipe(optional(string()), metadata({
-    description: "String template for changelog file footer, using with string patterns like {{ version }}. Placed below any changelog content.\nAllowed patterns to use are: all fixed and dynamic string patterns."
+    description: "String template for changelog file footer, using with string patterns like {{ nextVersion }}. Placed below any changelog content.\nAllowed patterns to use are: all fixed and dynamic string patterns."
   })),
   fileFooterTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing changelog file footer. Overrides `fileFooterTemplate` when both are provided.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+    description: `Path to text file containing changelog file footer. Overrides \`fileFooterTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
   })),
-  releaseHeaderTemplate: pipe(optional(pipe(string(), nonEmpty()), DEFAULT_CHANGELOG_RELEASE_HEADER_TEMPLATE), metadata({
-    description: `String template for header of a changelog release, using with string patterns like {{ version }}.
+  releaseHeaderTemplate: pipe(optional(pipe(string(), nonEmpty()), DEFAULT_RELEASE_HEADER_TEMPLATE), metadata({
+    description: `String template for header of a changelog release, using with string patterns like {{ nextVersion }}.
 Allowed patterns to use are: all fixed and dynamic string patterns.
-Default: ${JSON.stringify(DEFAULT_CHANGELOG_RELEASE_HEADER_TEMPLATE)}`
+Default: ${JSON.stringify(DEFAULT_RELEASE_HEADER_TEMPLATE)}`
   })),
   releaseHeaderTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing changelog release header. Overrides `releaseHeaderTemplate` when both are provided.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+    description: `Path to text file containing changelog release header. Overrides \`releaseHeaderTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
   })),
-  releaseSectionEntryTemplate: pipe(optional(pipe(string(), nonEmpty()), DEFAULT_CHANGELOG_SECTION_ENTRY_TEMPLATE), metadata({
+  releaseSectionHeadingTemplate: pipe(optional(pipe(string(), nonEmpty()), DEFAULT_RELEASE_SECTION_HEADING_TEMPLATE), metadata({
+    description: `String template for heading of a changelog release section, using with string patterns like {{ section }}.
+Allowed patterns to use are: all fixed and dynamic string patterns.
+Additionally, you can use special dynamic patterns like: {{ section }}, {{ sectionAlt }}.
+Default: ${JSON.stringify(DEFAULT_RELEASE_SECTION_HEADING_TEMPLATE)}`
+  })),
+  releaseSectionHeadingTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
+    description: `Path to text file containing changelog release section heading template. Overrides \`releaseSectionHeadingTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
+  })),
+  releaseSectionEntryTemplate: pipe(optional(pipe(string(), nonEmpty()), DEFAULT_RELEASE_SECTION_ENTRY_TEMPLATE), metadata({
     description: `String template for each entries in the changelog release sections. Allowed patterns to use are: all fixed and dynamic string patterns.
 Additionally, you can use a special set of dynamic patterns which are:
-{{ hash }}, {{ type }}, {{ scope }}, {{ desc }}, {{ body }}, {{ footer }}, {{ isBreaking }}.
-About special patterns: https://github.com/Pandoriux/zephyr-release/blob/main/docs/config-options.md#changelog--release-section-entry-template-optional
-Default: ${JSON.stringify(DEFAULT_CHANGELOG_SECTION_ENTRY_TEMPLATE)}`
+{{ hash }}, {{ type }}, {{ scope }}, {{ desc }}, {{ body }}, {{ footer }}, {{ breakingDesc }}, {{ isBreaking }}, {{ authorName }}, {{ authorEmail }}, {{ authorDate }}, {{ committerName }}, {{ committerEmail }}, {{ committerDate }}.
+About special patterns: ${DOCS_EXT_REF_TOKEN}/docs/config-options.md#changelog--release-section-entry-template-optional
+Default: ${JSON.stringify(DEFAULT_RELEASE_SECTION_ENTRY_TEMPLATE)}`
   })),
   releaseSectionEntryTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing changelog release section entry template. Overrides `releaseSectionEntryTemplate` when both are provided.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+    description: `Path to text file containing changelog release section entry template. Overrides \`releaseSectionEntryTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
   })),
-  releaseBreakingSectionHeading: pipe(optional(string(), "\u26A0 BREAKING CHANGES"), metadata({
+  releaseBreakingSectionHeading: pipe(optional(string(), "### \u26A0 BREAKING CHANGES"), metadata({
     description: "Heading of a changelog release BREAKING section."
   })),
-  releaseBreakingSectionEntryTemplate: pipe(optional(pipe(string(), nonEmpty()), DEFAULT_CHANGELOG_BREAKING_SECTION_ENTRY_TEMPLATE), metadata({
+  releaseBreakingSectionEntryTemplate: pipe(optional(pipe(string(), nonEmpty()), DEFAULT_RELEASE_BREAKING_SECTION_ENTRY_TEMPLATE), metadata({
     description: `Basically the same as \`releaseSectionEntryTemplate\`, but for breaking changes specifically. If not provided, falls back to \`releaseSectionEntryTemplate\`.
 Allowed patterns to use are: all fixed and dynamic string patterns.
-Default: ${JSON.stringify(DEFAULT_CHANGELOG_BREAKING_SECTION_ENTRY_TEMPLATE)}`
+Default: ${JSON.stringify(DEFAULT_RELEASE_BREAKING_SECTION_ENTRY_TEMPLATE)}`
   })),
   releaseBreakingSectionEntryTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing changelog release breaking section entry template. Overrides `releaseBreakingSectionEntryTemplate` when both are provided.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+    description: `Path to text file containing changelog release breaking section entry template. Overrides \`releaseBreakingSectionEntryTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
   })),
   releaseBodyOverride: pipe(optional(pipe(string(), nonEmpty())), metadata({
     description: "User-provided changelog release body, available in string templates as {{ changelogReleaseBody }}. If set, completely ignores the built-in generation and uses this value as the content. Should only be set dynamically, not in static config."
   })),
   releaseBodyOverridePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing changelog release body override, will take precedence over `releaseBodyOverride`.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+    description: `Path to text file containing changelog release body override, will take precedence over \`releaseBodyOverride\`.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
   })),
   releaseFooterTemplate: pipe(optional(string()), metadata({
     description: "String template for footer of a changelog release, using with string patterns.\nAllowed patterns to use are: all fixed and dynamic string patterns."
   })),
   releaseFooterTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing changelog release footer. Overrides `releaseFooterTemplate` when both are provided.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+    description: `Path to text file containing changelog release footer. Overrides \`releaseFooterTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
+  })),
+  releaseHeaderTemplateAlt: pipe(optional(pipe(string(), nonEmpty())), metadata({
+    description: "Alternative value for `releaseHeaderTemplate`. When not provided, fall back to the original."
+  })),
+  releaseHeaderTemplateAltPath: pipe(optional(trimNonEmptyStringSchema), metadata({
+    description: `Path to text file containing alternative changelog release header. Overrides \`releaseHeaderTemplateAlt\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
+  })),
+  releaseSectionHeadingTemplateAlt: pipe(optional(pipe(string(), nonEmpty()), DEFAULT_RELEASE_SECTION_HEADING_TEMPLATE_ALT), metadata({
+    description: `String template for alternative heading of a changelog release section. Allowed string patterns and special dynamic patterns are the same as \`releaseSectionHeadingTemplate\`.
+Default: ${JSON.stringify(DEFAULT_RELEASE_SECTION_HEADING_TEMPLATE_ALT)}`
+  })),
+  releaseSectionHeadingTemplateAltPath: pipe(optional(trimNonEmptyStringSchema), metadata({
+    description: `Path to text file containing alternative changelog release section heading template. Overrides \`releaseSectionHeadingTemplateAlt\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
+  })),
+  releaseSectionEntryTemplateAlt: pipe(optional(pipe(string(), nonEmpty())), metadata({
+    description: "Alternative value for `releaseSectionEntryTemplate`. When not provided, fall back to the original."
+  })),
+  releaseSectionEntryTemplateAltPath: pipe(optional(trimNonEmptyStringSchema), metadata({
+    description: `Path to text file containing alternative changelog release section entry template. Overrides \`releaseSectionEntryTemplateAlt\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
+  })),
+  releaseBreakingSectionHeadingAlt: pipe(optional(string()), metadata({
+    description: "Alternative value for `releaseBreakingSectionHeading`. When not provided, fall back to the original."
+  })),
+  releaseBreakingSectionEntryTemplateAlt: pipe(optional(pipe(string(), nonEmpty())), metadata({
+    description: "Alternative value for `releaseBreakingSectionEntryTemplate`. When not provided, fall back to the original."
+  })),
+  releaseBreakingSectionEntryTemplateAltPath: pipe(optional(trimNonEmptyStringSchema), metadata({
+    description: `Path to text file containing alternative changelog release breaking section entry template. Overrides \`releaseBreakingSectionEntryTemplateAlt\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
+  })),
+  releaseBodyOverrideAlt: pipe(optional(pipe(string(), nonEmpty())), metadata({
+    description: "Alternative value for `releaseBodyOverride`. When not provided, fall back to the original."
+  })),
+  releaseBodyOverrideAltPath: pipe(optional(trimNonEmptyStringSchema), metadata({
+    description: `Path to text file containing alternative changelog release body override. Overrides \`releaseBodyOverrideAlt\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
+  })),
+  releaseFooterTemplateAlt: pipe(optional(string()), metadata({
+    description: "Alternative value for `releaseFooterTemplate`. When not provided, fall back to the original."
+  })),
+  releaseFooterTemplateAltPath: pipe(optional(trimNonEmptyStringSchema), metadata({
+    description: `Path to text file containing alternative changelog release footer. Overrides \`releaseFooterTemplateAlt\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
   }))
 }), metadata({
   description: "Configuration specific to changelogs. All generated changelog content are available in string templates as {{ changelogRelease }} (release header + body) or {{ changelogReleaseHeader }} and {{ changelogReleaseBody }}."
@@ -85050,26 +85413,6 @@ Default: ${JSON.stringify(DEFAULT_CHANGELOG_BREAKING_SECTION_ENTRY_TEMPLATE)}`
 // src/schemas/configs/modules/commit-config.ts
 init_src();
 var CommitConfigSchema = pipe(object({
-  headerTemplate: pipe(optional(trimNonEmptyStringSchema, DEFAULT_COMMIT_HEADER_TEMPLATE), metadata({
-    description: `String template for commit header, using with string patterns like {{ version }}. You can optionally include a CI skip token here (or body/footer) to prevent downstream pipeline runs (e.g., \`[skip ci]\` or \`[ci skip]\` for GitHub, GitLab, and Bitbucket).
-Allowed patterns to use are: all fixed and dynamic string patterns.
-Default: ${JSON.stringify(DEFAULT_COMMIT_HEADER_TEMPLATE)}`
-  })),
-  headerTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing commit header template. Overrides `headerTemplate` when both are provided.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
-  })),
-  bodyTemplate: pipe(optional(string()), metadata({
-    description: "String template for commit body, using with string patterns like {{ changelogRelease }}. You can optionally include a CI skip token here (or header/footer) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` for GitHub, GitLab, and Bitbucket).\nAllowed patterns to use are: all fixed and dynamic string patterns.\n"
-  })),
-  bodyTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing commit body template. Overrides `bodyTemplate` when both are provided.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
-  })),
-  footerTemplate: pipe(optional(string()), metadata({
-    description: "String template for commit footer, using with string patterns. You can optionally include a CI skip token here (or header/body) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` for GitHub, GitLab, and Bitbucket).\nAllowed patterns to use are: all fixed and dynamic string patterns.\n"
-  })),
-  footerTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing commit footer template. Overrides `footerTemplate` when both are provided.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
-  })),
   localChangesToCommit: pipe(optional(union([
     trimNonEmptyStringSchema,
     pipe(array(trimNonEmptyStringSchema), nonEmpty())
@@ -85093,6 +85436,29 @@ Default: ${JSON.stringify(DEFAULT_COMMIT_HEADER_TEMPLATE)}`
         "**/*"
       ]
     ]
+  })),
+  headerTemplate: pipe(optional(trimNonEmptyStringSchema, DEFAULT_COMMIT_HEADER_TEMPLATE), metadata({
+    description: `String template for commit header, using with string patterns like {{ nextVersion }}. You can optionally include a CI skip token here (or body/footer) to prevent downstream pipeline runs (e.g., \`[skip ci]\` or \`[ci skip]\` for GitHub, GitLab, and Bitbucket).
+Allowed patterns to use are: all fixed and dynamic string patterns.
+Default: ${JSON.stringify(DEFAULT_COMMIT_HEADER_TEMPLATE)}`
+  })),
+  headerTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
+    description: `Path to text file containing commit header template. Overrides \`headerTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
+  })),
+  bodyTemplate: pipe(optional(string()), metadata({
+    description: "String template for commit body, using with string patterns like {{ changelogRelease }}. You can optionally include a CI skip token here (or header/footer) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` for GitHub, GitLab, and Bitbucket).\nAllowed patterns to use are: all fixed and dynamic string patterns.\n"
+  })),
+  bodyTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
+    description: `Path to text file containing commit body template. Overrides \`bodyTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
+  })),
+  footerTemplate: pipe(optional(string()), metadata({
+    description: "String template for commit footer, using with string patterns. You can optionally include a CI skip token here (or header/body) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` for GitHub, GitLab, and Bitbucket).\nAllowed patterns to use are: all fixed and dynamic string patterns.\n"
+  })),
+  footerTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
+    description: `Path to text file containing commit footer template. Overrides \`footerTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
   }))
 }), metadata({
   description: "Configuration specific to commits."
@@ -85139,15 +85505,15 @@ var TagConfigSchema = pipe(object({
     description: "Enable/disable tag creation. If disabled, create release note will also be skipped.\nDefault: true"
   })),
   nameTemplate: pipe(optional(trimNonEmptyStringSchema, DEFAULT_TAG_NAME_TEMPLATE), metadata({
-    description: `String template for tag name, using with string patterns like {{ version }}. Available in string templates as {{ tagName }}.
-Allowed patterns to use are: all fixed and dynamic string patterns.
+    description: `String template for tag name, using with string patterns like {{ nextVersion }}. Available in string templates as {{ tagName }}.
+Allowed patterns to use are: all fixed and dynamic string patterns (except {{ tagName }} itself).
 Default: ${JSON.stringify(DEFAULT_TAG_NAME_TEMPLATE)}`
   })),
-  type: pipe(optional(enum_(TagTypeOptions), TagTypeOptions.annotated), metadata({
+  type: pipe(optional(enum_(TagTypeOptions), TagTypeOptions.lightweight), metadata({
     description: `The type of Git tag to create, either lightweight, annotated or signed.
 - If annotated or signed, a tag message is required.
 - If signed, you must pre-configure the CI runner environment with GPG/SSH keys yourself (Zephyr Release does not manage keys for security reasons).
-Default: ${JSON.stringify(TagTypeOptions.annotated)}`
+Default: ${JSON.stringify(TagTypeOptions.lightweight)}`
   })),
   messageTemplate: pipe(optional(string(), DEFAULT_TAG_MESSAGE_TEMPLATE), metadata({
     description: `String template for the Git annotated or signed tag message.
@@ -85155,7 +85521,8 @@ Allowed patterns to use are: all fixed and dynamic string patterns.
 Default: ${JSON.stringify(DEFAULT_TAG_MESSAGE_TEMPLATE)}`
   })),
   messageTemplatePath: pipe(optional(trimNonEmptyStringSchema), metadata({
-    description: "Path to text file containing Git annotated or signed tag message template. Overrides `messageTemplate` when both are provided.\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/Pandoriux/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+    description: `Path to text file containing Git annotated or signed tag message template. Overrides \`messageTemplate\` when both are provided.
+To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`
   })),
   tagger: pipe(optional(TaggerSchema), metadata({
     description: "Custom identity and timestamp information for the Git tag. If omitted, defaults to the platform native behavior."
@@ -85166,12 +85533,13 @@ Default: ${JSON.stringify(DEFAULT_TAG_MESSAGE_TEMPLATE)}`
 
 // src/schemas/configs/config.ts
 var ConfigSchema = pipe(object({
-  ...BaseConfigSchema.entries,
+  ...BaseCoreConfigSchema.entries,
   bumpStrategy: optional(BumpStrategyConfigSchema, {}),
   changelog: optional(ChangelogConfigSchema, {}),
   commit: optional(CommitConfigSchema, {}),
   tag: optional(TagConfigSchema, {}),
-  release: optional(ReleaseConfigSchema, {})
+  release: optional(ReleaseConfigSchema, {}),
+  ...BaseLifecycleConfigSchema.entries
 }), metadata({
   title: "Zephyr Release configuration file",
   description: "A JSON representation of a Zephyr Release configuration file."
@@ -92064,10 +92432,10 @@ function toConstantCase(input) {
 }
 
 // src/utils/transformers/case.ts
-function toExportOutputKey(k) {
+function toOutputKey(k) {
   return "zr-" + toKebabCase(k);
 }
-function toExportEnvVarKey(k) {
+function toEnvKey(k) {
   return "ZR_" + toConstantCase(k);
 }
 
@@ -96863,7 +97231,7 @@ async function resolveStringTemplate(template, additionalContext) {
     }
     const renderedTemplate = await liquidEngine.render(parsedTemplate, additionalContext ? {
       ...STRING_PATTERN_CONTEXT,
-      additionalContext
+      ...additionalContext
     } : STRING_PATTERN_CONTEXT);
     if (typeof renderedTemplate !== "string") {
       throw new Error(`Resolved template is not a string. Received '${typeof renderedTemplate}'`);
@@ -96938,41 +97306,43 @@ function createFixedAndDynamicDatetimeStringPatternContext(timeZone) {
   Object.assign(STRING_PATTERN_CONTEXT, CUSTOM_CONTEXT, BUILT_IN_CONTEXT);
   taskLogger.debug("Fixed and dynamic datetime string pattern context initialized.");
 }
-function createFixedPreviousVersionStringPatternContext(previousVersion) {
-  if (!previousVersion) return;
+function createFixedCurrentVersionStringPatternContext(currentVersion) {
+  if (!currentVersion) return;
   const versionContext = {
-    previousVersion: format3(previousVersion),
-    previousVersionCore: `${previousVersion.major}.${previousVersion.minor}.${previousVersion.patch}`,
-    previousVersionPre: previousVersion?.prerelease?.length ? previousVersion.prerelease.join(".") : void 0,
-    previousVersionBld: previousVersion?.build?.length ? previousVersion.build.join(".") : void 0
+    currentVersion: format3(currentVersion),
+    currentVersionCore: `${currentVersion.major}.${currentVersion.minor}.${currentVersion.patch}`,
+    currentVersionPre: currentVersion?.prerelease?.length ? currentVersion.prerelease.join(".") : void 0,
+    currentVersionBld: currentVersion?.build?.length ? currentVersion.build.join(".") : void 0
   };
   Object.assign(BUILT_IN_CONTEXT, versionContext);
   Object.assign(STRING_PATTERN_CONTEXT, CUSTOM_CONTEXT, BUILT_IN_CONTEXT);
-  taskLogger.debug("Fixed previous version string pattern context: " + JSON.stringify(versionContext, null, 2));
+  taskLogger.debug("Fixed current version string pattern context: " + JSON.stringify(versionContext, null, 2));
 }
-async function createFixedVersionStringPatternContext(version2, tagTemplate) {
+function createFixedNextVersionStringPatternContext(nextVersion) {
   const versionContext = {
-    version: format3(version2),
-    versionCore: `${version2.major}.${version2.minor}.${version2.patch}`,
-    versionPre: version2.prerelease?.length ? version2.prerelease.join(".") : void 0,
-    versionBld: version2.build?.length ? version2.build.join(".") : void 0
+    nextVersion: format3(nextVersion),
+    nextVersionCore: `${nextVersion.major}.${nextVersion.minor}.${nextVersion.patch}`,
+    nextVersionPre: nextVersion.prerelease?.length ? nextVersion.prerelease.join(".") : void 0,
+    nextVersionBld: nextVersion.build?.length ? nextVersion.build.join(".") : void 0
   };
   Object.assign(BUILT_IN_CONTEXT, versionContext);
   Object.assign(STRING_PATTERN_CONTEXT, CUSTOM_CONTEXT, BUILT_IN_CONTEXT);
+  taskLogger.debug("Fixed next version string pattern context: " + JSON.stringify(versionContext, null, 2));
+}
+async function createFixedTagStringPatternContext(tagTemplate) {
   const tagContext = {
     tagName: await resolveStringTemplate(tagTemplate)
   };
   Object.assign(BUILT_IN_CONTEXT, tagContext);
   Object.assign(STRING_PATTERN_CONTEXT, CUSTOM_CONTEXT, BUILT_IN_CONTEXT);
-  taskLogger.debug("Fixed version string pattern context: " + JSON.stringify({
-    ...versionContext,
-    ...tagContext
-  }, null, 2));
+  taskLogger.debug("Fixed tag string pattern context: " + JSON.stringify(tagContext, null, 2));
 }
-function createDynamicChangelogStringPatternContext(changelogRelease, changelogReleaseBody) {
+function createDynamicChangelogStringPatternContext(changelogRelease, changelogReleaseBody, changelogReleaseAlt, changelogReleaseBodyAlt) {
   const context = {
     changelogRelease,
-    changelogReleaseBody
+    changelogReleaseBody,
+    changelogReleaseAlt,
+    changelogReleaseBodyAlt
   };
   Object.assign(BUILT_IN_CONTEXT, context);
   Object.assign(STRING_PATTERN_CONTEXT, CUSTOM_CONTEXT, BUILT_IN_CONTEXT);
@@ -97052,15 +97422,15 @@ async function exportBaseOperationVariables(provider, options) {
     dLogger.endGroup();
   });
   Object.entries(prepareExportObject).forEach(([k, v]) => {
-    provider.exportOutputs(toExportOutputKey(k), v);
-    provider.exportEnvVars(toExportEnvVarKey(k), v);
+    provider.setOutput(toOutputKey(k), v);
+    provider.setEnv(toEnvKey(k), v);
   });
 }
-async function exportPrePrepareOperationVariables(provider, resolvedCommitEntries, previousVersion, version2) {
+async function exportPrePrepareOperationVariables(provider, resolvedCommitEntries, currentVersion, nextVersion) {
   const prepareExportObject = {
     resolvedCommitEntries: JSON.stringify(resolvedCommitEntries),
-    previousVersion: previousVersion ? format3(previousVersion) : "",
-    version: format3(version2),
+    currentVersion: currentVersion ? format3(currentVersion) : "",
+    nextVersion: format3(nextVersion),
     patternContext: await stringifyCurrentPatternContext()
   };
   taskLogger.debugWrap((dLogger) => {
@@ -97069,8 +97439,8 @@ async function exportPrePrepareOperationVariables(provider, resolvedCommitEntrie
     dLogger.endGroup();
   });
   Object.entries(prepareExportObject).forEach(([k, v]) => {
-    provider.exportOutputs(toExportOutputKey(k), v);
-    provider.exportEnvVars(toExportEnvVarKey(k), v);
+    provider.setOutput(toOutputKey(k), v);
+    provider.setEnv(toEnvKey(k), v);
   });
 }
 async function exportPostPrepareOperationVariables(provider, commitHash, changesData, modeRelatedData) {
@@ -97100,13 +97470,13 @@ async function exportPostPrepareOperationVariables(provider, commitHash, changes
     dLogger.endGroup();
   });
   Object.entries(prepareExportObject).forEach(([k, v]) => {
-    provider.exportOutputs(toExportOutputKey(k), v);
-    provider.exportEnvVars(toExportEnvVarKey(k), v);
+    provider.setOutput(toOutputKey(k), v);
+    provider.setEnv(toEnvKey(k), v);
   });
 }
-async function exportPrePublishOperationVariables(provider, version2, proposalId) {
+async function exportPrePublishOperationVariables(provider, nextVersion, proposalId) {
   const prepareExportObject = {
-    version: format3(version2),
+    nextVersion: format3(nextVersion),
     proposalId,
     patternContext: await stringifyCurrentPatternContext()
   };
@@ -97116,8 +97486,8 @@ async function exportPrePublishOperationVariables(provider, version2, proposalId
     dLogger.endGroup();
   });
   Object.entries(prepareExportObject).forEach(([k, v]) => {
-    provider.exportOutputs(toExportOutputKey(k), v);
-    provider.exportEnvVars(toExportEnvVarKey(k), v);
+    provider.setOutput(toOutputKey(k), v);
+    provider.setEnv(toEnvKey(k), v);
   });
 }
 async function exportPostPublishOperationVariables(provider, tagHash, releaseId, releaseUploadUrl) {
@@ -97133,8 +97503,8 @@ async function exportPostPublishOperationVariables(provider, tagHash, releaseId,
     dLogger.endGroup();
   });
   Object.entries(prepareExportObject).forEach(([k, v]) => {
-    provider.exportOutputs(toExportOutputKey(k), v);
-    provider.exportEnvVars(toExportEnvVarKey(k), v);
+    provider.setOutput(toOutputKey(k), v);
+    provider.setEnv(toEnvKey(k), v);
   });
 }
 async function exportFinalOperationVariables(provider, outcome) {
@@ -97144,8 +97514,8 @@ async function exportFinalOperationVariables(provider, outcome) {
   };
   taskLogger.debug("Final operation variables to export:\n" + JSON.stringify(prepareExportObject, null, 2));
   Object.entries(prepareExportObject).forEach(([k, v]) => {
-    provider.exportOutputs(toExportOutputKey(k), v);
-    provider.exportEnvVars(toExportEnvVarKey(k), v);
+    provider.setOutput(toOutputKey(k), v);
+    provider.setEnv(toEnvKey(k), v);
   });
 }
 
@@ -97563,10 +97933,10 @@ var CommitParser = class {
 import { Transform } from "node:stream";
 
 // src/errors/safe-exit.ts
-var SafeExit = class _SafeExit extends Error {
+var SafeExit = class extends Error {
+  name = "SafeExit";
   constructor(message = "Safe exit", opts) {
     super(message, opts);
-    this.name = _SafeExit.name;
   }
 };
 
@@ -97599,27 +97969,29 @@ function validateCurrentOperationTriggerCtx(provider, allowedCommitTypes, mode) 
   const commitParser = new CommitParser(provider.getConventionalCommitParserOptions());
   const allowedTypes = new Set(allowedCommitTypes.map((c) => c.type));
   const parsedLatestTriggerCommit = commitParser.parse(operationContext.latestTriggerCommit.message);
-  const isZephyrReleaseSignCommit = parsedLatestTriggerCommit.notes.some((n) => n.title.toLowerCase() === ZEPHYR_RELEASE_COMMIT_SIGN.toLowerCase());
-  if (isZephyrReleaseSignCommit) {
-    throw new SafeExit("Detected Zephyr Release bot signature in the trigger commit. Exiting safely to prevent an infinite CI loop");
+  if (mode === "auto") {
+    const isZephyrReleaseSignCommit = parsedLatestTriggerCommit.notes.some((n) => n.title.toLowerCase() === ZEPHYR_RELEASE_COMMIT_SIGN.toLowerCase());
+    if (isZephyrReleaseSignCommit) {
+      throw new SafeExit("Detected Zephyr Release bot signature in the trigger commit. Exiting safely to prevent an infinite CI loop");
+    }
   }
   const parsedTriggerCommits = operationContext.triggerCommits.map((c) => commitParser.parse(c.message));
-  const parsedOperationContext = {
+  const commitHasAllowedType = parsedLatestTriggerCommit.type && allowedTypes.has(parsedLatestTriggerCommit.type) || parsedTriggerCommits.some((c) => c.type && allowedTypes.has(c.type));
+  if (!commitHasAllowedType) {
+    if (mode === "auto") {
+      taskLogger.info('No commits with an allowed type found. But operation continues because execution mode is "auto"');
+    } else {
+      taskLogger.info("No commits with an allowed type found. But operation continues so a later step can verify if this is a merged release proposal");
+    }
+  }
+  return {
     latestTriggerCommit: {
       parsedCommit: parsedLatestTriggerCommit,
       treeHash: operationContext.latestTriggerCommit.treeHash
     },
-    parsedTriggerCommits
+    parsedTriggerCommits,
+    commitHasAllowedType
   };
-  const hasAllowedType = parsedLatestTriggerCommit.type && allowedTypes.has(parsedLatestTriggerCommit.type) || parsedTriggerCommits.some((c) => c.type && allowedTypes.has(c.type));
-  if (!hasAllowedType) {
-    if (mode === "auto") {
-      taskLogger.info('No commits with an allowed type found. But operation continues because execution mode is "auto"');
-    } else {
-      throw new SafeExit("No commits with an allowed type found");
-    }
-  }
-  return parsedOperationContext;
 }
 
 // src/workflows/review.ts
@@ -102045,17 +102417,23 @@ async function generatePrepareChangelogReleaseContent(provider, resolvedCommits,
   ]);
   return {
     release: [
-      releaseHeader,
-      releaseBody,
-      releaseFooter
+      releaseHeader.base,
+      releaseBody.base,
+      releaseFooter.base
     ].filter(Boolean).join("\n\n"),
-    releaseBody
+    releaseBody: releaseBody.base,
+    releaseAlt: [
+      releaseHeader.alt,
+      releaseBody.alt,
+      releaseFooter.alt
+    ].filter(Boolean).join("\n\n"),
+    releaseBodyAlt: releaseBody.alt
   };
 }
 async function generatePublishChangelogReleaseContent(provider, proposalChangelogRelease, inputs, config) {
   try {
-    const { releaseBodyOverride, releaseBodyOverridePath } = config.changelog;
-    if (releaseBodyOverride || releaseBodyOverridePath) {
+    const { releaseBodyOverride, releaseBodyOverridePath, releaseBodyOverrideAlt, releaseBodyOverrideAltPath } = config.changelog;
+    if (releaseBodyOverride || releaseBodyOverridePath || releaseBodyOverrideAlt || releaseBodyOverrideAltPath) {
       const [releaseHeader, releaseBody, releaseFooter] = await Promise.all([
         resolveReleaseHeader(provider, inputs, config),
         resolveReleaseBody(provider, void 0, inputs, config),
@@ -102063,18 +102441,24 @@ async function generatePublishChangelogReleaseContent(provider, proposalChangelo
       ]);
       return {
         release: [
-          releaseHeader,
-          releaseBody,
-          releaseFooter
+          releaseHeader.base,
+          releaseBody.base,
+          releaseFooter.base
         ].filter(Boolean).join("\n\n"),
-        releaseBody
+        releaseBody: releaseBody.base,
+        releaseAlt: [
+          releaseHeader.alt,
+          releaseBody.alt,
+          releaseFooter.alt
+        ].filter(Boolean).join("\n\n"),
+        releaseBodyAlt: releaseBody.alt
       };
     }
     return {
       release: proposalChangelogRelease
     };
   } catch (error) {
-    const message = `Failed to generate publish changelog release content: ${error instanceof Error ? error.message : String(error)}`;
+    const message = `Failed to generate publish changelog release content using override: ${error instanceof Error ? error.message : String(error)} - falling back to using proposal body as release content.`;
     taskLogger.warn(message);
     failedNonCriticalTasks.push(message);
     return {
@@ -102083,101 +102467,310 @@ async function generatePublishChangelogReleaseContent(provider, proposalChangelo
   }
 }
 async function resolveReleaseHeader(provider, inputs, config) {
+  const { releaseHeaderTemplate, releaseHeaderTemplatePath, releaseHeaderTemplateAlt, releaseHeaderTemplateAltPath } = config.changelog;
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
-  const { changelog: { releaseHeaderTemplate, releaseHeaderTemplatePath } } = config;
+  const getTextOpts = {
+    provider,
+    workspacePath,
+    ref: triggerCommitHash
+  };
+  let baseTemplate;
   if (releaseHeaderTemplatePath) {
-    const headerTemplate = await getTextFile(sourceMode.overrides?.[releaseHeaderTemplatePath] ?? sourceMode.mode, releaseHeaderTemplatePath, {
-      provider,
-      workspacePath,
-      ref: triggerCommitHash
-    });
-    return await resolveStringTemplate(headerTemplate);
+    baseTemplate = await getTextFile(sourceMode.overrides?.[releaseHeaderTemplatePath] ?? sourceMode.mode, releaseHeaderTemplatePath, getTextOpts);
+  } else {
+    baseTemplate = releaseHeaderTemplate;
   }
-  return await resolveStringTemplate(releaseHeaderTemplate);
+  let altTemplate;
+  const resolvedAltPath = releaseHeaderTemplateAltPath ?? releaseHeaderTemplatePath;
+  const resolvedAltTemplate = releaseHeaderTemplateAlt ?? releaseHeaderTemplate;
+  if (resolvedAltPath === releaseHeaderTemplatePath && resolvedAltTemplate === releaseHeaderTemplate) {
+    altTemplate = baseTemplate;
+  } else if (resolvedAltPath) {
+    altTemplate = await getTextFile(sourceMode.overrides?.[resolvedAltPath] ?? sourceMode.mode, resolvedAltPath, getTextOpts);
+  } else {
+    altTemplate = resolvedAltTemplate;
+  }
+  if (baseTemplate === altTemplate) {
+    const resolved = await resolveStringTemplate(baseTemplate);
+    return {
+      base: resolved,
+      alt: resolved
+    };
+  } else {
+    const [base, alt] = await Promise.all([
+      resolveStringTemplate(baseTemplate),
+      resolveStringTemplate(altTemplate)
+    ]);
+    return {
+      base,
+      alt
+    };
+  }
 }
 async function resolveReleaseBody(provider, resolvedCommits, inputs, config) {
+  const { releaseBodyOverride, releaseBodyOverridePath, releaseBodyOverrideAlt, releaseBodyOverrideAltPath } = config.changelog;
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
-  const { changelog: { releaseBodyOverride, releaseBodyOverridePath } } = config;
+  const getTextOpts = {
+    provider,
+    workspacePath,
+    ref: triggerCommitHash
+  };
+  let baseTemplateOverride;
   if (releaseBodyOverridePath) {
-    return await getTextFile(sourceMode.overrides?.[releaseBodyOverridePath] ?? sourceMode.mode, releaseBodyOverridePath, {
-      provider,
-      workspacePath,
-      ref: triggerCommitHash
-    });
+    baseTemplateOverride = await getTextFile(sourceMode.overrides?.[releaseBodyOverridePath] ?? sourceMode.mode, releaseBodyOverridePath, getTextOpts);
+  } else {
+    baseTemplateOverride = releaseBodyOverride;
   }
-  if (releaseBodyOverride) {
-    return releaseBodyOverride;
+  let altTemplateOverride;
+  const resolvedAltPath = releaseBodyOverrideAltPath ?? releaseBodyOverridePath;
+  const resolvedAltTemplate = releaseBodyOverrideAlt ?? releaseBodyOverride;
+  if (resolvedAltPath === releaseBodyOverridePath && resolvedAltTemplate === releaseBodyOverride) {
+    altTemplateOverride = baseTemplateOverride;
+  } else if (resolvedAltPath) {
+    altTemplateOverride = await getTextFile(sourceMode.overrides?.[resolvedAltPath] ?? sourceMode.mode, resolvedAltPath, getTextOpts);
+  } else {
+    altTemplateOverride = resolvedAltTemplate;
+  }
+  if (baseTemplateOverride !== void 0 && altTemplateOverride !== void 0) {
+    return {
+      base: baseTemplateOverride,
+      alt: altTemplateOverride
+    };
   }
   if (!resolvedCommits) {
     throw new Error("resolvedCommits must be provided to generate a release body when no override is configured");
   }
-  return await generateReleaseBodyBasedOnCommits(provider, resolvedCommits, inputs, config);
+  const generated = await generateReleaseBodyBasedOnCommits(provider, resolvedCommits, inputs, config);
+  return {
+    base: baseTemplateOverride ?? generated.base,
+    alt: altTemplateOverride ?? generated.alt
+  };
 }
 async function resolveReleaseFooter(provider, inputs, config) {
+  const { releaseFooterTemplate, releaseFooterTemplatePath, releaseFooterTemplateAlt, releaseFooterTemplateAltPath } = config.changelog;
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
-  const { changelog: { releaseFooterTemplate, releaseFooterTemplatePath } } = config;
+  const getTextOpts = {
+    provider,
+    workspacePath,
+    ref: triggerCommitHash
+  };
+  let baseTemplate;
   if (releaseFooterTemplatePath) {
-    const footerTemplate = await getTextFile(sourceMode.overrides?.[releaseFooterTemplatePath] ?? sourceMode.mode, releaseFooterTemplatePath, {
-      provider,
-      workspacePath,
-      ref: triggerCommitHash
-    });
-    return await resolveStringTemplate(footerTemplate);
+    baseTemplate = await getTextFile(sourceMode.overrides?.[releaseFooterTemplatePath] ?? sourceMode.mode, releaseFooterTemplatePath, getTextOpts);
+  } else {
+    baseTemplate = releaseFooterTemplate;
   }
-  if (releaseFooterTemplate) {
-    return await resolveStringTemplate(releaseFooterTemplate);
+  let altTemplate;
+  const resolvedAltPath = releaseFooterTemplateAltPath ?? releaseFooterTemplatePath;
+  const resolvedAltTemplate = releaseFooterTemplateAlt ?? releaseFooterTemplate;
+  if (resolvedAltPath === releaseFooterTemplatePath && resolvedAltTemplate === releaseFooterTemplate) {
+    altTemplate = baseTemplate;
+  } else if (resolvedAltPath) {
+    altTemplate = await getTextFile(sourceMode.overrides?.[resolvedAltPath] ?? sourceMode.mode, resolvedAltPath, getTextOpts);
+  } else {
+    altTemplate = resolvedAltTemplate;
   }
-  return void 0;
+  if (baseTemplate === altTemplate) {
+    if (baseTemplate) {
+      const resolved = await resolveStringTemplate(baseTemplate);
+      return {
+        base: resolved,
+        alt: resolved
+      };
+    }
+  } else {
+    const resolves = await Promise.all([
+      baseTemplate ? resolveStringTemplate(baseTemplate) : Promise.resolve(void 0),
+      altTemplate ? resolveStringTemplate(altTemplate) : Promise.resolve(void 0)
+    ]);
+    return {
+      base: resolves[0],
+      alt: resolves[1]
+    };
+  }
+  return {
+    base: void 0,
+    alt: void 0
+  };
 }
 async function generateReleaseBodyBasedOnCommits(provider, resolvedCommits, inputs, config) {
-  const { commitTypes, changelog: { releaseSectionEntryTemplate, releaseSectionEntryTemplatePath, releaseBreakingSectionHeading, releaseBreakingSectionEntryTemplate, releaseBreakingSectionEntryTemplatePath } } = config;
-  const { triggerCommitHash, workspacePath, sourceMode } = inputs;
-  const sectionGroups = /* @__PURE__ */ new Map();
+  const { commitTypes, changelog: { commitGroupMode, commitSortOrder, releaseSectionHeadingTemplate, releaseSectionHeadingTemplatePath, releaseSectionEntryTemplate, releaseSectionEntryTemplatePath, releaseBreakingSectionHeading, releaseBreakingSectionEntryTemplate, releaseBreakingSectionEntryTemplatePath, releaseSectionHeadingTemplateAlt, releaseSectionHeadingTemplateAltPath, releaseSectionEntryTemplateAlt, releaseSectionEntryTemplateAltPath, releaseBreakingSectionHeadingAlt, releaseBreakingSectionEntryTemplateAlt, releaseBreakingSectionEntryTemplateAltPath } } = config;
+  const baseSectionGroups = /* @__PURE__ */ new Map();
+  const altSectionGroups = /* @__PURE__ */ new Map();
   const typeToSection = /* @__PURE__ */ new Map();
-  const breakingSectionHeading = await resolveStringTemplate(releaseBreakingSectionHeading);
-  sectionGroups.set(breakingSectionHeading, []);
+  const breakingSectionHeadingBase = await resolveStringTemplate(releaseBreakingSectionHeading);
+  const breakingSectionHeadingAlt = await resolveStringTemplate(releaseBreakingSectionHeadingAlt ?? releaseBreakingSectionHeading);
+  baseSectionGroups.set(breakingSectionHeadingBase, {
+    entries: [],
+    sectionInfo: {
+      section: breakingSectionHeadingBase,
+      sectionAlt: breakingSectionHeadingAlt
+    }
+  });
+  altSectionGroups.set(breakingSectionHeadingAlt, {
+    entries: [],
+    sectionInfo: {
+      section: breakingSectionHeadingBase,
+      sectionAlt: breakingSectionHeadingAlt
+    }
+  });
   for (const ct of commitTypes) {
-    if (ct.hidden) continue;
-    const sectionName = ct.section ?? toTitleCase(ct.type);
-    typeToSection.set(ct.type, sectionName);
-    if (!sectionGroups.has(sectionName)) {
-      sectionGroups.set(sectionName, []);
+    const sectionBase = ct.section ?? toTitleCase(ct.type);
+    const sectionAlt = ct.sectionAlt ?? sectionBase;
+    typeToSection.set(ct.type, {
+      baseSection: sectionBase,
+      altSection: sectionAlt,
+      hidden: ct.hidden
+    });
+    const sectionInfo = {
+      section: sectionBase,
+      sectionAlt
+    };
+    if (!baseSectionGroups.has(sectionBase)) {
+      baseSectionGroups.set(sectionBase, {
+        entries: [],
+        sectionInfo
+      });
+    }
+    if (!altSectionGroups.has(sectionAlt)) {
+      altSectionGroups.set(sectionAlt, {
+        entries: [],
+        sectionInfo
+      });
     }
   }
-  const sectionEntryTemplate = releaseSectionEntryTemplatePath ? await getTextFile(sourceMode.overrides?.[releaseSectionEntryTemplatePath] ?? sourceMode.mode, releaseSectionEntryTemplatePath, {
+  const { triggerCommitHash, workspacePath, sourceMode } = inputs;
+  const getTextOpts = {
     provider,
     workspacePath,
     ref: triggerCommitHash
-  }) : releaseSectionEntryTemplate;
-  const breakingSectionEntryTemplate = releaseBreakingSectionEntryTemplatePath ? await getTextFile(sourceMode.overrides?.[releaseBreakingSectionEntryTemplatePath] ?? sourceMode.mode, releaseBreakingSectionEntryTemplatePath, {
-    provider,
-    workspacePath,
-    ref: triggerCommitHash
-  }) : releaseBreakingSectionEntryTemplate;
-  for (const commit of resolvedCommits) {
-    const section = typeToSection.get(commit.type);
-    if (!section) continue;
-    const sectionContents = sectionGroups.get(section);
-    if (!sectionContents) continue;
+  };
+  let sectionHeadingTemplateBase;
+  if (releaseSectionHeadingTemplatePath) {
+    sectionHeadingTemplateBase = await getTextFile(sourceMode.overrides?.[releaseSectionHeadingTemplatePath] ?? sourceMode.mode, releaseSectionHeadingTemplatePath, getTextOpts);
+  } else {
+    sectionHeadingTemplateBase = releaseSectionHeadingTemplate;
+  }
+  let sectionHeadingTemplateAlt;
+  const resolvedSectionHeadingAltPath = releaseSectionHeadingTemplateAltPath ?? releaseSectionHeadingTemplatePath;
+  const resolvedSectionHeadingAltTemplate = releaseSectionHeadingTemplateAlt;
+  if (resolvedSectionHeadingAltPath === releaseSectionHeadingTemplatePath && resolvedSectionHeadingAltTemplate === releaseSectionHeadingTemplate) {
+    sectionHeadingTemplateAlt = sectionHeadingTemplateBase;
+  } else if (resolvedSectionHeadingAltPath) {
+    sectionHeadingTemplateAlt = await getTextFile(sourceMode.overrides?.[resolvedSectionHeadingAltPath] ?? sourceMode.mode, resolvedSectionHeadingAltPath, getTextOpts);
+  } else {
+    sectionHeadingTemplateAlt = resolvedSectionHeadingAltTemplate;
+  }
+  let sectionEntryTemplateBase;
+  if (releaseSectionEntryTemplatePath) {
+    sectionEntryTemplateBase = await getTextFile(sourceMode.overrides?.[releaseSectionEntryTemplatePath] ?? sourceMode.mode, releaseSectionEntryTemplatePath, getTextOpts);
+  } else {
+    sectionEntryTemplateBase = releaseSectionEntryTemplate;
+  }
+  let sectionEntryTemplateAlt;
+  const resolvedSectionEntryAltPath = releaseSectionEntryTemplateAltPath ?? releaseSectionEntryTemplatePath;
+  const resolvedSectionEntryAltTemplate = releaseSectionEntryTemplateAlt ?? releaseSectionEntryTemplate;
+  if (resolvedSectionEntryAltPath === releaseSectionEntryTemplatePath && resolvedSectionEntryAltTemplate === releaseSectionEntryTemplate) {
+    sectionEntryTemplateAlt = sectionEntryTemplateBase;
+  } else if (resolvedSectionEntryAltPath) {
+    sectionEntryTemplateAlt = await getTextFile(sourceMode.overrides?.[resolvedSectionEntryAltPath] ?? sourceMode.mode, resolvedSectionEntryAltPath, getTextOpts);
+  } else {
+    sectionEntryTemplateAlt = resolvedSectionEntryAltTemplate;
+  }
+  let breakingEntryTemplateBase;
+  if (releaseBreakingSectionEntryTemplatePath) {
+    breakingEntryTemplateBase = await getTextFile(sourceMode.overrides?.[releaseBreakingSectionEntryTemplatePath] ?? sourceMode.mode, releaseBreakingSectionEntryTemplatePath, getTextOpts);
+  } else {
+    breakingEntryTemplateBase = releaseBreakingSectionEntryTemplate;
+  }
+  let breakingEntryTemplateAlt;
+  const resolvedBreakingEntryAltPath = releaseBreakingSectionEntryTemplateAltPath ?? releaseBreakingSectionEntryTemplatePath;
+  const resolvedBreakingEntryAltTemplate = releaseBreakingSectionEntryTemplateAlt ?? releaseBreakingSectionEntryTemplate;
+  if (resolvedBreakingEntryAltPath === releaseBreakingSectionEntryTemplatePath && resolvedBreakingEntryAltTemplate === releaseBreakingSectionEntryTemplate) {
+    breakingEntryTemplateAlt = breakingEntryTemplateBase;
+  } else if (resolvedBreakingEntryAltPath) {
+    breakingEntryTemplateAlt = await getTextFile(sourceMode.overrides?.[resolvedBreakingEntryAltPath] ?? sourceMode.mode, resolvedBreakingEntryAltPath, getTextOpts);
+  } else {
+    breakingEntryTemplateAlt = resolvedBreakingEntryAltTemplate;
+  }
+  const sortedCommits = [
+    ...resolvedCommits
+  ].sort((a, b) => {
+    if (commitGroupMode !== CommitGroupModes.none) {
+      const scopeA = a.scope ? a.scope.toLowerCase() : "";
+      const scopeB = b.scope ? b.scope.toLowerCase() : "";
+      if (scopeA !== scopeB) {
+        if (commitGroupMode === CommitGroupModes.scopeFirst) {
+          if (!scopeA && scopeB) return 1;
+          if (scopeA && !scopeB) return -1;
+        } else if (commitGroupMode === CommitGroupModes.scopeLast) {
+          if (!scopeA && scopeB) return -1;
+          if (scopeA && !scopeB) return 1;
+        }
+        if (scopeA && scopeB) {
+          return scopeA.localeCompare(scopeB);
+        }
+      }
+    }
+    if (commitSortOrder === CommitSortOrders.oldestFirst) {
+      return a.committer.date.getTime() - b.committer.date.getTime();
+    } else if (commitSortOrder === CommitSortOrders.newestFirst) {
+      return b.committer.date.getTime() - a.committer.date.getTime();
+    } else {
+      return a.subject.localeCompare(b.subject);
+    }
+  });
+  for (const commit of sortedCommits) {
+    const typeInfo = typeToSection.get(commit.type);
+    if (!typeInfo) continue;
+    if (typeInfo.hidden && !commit.isBreaking) continue;
+    const baseSectionGroup = baseSectionGroups.get(typeInfo.baseSection);
+    const altSectionGroup = altSectionGroups.get(typeInfo.altSection);
+    if (!baseSectionGroup || !altSectionGroup) continue;
     const commitPatterns = createCommitExtraPatterns(commit);
-    const commitStr = await resolveStringTemplate(sectionEntryTemplate, commitPatterns);
-    sectionContents.push(commitStr);
+    const commitStrBase = await resolveStringTemplate(sectionEntryTemplateBase, commitPatterns);
+    const commitStrAlt = sectionEntryTemplateBase === sectionEntryTemplateAlt ? commitStrBase : await resolveStringTemplate(sectionEntryTemplateAlt, commitPatterns);
+    baseSectionGroup.entries.push(commitStrBase);
+    altSectionGroup.entries.push(commitStrAlt);
     if (commit.isBreaking) {
-      const commitBreakingStr = breakingSectionEntryTemplate ? await resolveStringTemplate(breakingSectionEntryTemplate, commitPatterns) : commitStr;
-      const breakingSectionContents = sectionGroups.get(breakingSectionHeading);
-      if (!breakingSectionContents) {
+      const commitBreakingStrBase = breakingEntryTemplateBase ? await resolveStringTemplate(breakingEntryTemplateBase, commitPatterns) : commitStrBase;
+      let commitBreakingStrAlt;
+      if (breakingEntryTemplateAlt) {
+        if (breakingEntryTemplateBase === breakingEntryTemplateAlt) {
+          commitBreakingStrAlt = commitBreakingStrBase;
+        } else {
+          commitBreakingStrAlt = await resolveStringTemplate(breakingEntryTemplateAlt, commitPatterns);
+        }
+      } else {
+        commitBreakingStrAlt = commitStrAlt;
+      }
+      const baseBreakingGroup = baseSectionGroups.get(breakingSectionHeadingBase);
+      const altBreakingGroup = altSectionGroups.get(breakingSectionHeadingAlt);
+      if (!baseBreakingGroup || !altBreakingGroup) {
         throw new Error(`${generatePrepareChangelogReleaseContent.name} failed: Breaking Changes section has not been initialized?`);
       }
-      breakingSectionContents.push(commitBreakingStr);
+      baseBreakingGroup.entries.push(commitBreakingStrBase);
+      altBreakingGroup.entries.push(commitBreakingStrAlt);
     }
   }
-  const finalReleaseBody = [];
-  for (const [section, entries] of sectionGroups) {
-    if (entries.length === 0) continue;
-    finalReleaseBody.push(section);
-    finalReleaseBody.push(entries.sort().join("\n"));
+  const finalReleaseBodyBase = [];
+  for (const [key, group] of baseSectionGroups) {
+    if (group.entries.length === 0) continue;
+    const heading = key === breakingSectionHeadingBase ? key : await resolveStringTemplate(sectionHeadingTemplateBase, group.sectionInfo);
+    finalReleaseBodyBase.push(heading);
+    finalReleaseBodyBase.push(group.entries.join("\n"));
   }
-  return finalReleaseBody.join("\n\n");
+  const finalReleaseBodyAlt = [];
+  for (const [key, group] of altSectionGroups) {
+    if (group.entries.length === 0) continue;
+    const heading = key === breakingSectionHeadingAlt ? key : await resolveStringTemplate(sectionHeadingTemplateAlt, group.sectionInfo);
+    finalReleaseBodyAlt.push(heading);
+    finalReleaseBodyAlt.push(group.entries.join("\n"));
+  }
+  return {
+    base: finalReleaseBodyBase.join("\n\n"),
+    alt: finalReleaseBodyAlt.join("\n\n")
+  };
 }
 function createCommitExtraPatterns(commit) {
   const breakingDesc = commit.notes.findLast((n) => n.title === breakingChangeKeywords.space || n.title === breakingChangeKeywords.hyphen)?.text ?? commit.subject;
@@ -102190,11 +102783,17 @@ function createCommitExtraPatterns(commit) {
     body: commit.body,
     footer: commit.footer,
     breakingDesc,
-    isBreaking: commit.isBreaking
+    isBreaking: commit.isBreaking,
+    authorName: commit.author.name,
+    authorEmail: commit.author.email,
+    authorDate: commit.author.date.toString(),
+    committerName: commit.committer.name,
+    committerEmail: commit.committer.email,
+    committerDate: commit.committer.date.toString()
   };
 }
-async function prepareChangelogFileToCommit(provider, changelogConfig, sourceMode, workspacePath, releaseContent, triggerCommitHash) {
-  const { path, fileHeaderTemplate, fileHeaderTemplatePath, fileFooterTemplate, fileFooterTemplatePath } = changelogConfig;
+async function prepareChangelogFileToCommit(provider, changelogConfig, sourceMode, workspacePath, triggerCommitHash) {
+  const { path, fileHeaderTemplate, fileHeaderTemplatePath, fileReleaseTemplate, fileReleaseTemplatePath, fileFooterTemplate, fileFooterTemplatePath } = changelogConfig;
   const changelogSourceMode = sourceMode.overrides?.[path] ?? sourceMode.mode;
   const currentFileContent = await getTextFile(changelogSourceMode, path, {
     provider,
@@ -102215,6 +102814,17 @@ async function prepareChangelogFileToCommit(provider, changelogConfig, sourceMod
     });
     header = await resolveStringTemplate(headerTemplate);
   } else header = await resolveStringTemplate(fileHeaderTemplate);
+  let releaseContentBlock;
+  if (fileReleaseTemplatePath) {
+    const releaseTemplate = await getTextFile(sourceMode.overrides?.[fileReleaseTemplatePath] ?? sourceMode.mode, fileReleaseTemplatePath, {
+      provider,
+      workspacePath,
+      ref: triggerCommitHash
+    });
+    releaseContentBlock = await resolveStringTemplate(releaseTemplate);
+  } else {
+    releaseContentBlock = await resolveStringTemplate(fileReleaseTemplate);
+  }
   let footer;
   if (fileFooterTemplatePath) {
     const footerTemplate = await getTextFile(sourceMode.overrides?.[fileFooterTemplatePath] ?? sourceMode.mode, fileFooterTemplatePath, {
@@ -102229,7 +102839,7 @@ async function prepareChangelogFileToCommit(provider, changelogConfig, sourceMod
   if (!currentFileContent.trim()) {
     const bodyWithMarkers = [
       CHANGELOG_MARKERS.bodyStart,
-      releaseContent,
+      releaseContentBlock,
       CHANGELOG_MARKERS.bodyEnd
     ].join("\n");
     return [
@@ -102248,7 +102858,7 @@ async function prepareChangelogFileToCommit(provider, changelogConfig, sourceMod
       ].join("\n");
       const bodyWithMarkers = [
         CHANGELOG_MARKERS.bodyStart,
-        releaseContent,
+        releaseContentBlock,
         CHANGELOG_MARKERS.bodyEnd
       ].join("\n");
       return [
@@ -102261,9 +102871,9 @@ async function prepareChangelogFileToCommit(provider, changelogConfig, sourceMod
       const bodyStartMarkerEndIndex = bodyStartMarkerIndex + CHANGELOG_MARKERS.bodyStart.length;
       const existingBodyContent = currentFileContent.substring(bodyStartMarkerEndIndex, bodyEndMarkerIndex).trim();
       const updatedBody = existingBodyContent ? [
-        releaseContent,
+        releaseContentBlock,
         existingBodyContent
-      ].join("\n\n") : releaseContent;
+      ].join("\n\n") : releaseContentBlock;
       const updatedBodyWithMarkers = [
         CHANGELOG_MARKERS.bodyStart,
         updatedBody,
@@ -102290,10 +102900,17 @@ async function prepareChangelogFileToCommit(provider, changelogConfig, sourceMod
 import { execSync } from "node:child_process";
 init_branch();
 init_conventional_commit_parser_options();
+init_commit2();
+init_mod();
 async function resolveCommitsFromTriggerToLastRelease(provider, inputs, config) {
   const { triggerCommitHash } = inputs;
-  const { commitTypes, stopResolvingCommitAt } = config;
-  const rawCommits = await provider.findCommitsFromGivenToPreviousTagged(triggerCommitHash, stopResolvingCommitAt);
+  const { commitTypes, maxCommitsToResolve, resolveUntilCommitHash } = config;
+  const rawCommits = await provider.listCommitsFromGivenToLastRelease(triggerCommitHash, maxCommitsToResolve, resolveUntilCommitHash).catch((error) => {
+    if (error instanceof NoCommitFoundError) {
+      throw new SafeExit(error.message);
+    }
+    throw error;
+  });
   taskLogger.debugWrap((dLogger) => {
     dLogger.startGroup("Raw collected commits:");
     dLogger.info(JSON.stringify(rawCommits, null, 2));
@@ -102328,7 +102945,9 @@ async function resolveCommitsFromTriggerToLastRelease(provider, inputs, config) 
       hash: entry.hash,
       type,
       subject,
-      isBreaking
+      isBreaking,
+      author: entry.author,
+      committer: entry.committer
     });
   }
   if (!resolvedTriggerCommit) {
@@ -102355,7 +102974,9 @@ function processRawCommits(rawCommits) {
       hash: raw2.hash,
       message: cleanedOriginalMessage,
       isVirtual: false,
-      isIgnored: overrides.length > 0
+      isIgnored: overrides.length > 0,
+      author: raw2.author,
+      committer: raw2.committer
     });
     const nestedEntries = overrides.length > 0 ? overrides : appends;
     for (const msg of nestedEntries) {
@@ -102363,7 +102984,9 @@ function processRawCommits(rawCommits) {
         hash: raw2.hash,
         message: msg,
         isVirtual: true,
-        isIgnored: false
+        isIgnored: false,
+        author: raw2.author,
+        committer: raw2.committer
       });
     }
   }
@@ -102378,22 +103001,21 @@ function extractBlock(text, block) {
   if (startIdx === -1 || endIdx === -1 || startIdx >= endIdx) return [];
   return text.slice(startIdx + block.start.length, endIdx).split("\n").map((line) => line.trim()).filter((line) => line.length > 0);
 }
-async function prepareChangesToCommit(provider, inputs, config, newData) {
+async function prepareChangesToCommit(provider, inputs, config, nextVersion) {
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
   const { versionFiles, changelog, commit } = config;
   const { localChangesToCommit } = commit;
   const { writeToFile, path } = changelog;
-  const { changelogRelease, nextVersion } = newData;
   const changesData = /* @__PURE__ */ new Map();
   taskLogger.info("Collecting changelog data to commit...");
   if (writeToFile) {
-    const clContent = await prepareChangelogFileToCommit(provider, changelog, sourceMode, workspacePath, changelogRelease, triggerCommitHash);
+    const clContent = await prepareChangelogFileToCommit(provider, changelog, sourceMode, workspacePath, triggerCommitHash);
     changesData.set(normalize3(path), clContent);
   } else {
     taskLogger.info("Changelog config write to file is off. Skipping...");
   }
   taskLogger.info(`Collecting version files data to commit (${versionFiles.length} files)...`);
-  const vfChangesData = await prepareVersionFilesToCommit(provider, versionFiles, sourceMode, workspacePath, nextVersion, triggerCommitHash);
+  const vfChangesData = await prepareVersionFilesToCommit(provider, versionFiles, sourceMode, workspacePath, format3(nextVersion), triggerCommitHash);
   for (const [vfPath, vfContent] of vfChangesData) {
     changesData.set(normalize3(vfPath), vfContent);
   }
@@ -102644,9 +103266,6 @@ async function addReviewersToProposal(provider, proposalId, reviewers) {
   }
 }
 
-// src/workflows/review.prepare.ts
-init_mod();
-
 // src/tasks/calculate-next-version/calculate-version.ts
 init_mod();
 init_logger();
@@ -102674,23 +103293,41 @@ function calculateNextCoreSemVer(currentSemVer, entries, strategy) {
     }
   };
   for (const entry of entries) {
-    processBumpRule(entry, strategy.major, rawCounts.major);
-    processBumpRule(entry, strategy.minor, rawCounts.minor);
-    processBumpRule(entry, strategy.patch, rawCounts.patch);
+    const majorCounts = getBumpRuleCounts(entry, strategy.major);
+    rawCounts.major.commits += majorCounts.commits;
+    rawCounts.major.directBumps += majorCounts.directBumps;
+    const minorCounts = getBumpRuleCounts(entry, strategy.minor);
+    rawCounts.minor.commits += minorCounts.commits;
+    rawCounts.minor.directBumps += minorCounts.directBumps;
+    const patchCounts = getBumpRuleCounts(entry, strategy.patch);
+    rawCounts.patch.commits += patchCounts.commits;
+    rawCounts.patch.directBumps += patchCounts.directBumps;
   }
-  let majorBumps = rawCounts.major.directBumps + calculateBumpsFromCommits(rawCounts.major.commits, strategy.major?.commitsPerBump);
-  let minorBumps = rawCounts.minor.directBumps + calculateBumpsFromCommits(rawCounts.minor.commits, strategy.minor?.commitsPerBump);
-  let patchBumps = rawCounts.patch.directBumps + calculateBumpsFromCommits(rawCounts.patch.commits, strategy.patch?.commitsPerBump);
   if (currentSemVer.major === 0) {
-    if (strategy.bumpMinorForMajorPreStable && majorBumps > 0) {
-      minorBumps += majorBumps;
-      majorBumps = 0;
+    const origMajor = {
+      ...rawCounts.major
+    };
+    const origMinor = {
+      ...rawCounts.minor
+    };
+    if (strategy.treatMajorAsMinorPreStable && (origMajor.commits > 0 || origMajor.directBumps > 0)) {
+      rawCounts.major = {
+        commits: 0,
+        directBumps: 0
+      };
+      rawCounts.minor.commits += origMajor.commits;
+      rawCounts.minor.directBumps += origMajor.directBumps;
     }
-    if (strategy.bumpPatchForMinorPreStable && minorBumps > 0) {
-      patchBumps += minorBumps;
-      minorBumps = 0;
+    if (strategy.treatMinorAsPatchPreStable && (origMinor.commits > 0 || origMinor.directBumps > 0)) {
+      rawCounts.minor.commits -= origMinor.commits;
+      rawCounts.minor.directBumps -= origMinor.directBumps;
+      rawCounts.patch.commits += origMinor.commits;
+      rawCounts.patch.directBumps += origMinor.directBumps;
     }
   }
+  const majorBumps = rawCounts.major.directBumps + calculateBumpsFromCommits(rawCounts.major.commits, strategy.major?.commitsPerBump);
+  const minorBumps = rawCounts.minor.directBumps + calculateBumpsFromCommits(rawCounts.minor.commits, strategy.minor?.commitsPerBump);
+  const patchBumps = rawCounts.patch.directBumps + calculateBumpsFromCommits(rawCounts.patch.commits, strategy.patch?.commitsPerBump);
   const nextCoreSemver = {
     ...currentSemVer
   };
@@ -102706,20 +103343,31 @@ function calculateNextCoreSemVer(currentSemVer, entries, strategy) {
   }
   return nextCoreSemver;
 }
-function processBumpRule(entry, rule, mutableCounter) {
+function getBumpRuleCounts(entry, rule) {
   if (entry.isBreaking) {
     if (rule.countBreakingAs === countBreakingAsOptions.bump) {
-      mutableCounter.directBumps++;
-      return;
+      return {
+        commits: 0,
+        directBumps: 1
+      };
     }
     if (rule.countBreakingAs === countBreakingAsOptions.commit) {
-      mutableCounter.commits++;
-      return;
+      return {
+        commits: 1,
+        directBumps: 0
+      };
     }
   }
   if (rule.types && rule.types.includes(entry.type)) {
-    mutableCounter.commits++;
+    return {
+      commits: 1,
+      directBumps: 0
+    };
   }
+  return {
+    commits: 0,
+    directBumps: 0
+  };
 }
 function calculateBumpsFromCommits(count, commitsPerBump) {
   if (count === 0) return 0;
@@ -102842,7 +103490,7 @@ function resolveIncremental(item, previousValue, versionChangeCtx, structureChan
 }
 
 // src/tasks/calculate-next-version/calculate-version.ts
-function calculateNextVersion(resolvedCommitsResult, config, previousVersion) {
+function calculateNextVersion(resolvedCommitsResult, config, currentVersion) {
   const { resolvedTriggerCommit, entries } = resolvedCommitsResult;
   const { timeZone, initialVersion, commitTypes, allowedReleaseAsCommitTypes, bumpStrategy } = config;
   taskLogger.info("Checking if there is release-as trigger (manual version set)...");
@@ -102850,16 +103498,23 @@ function calculateNextVersion(resolvedCommitsResult, config, previousVersion) {
   if (manualReleaseAsVersion) {
     return manualReleaseAsVersion;
   }
-  if (!previousVersion) {
-    taskLogger.info(`No previous version found, using initial version: ${initialVersion}`);
+  if (!currentVersion) {
+    taskLogger.info(`No current version found, using initial version: ${initialVersion}`);
     if (!canParse(initialVersion)) {
       throw new Error(`Initial version '${initialVersion}' is not a valid semver object`);
     }
     return parse6(initialVersion);
   }
-  taskLogger.info(`Previous version got from version file is ${previousVersion}`);
-  const nextCoreSemVer = calculateNextCoreSemVer(previousVersion, entries, bumpStrategy);
-  const nextExtensionSemVer = calculateNextExtensionsSemVer(previousVersion, nextCoreSemVer, bumpStrategy, timeZone);
+  if (currentVersion.major === 0 && currentVersion.minor === 0 && currentVersion.patch === 0 && (currentVersion.prerelease?.length ?? 0) === 0 && (currentVersion.build?.length ?? 0) === 0 && initialVersion !== "0.0.0") {
+    taskLogger.info("Current version is 0.0.0, treating it as if there is no current version and using initial version for calculation");
+    if (!canParse(initialVersion)) {
+      throw new Error(`Initial version '${initialVersion}' is not a valid semver object`);
+    }
+    return parse6(initialVersion);
+  }
+  taskLogger.info(`Current version got from version file is ${currentVersion}`);
+  const nextCoreSemVer = calculateNextCoreSemVer(currentVersion, entries, bumpStrategy);
+  const nextExtensionSemVer = calculateNextExtensionsSemVer(currentVersion, nextCoreSemVer, bumpStrategy, timeZone);
   const finalSemVer = {
     major: nextCoreSemVer.major,
     minor: nextCoreSemVer.minor,
@@ -102894,27 +103549,27 @@ function isReleaseAsAllowed(type, allowReleaseAs, commitTypes) {
   }
   return false;
 }
-function compareVersionToPreviousVersion(version2, previousVersion) {
-  if (!previousVersion) {
-    taskLogger.info("Previous version is undefined; calculated next version is considered valid");
+function compareNextVersionToCurrentVersion(nextVersion, currentVersion) {
+  if (!currentVersion) {
+    taskLogger.info("Current version is undefined; calculated next version is considered valid");
     return;
   }
-  const versionStr = format3(version2);
-  const previousVersionStr = format3(previousVersion);
-  if (versionStr === previousVersionStr) {
-    throw new SafeExit(`Calculated next version (${versionStr}) is unchanged compared to previous version (${previousVersionStr})`);
+  const nextVersionStr = format3(nextVersion);
+  const currentVersionStr = format3(currentVersion);
+  if (nextVersionStr === currentVersionStr) {
+    throw new SafeExit(`Calculated next version (${nextVersionStr}) is unchanged compared to current version (${currentVersionStr})`);
   } else {
-    taskLogger.info(`Calculated next version (${versionStr}) is different from previous version (${previousVersionStr}). Proceeding...`);
+    taskLogger.info(`Calculated next version (${nextVersionStr}) is different from current version (${currentVersionStr}). Proceeding...`);
     return;
   }
 }
 
 // src/tasks/calculate-next-version/previous-version.ts
 init_logger();
-async function getPreviousVersion(provider, inputs, config) {
+async function getCurrentVersion(provider, inputs, config) {
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
   const { versionFiles } = config;
-  taskLogger.info("Getting previous version from primary version files...");
+  taskLogger.info("Getting current version from primary version files...");
   const primaryVersionFile = getPrimaryVersionFile(versionFiles);
   const primaryVersion = await getVersionSemVerFromVersionFile(primaryVersionFile, sourceMode, provider, workspacePath, triggerCommitHash);
   return primaryVersion;
@@ -102992,16 +103647,17 @@ async function resolveRuntimeConfigOverride(rawConfig, config, workspacePath) {
   };
 }
 async function synchronizeRuntimeStateAfterOverride(params) {
-  const { provider, config, rawConfig, triggerBranchName, version: version2, previousVersion } = params;
+  const { provider, config, rawConfig, triggerBranchName, nextVersion, currentVersion } = params;
   taskLogger.debug("Synchronizing runtime state after config override...");
   createCustomStringPatternContext(config.customStringPatterns);
   await createFixedBaseStringPatternContext(provider, triggerBranchName, config);
   createFixedAndDynamicDatetimeStringPatternContext(config.timeZone);
-  if (previousVersion) {
-    createFixedPreviousVersionStringPatternContext(previousVersion);
+  if (currentVersion) {
+    createFixedCurrentVersionStringPatternContext(currentVersion);
   }
-  if (version2) {
-    await createFixedVersionStringPatternContext(version2, config.tag.nameTemplate);
+  if (nextVersion) {
+    createFixedNextVersionStringPatternContext(nextVersion);
+    await createFixedTagStringPatternContext(config.tag.nameTemplate);
   }
   const staleExports = {
     config: JSON.stringify(rawConfig, jsonValueNormalizer),
@@ -103009,8 +103665,8 @@ async function synchronizeRuntimeStateAfterOverride(params) {
     patternContext: await stringifyCurrentPatternContext()
   };
   Object.entries(staleExports).forEach(([k, v]) => {
-    provider.exportOutputs(toExportOutputKey(k), v);
-    provider.exportEnvVars(toExportEnvVarKey(k), v);
+    provider.setOutput(toOutputKey(k), v);
+    provider.setEnv(toEnvKey(k), v);
   });
   taskLogger.debug("Runtime state synchronized.");
 }
@@ -103019,24 +103675,25 @@ async function synchronizeRuntimeStateAfterOverride(params) {
 async function executeReviewPreparePhase(provider, currentRunSettings, bootstrapData) {
   const { workingBranchResult, associatedProposalFromBranch, triggerContext } = bootstrapData;
   let runSettings = currentRunSettings;
-  logger.stepStart("Starting: Get previous version");
-  const previousVersion = await getPreviousVersion(provider, runSettings.inputs, runSettings.config);
-  logger.stepFinish("Finished: Get previous version");
+  logger.stepStart("Starting: Get current version");
+  const currentVersion = await getCurrentVersion(provider, runSettings.inputs, runSettings.config);
+  logger.stepFinish("Finished: Get current version");
   logger.stepStart("Starting: Resolve commits from trigger to last release");
   const resolvedCommitsResult = await resolveCommitsFromTriggerToLastRelease(provider, runSettings.inputs, runSettings.config);
   logger.stepFinish("Finished: Resolve commits from trigger to last release");
   logger.stepStart("Starting: Calculate next version");
-  const nextVersion = calculateNextVersion(resolvedCommitsResult, runSettings.config, previousVersion);
+  const nextVersion = calculateNextVersion(resolvedCommitsResult, runSettings.config, currentVersion);
   logger.stepFinish("Finished: Calculate next version");
-  logger.stepStart("Starting: Compare calculated next version with previous version");
-  compareVersionToPreviousVersion(nextVersion, previousVersion);
-  logger.stepFinish("Finished: Compare calculated next version with previous version");
-  logger.debugStepStart("Starting: Create fixed version and previous version string pattern context");
-  createFixedPreviousVersionStringPatternContext(previousVersion);
-  await createFixedVersionStringPatternContext(nextVersion, runSettings.config.tag.nameTemplate);
-  logger.debugStepFinish("Finished: Create fixed version string pattern context");
+  logger.stepStart("Starting: Compare calculated next version with current version");
+  compareNextVersionToCurrentVersion(nextVersion, currentVersion);
+  logger.stepFinish("Finished: Compare calculated next version with current version");
+  logger.debugStepStart("Starting: Create fixed current version, next version and tag string pattern context");
+  createFixedCurrentVersionStringPatternContext(currentVersion);
+  createFixedNextVersionStringPatternContext(nextVersion);
+  await createFixedTagStringPatternContext(runSettings.config.tag.nameTemplate);
+  logger.debugStepFinish("Finished: Create fixed current version, next version and tag string pattern context");
   logger.debugStepStart("Starting: Export pre prepare operation variables");
-  await exportPrePrepareOperationVariables(provider, resolvedCommitsResult.entries, previousVersion, nextVersion);
+  await exportPrePrepareOperationVariables(provider, resolvedCommitsResult.entries, currentVersion, nextVersion);
   logger.debugStepFinish("Finished: Export pre prepare operation variables");
   logger.stepStart("Starting: Execute prepare pre commands");
   const preResult = await runCommands(runSettings.config.commandHooks.prepare, "pre");
@@ -103058,8 +103715,8 @@ async function executeReviewPreparePhase(provider, currentRunSettings, bootstrap
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
-      version: nextVersion,
-      previousVersion
+      nextVersion,
+      currentVersion
     });
     logger.stepFinish("Finished: Resolve runtime config override (prepare pre commands)");
   } else {
@@ -103069,13 +103726,10 @@ async function executeReviewPreparePhase(provider, currentRunSettings, bootstrap
   const changelogReleaseResult = await generatePrepareChangelogReleaseContent(provider, resolvedCommitsResult.entries, runSettings.inputs, runSettings.config);
   logger.stepFinish("Finished: Generate changelog release content");
   logger.debugStepStart("Starting: Create dynamic changelog string pattern context");
-  createDynamicChangelogStringPatternContext(changelogReleaseResult.release, changelogReleaseResult.releaseBody);
+  createDynamicChangelogStringPatternContext(changelogReleaseResult.release, changelogReleaseResult.releaseBody, changelogReleaseResult.releaseAlt, changelogReleaseResult.releaseBodyAlt);
   logger.debugStepFinish("Finished: Create dynamic changelog string pattern context");
   logger.stepStart("Starting: Prepare and collect changes data to commit");
-  const changesData = await prepareChangesToCommit(provider, runSettings.inputs, runSettings.config, {
-    changelogRelease: changelogReleaseResult.release,
-    nextVersion: format3(nextVersion)
-  });
+  const changesData = await prepareChangesToCommit(provider, runSettings.inputs, runSettings.config, nextVersion);
   logger.stepFinish("Finished: Prepare and collect changes data to commit");
   logger.stepStart("Starting: Commit changes");
   const commitResult = await commitChangesToBranch(provider, runSettings.inputs, runSettings.config, {
@@ -103132,8 +103786,8 @@ async function executeReviewPreparePhase(provider, currentRunSettings, bootstrap
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
-      version: nextVersion,
-      previousVersion
+      nextVersion,
+      currentVersion
     });
     logger.stepFinish("Finished: Resolve runtime config override (prepare post commands)");
   } else {
@@ -114871,7 +115525,7 @@ init_mod2();
 async function createRelease(provider, inputs, config) {
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
   const { tag } = config;
-  const { prerelease, draft, setLatest, titleTemplate, titleTemplatePath, bodyTemplate, bodyTemplatePath } = config.release;
+  const { prerelease, draft, setLatest, titleTemplate, titleTemplatePath, headerTemplate, headerTemplatePath, bodyTemplate, bodyTemplatePath, footerTemplate, footerTemplatePath } = config.release;
   let releaseNoteTitle;
   if (titleTemplatePath) {
     const releaseTitleTemplate = await getTextFile(sourceMode.overrides?.[titleTemplatePath] ?? sourceMode.mode, titleTemplatePath, {
@@ -114882,6 +115536,17 @@ async function createRelease(provider, inputs, config) {
     releaseNoteTitle = await resolveStringTemplate(releaseTitleTemplate);
   } else {
     releaseNoteTitle = await resolveStringTemplate(titleTemplate);
+  }
+  let releaseNoteHeader;
+  if (headerTemplatePath) {
+    const releaseHeaderTemplate = await getTextFile(sourceMode.overrides?.[headerTemplatePath] ?? sourceMode.mode, headerTemplatePath, {
+      provider,
+      workspacePath,
+      ref: triggerCommitHash
+    });
+    releaseNoteHeader = await resolveStringTemplate(releaseHeaderTemplate);
+  } else if (headerTemplate !== void 0) {
+    releaseNoteHeader = await resolveStringTemplate(headerTemplate);
   }
   let releaseNoteBody;
   if (bodyTemplatePath) {
@@ -114894,7 +115559,23 @@ async function createRelease(provider, inputs, config) {
   } else {
     releaseNoteBody = await resolveStringTemplate(bodyTemplate);
   }
-  const createdRelease = await provider.createRelease(await resolveStringTemplate(tag.nameTemplate), releaseNoteTitle, releaseNoteBody, {
+  let releaseNoteFooter;
+  if (footerTemplatePath) {
+    const releaseFooterTemplate = await getTextFile(sourceMode.overrides?.[footerTemplatePath] ?? sourceMode.mode, footerTemplatePath, {
+      provider,
+      workspacePath,
+      ref: triggerCommitHash
+    });
+    releaseNoteFooter = await resolveStringTemplate(releaseFooterTemplate);
+  } else if (footerTemplate !== void 0) {
+    releaseNoteFooter = await resolveStringTemplate(footerTemplate);
+  }
+  const fullReleaseBody = [
+    releaseNoteHeader,
+    releaseNoteBody,
+    releaseNoteFooter
+  ].filter(Boolean).join("\n\n");
+  const createdRelease = await provider.createRelease(await resolveStringTemplate(tag.nameTemplate), releaseNoteTitle, fullReleaseBody, {
     prerelease,
     draft,
     setLatest
@@ -114961,12 +115642,12 @@ async function createTag(provider, targetCommitHash, inputs, config) {
           break;
         case TaggerDateOptions.commitDate: {
           const commitData = await provider.getCommit(targetCommitHash);
-          taggerDate = commitData.committer.date.toISOString();
+          taggerDate = commitData.committer.date.toString();
           break;
         }
         case TaggerDateOptions.authorDate: {
           const commitData = await provider.getCommit(targetCommitHash);
-          taggerDate = commitData.author.date.toISOString();
+          taggerDate = commitData.author.date.toString();
           break;
         }
         default:
@@ -114990,21 +115671,22 @@ async function executeReviewPublishPhase(provider, currentRunSettings, associate
   const proposalChangelogRelease = extractChangelogFromProposal(associatedProposalForCommit);
   const changelogReleaseResult = await generatePublishChangelogReleaseContent(provider, proposalChangelogRelease ?? "", runSettings.inputs, runSettings.config);
   logger.stepFinish("Finished: Generate changelog release content");
-  logger.stepStart("Starting: Extract version from primary version file");
+  logger.stepStart("Starting: Extract next version from primary version file");
   const primaryVersionFile = getPrimaryVersionFile(runSettings.config.versionFiles);
-  const version2 = await getVersionSemVerFromVersionFile(primaryVersionFile, runSettings.inputs.sourceMode, provider, runSettings.inputs.workspacePath, runSettings.inputs.triggerCommitHash);
-  if (!version2) {
-    throw new Error("Failed to extract version from primary version file");
+  const nextVersion = await getVersionSemVerFromVersionFile(primaryVersionFile, runSettings.inputs.sourceMode, provider, runSettings.inputs.workspacePath, runSettings.inputs.triggerCommitHash);
+  if (!nextVersion) {
+    throw new Error("Failed to extract next version from primary version file");
   }
-  logger.stepFinish("Finished: Extract version from primary version file");
-  logger.debugStepStart("Starting: Create fixed version string pattern context");
-  await createFixedVersionStringPatternContext(version2, runSettings.config.tag.nameTemplate);
-  logger.debugStepFinish("Finished: Create fixed version string pattern context");
+  logger.stepFinish("Finished: Extract next version from primary version file");
+  logger.debugStepStart("Starting: Create fixed next version and tag string pattern context");
+  createFixedNextVersionStringPatternContext(nextVersion);
+  await createFixedTagStringPatternContext(runSettings.config.tag.nameTemplate);
+  logger.debugStepFinish("Finished: Create fixed next version and tag string pattern context");
   logger.debugStepStart("Starting: Create dynamic changelog string pattern contextt");
-  createDynamicChangelogStringPatternContext(changelogReleaseResult?.release, changelogReleaseResult?.releaseBody);
+  createDynamicChangelogStringPatternContext(changelogReleaseResult?.release, changelogReleaseResult?.releaseBody, changelogReleaseResult?.releaseAlt, changelogReleaseResult?.releaseBodyAlt);
   logger.debugStepFinish("Finished: Create dynamic changelog string pattern contextt");
   logger.debugStepStart("Starting: Export pre publish operation variables");
-  await exportPrePublishOperationVariables(provider, version2, associatedProposalForCommit.id);
+  await exportPrePublishOperationVariables(provider, nextVersion, associatedProposalForCommit.id);
   logger.debugStepFinish("Finished: Export pre publish operation variables");
   logger.stepStart("Starting: Execute publish pre commands");
   const preResult = await runCommands(runSettings.config.commandHooks.publish, "pre");
@@ -115026,7 +115708,7 @@ async function executeReviewPublishPhase(provider, currentRunSettings, associate
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
-      version: version2
+      nextVersion
     });
     logger.stepFinish("Finished: Resolve runtime config override (publish pre commands)");
   } else {
@@ -115076,7 +115758,7 @@ async function executeReviewPublishPhase(provider, currentRunSettings, associate
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
-      version: version2
+      nextVersion
     });
     logger.stepFinish("Finished: Resolve runtime config override (publish post commands)");
   } else {
@@ -115089,10 +115771,10 @@ async function executeReviewPublishPhase(provider, currentRunSettings, associate
 async function executeReviewStrategy(provider, currentRunSettings, bootstrapData) {
   let runSettings = currentRunSettings;
   if (!bootstrapData.associatedProposalForCommit) {
-    logger.subHeader("Review mode execution (prepare): Creating/Updating release proposal (PR, MR, etc.)...");
+    logger.header("Review mode execution (prepare): Creating/Updating release proposal");
     runSettings = await executeReviewPreparePhase(provider, runSettings, bootstrapData);
   } else if (runSettings.config.tag.createTag) {
-    logger.subHeader("Review mode execution (publish): Creating tag and release...");
+    logger.header("Review mode execution (publish): Creating tag and release");
     runSettings = await executeReviewPublishPhase(provider, runSettings, bootstrapData.associatedProposalForCommit);
   } else {
     logger.subHeader("Review mode execution (publish): Skip create tag and release (disabled in config)");
@@ -115101,7 +115783,6 @@ async function executeReviewStrategy(provider, currentRunSettings, bootstrapData
 }
 
 // src/workflows/auto.ts
-init_mod();
 init_logger();
 
 // src/tasks/auto-trigger-strategy.ts
@@ -115188,25 +115869,26 @@ async function executeAutoStrategy(provider, currentRunSettings, opts) {
     triggerContext
   } = opts;
   let runSettings = currentRunSettings;
-  logger.subHeader("Auto mode execution (prepare): Creating commit...");
-  logger.stepStart("Starting: Get previous version");
-  const previousVersion = await getPreviousVersion(provider, runSettings.inputs, runSettings.config);
-  logger.stepFinish("Finished: Get previous version");
+  logger.header("Auto mode execution (prepare): Creating commit...");
+  logger.stepStart("Starting: Get current version");
+  const currentVersion = await getCurrentVersion(provider, runSettings.inputs, runSettings.config);
+  logger.stepFinish("Finished: Get current version");
   logger.stepStart("Starting: Resolve commits from trigger to last release");
   const resolvedCommitsResult = await resolveCommitsFromTriggerToLastRelease(provider, runSettings.inputs, runSettings.config);
   logger.stepFinish("Finished: Resolve commits from trigger to last release");
   logger.stepStart("Starting: Calculate next version");
-  const nextVersion = calculateNextVersion(resolvedCommitsResult, runSettings.config, previousVersion);
+  const nextVersion = calculateNextVersion(resolvedCommitsResult, runSettings.config, currentVersion);
   logger.stepFinish("Finished: Calculate next version");
-  logger.stepStart("Starting: Compare calculated next version with previous version");
-  compareVersionToPreviousVersion(nextVersion, previousVersion);
-  logger.stepFinish("Finished: Compare calculated next version with previous version");
-  logger.debugStepStart("Starting: Create fixed version and previous version string pattern context");
-  createFixedPreviousVersionStringPatternContext(previousVersion);
-  await createFixedVersionStringPatternContext(nextVersion, runSettings.config.tag.nameTemplate);
-  logger.debugStepFinish("Finished: Create fixed version string pattern context");
+  logger.stepStart("Starting: Compare calculated next version with current version");
+  compareNextVersionToCurrentVersion(nextVersion, currentVersion);
+  logger.stepFinish("Finished: Compare calculated next version with current version");
+  logger.debugStepStart("Starting: Create fixed current version, next version and tag string pattern context");
+  createFixedCurrentVersionStringPatternContext(currentVersion);
+  createFixedNextVersionStringPatternContext(nextVersion);
+  await createFixedTagStringPatternContext(runSettings.config.tag.nameTemplate);
+  logger.debugStepFinish("Finished: Create fixed current version, next version and tag string pattern context");
   logger.debugStepStart("Starting: Export pre prepare operation variables");
-  await exportPrePrepareOperationVariables(provider, resolvedCommitsResult.entries, previousVersion, nextVersion);
+  await exportPrePrepareOperationVariables(provider, resolvedCommitsResult.entries, currentVersion, nextVersion);
   logger.debugStepFinish("Finished: Export pre prepare operation variables");
   logger.stepStart("Starting: Execute prepare pre commands");
   const preResult = await runCommands(runSettings.config.commandHooks.prepare, "pre");
@@ -115228,8 +115910,8 @@ async function executeAutoStrategy(provider, currentRunSettings, opts) {
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
-      version: nextVersion,
-      previousVersion
+      nextVersion,
+      currentVersion
     });
     logger.stepFinish("Finished: Resolve runtime config override (prepare pre commands)");
   } else {
@@ -115242,13 +115924,10 @@ async function executeAutoStrategy(provider, currentRunSettings, opts) {
   const changelogReleaseResult = await generatePrepareChangelogReleaseContent(provider, resolvedCommitsResult.entries, runSettings.inputs, runSettings.config);
   logger.stepFinish("Finished: Generate changelog release content");
   logger.debugStepStart("Starting: Create dynamic changelog string pattern context");
-  createDynamicChangelogStringPatternContext(changelogReleaseResult.release, changelogReleaseResult.releaseBody);
+  createDynamicChangelogStringPatternContext(changelogReleaseResult.release, changelogReleaseResult.releaseBody, changelogReleaseResult.releaseAlt, changelogReleaseResult.releaseBodyAlt);
   logger.debugStepFinish("Finished: Create dynamic changelog string pattern context");
   logger.stepStart("Starting: Prepare and collect changes data to commit");
-  const changesData = await prepareChangesToCommit(provider, runSettings.inputs, runSettings.config, {
-    changelogRelease: changelogReleaseResult.release,
-    nextVersion: format3(nextVersion)
-  });
+  const changesData = await prepareChangesToCommit(provider, runSettings.inputs, runSettings.config, nextVersion);
   logger.stepFinish("Finished: Prepare and collect changes data to commit");
   logger.stepStart("Starting: Commit changes");
   const commitResult = await commitChangesToBranch(provider, runSettings.inputs, runSettings.config, {
@@ -115283,15 +115962,15 @@ async function executeAutoStrategy(provider, currentRunSettings, opts) {
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
-      version: nextVersion,
-      previousVersion
+      nextVersion,
+      currentVersion
     });
     logger.stepFinish("Finished: Resolve runtime config override (prepare post commands)");
   } else {
     logger.stepSkip("Skipped: Resolve runtime config override (prepare post commands)");
   }
   if (runSettings.config.tag.createTag) {
-    logger.subHeader("Auto mode execution (publish): Creating tag and release...");
+    logger.header("Auto mode execution (publish): Creating tag and release...");
     logger.debugStepStart("Starting: Export pre publish operation variables");
     await exportPrePublishOperationVariables(provider, nextVersion);
     logger.debugStepFinish("Finished: Export pre publish operation variables");
@@ -115315,8 +115994,8 @@ async function executeAutoStrategy(provider, currentRunSettings, opts) {
         config: runSettings.config,
         rawConfig: runSettings.rawConfig,
         triggerBranchName: runSettings.inputs.triggerBranchName,
-        version: nextVersion,
-        previousVersion
+        nextVersion,
+        currentVersion
       });
       logger.stepFinish("Finished: Resolve runtime config override (publish pre commands)");
     } else {
@@ -115363,15 +116042,15 @@ async function executeAutoStrategy(provider, currentRunSettings, opts) {
         config: runSettings.config,
         rawConfig: runSettings.rawConfig,
         triggerBranchName: runSettings.inputs.triggerBranchName,
-        version: nextVersion,
-        previousVersion
+        nextVersion,
+        currentVersion
       });
       logger.stepFinish("Finished: Resolve runtime config override (publish post commands)");
     } else {
       logger.stepSkip("Skipped: Resolve runtime config override (publish post commands)");
     }
   } else {
-    logger.subHeader("Auto mode execution (publish): Skip create tag and release (disabled in config)");
+    logger.header("Auto mode execution (publish): Skip create tag and release (disabled in config)");
   }
   return runSettings;
 }
@@ -115438,10 +116117,10 @@ function registerTransformersToTemplateEngine(provider) {
       throw new Error(`Transformer "wrap_compare_tag" input requires a string, received ${typeof txt}`);
     }
     if (typeof tag1 !== "string") {
-      throw new Error(`Transformer "wrap_compare_tag" arg 1 requires a string, received ${typeof tag1}`);
+      throw new Error(`Transformer "wrap_compare_tag" arg 1 \`tag1\` requires a string, received ${typeof tag1}`);
     }
     if (typeof tag2 !== "string") {
-      throw new Error(`Transformer "wrap_compare_tag" arg 2 requires a string, received ${typeof tag2}`);
+      throw new Error(`Transformer "wrap_compare_tag" arg 2 \`tag2\` requires a string, received ${typeof tag2}`);
     }
     return `[${txt}](${provider.getCompareTagUrl(tag1, tag2)})`;
   });
@@ -115450,14 +116129,14 @@ function registerTransformersToTemplateEngine(provider) {
       throw new Error(`Filter "wrap_compare_latest_tag" input requires a string, received ${typeof txt}`);
     }
     if (typeof currentTag !== "string") {
-      throw new Error(`Filter "wrap_compare_latest_tag" arg 1 requires a string, received ${typeof currentTag}`);
+      throw new Error(`Filter "wrap_compare_latest_tag" arg 1 \`currentTag\` requires a string, received ${typeof currentTag}`);
     }
     if (skip !== void 0) {
       if (typeof skip !== "number") {
-        throw new Error(`Filter "wrap_compare_latest_tag" arg 2 requires a number (positive integer), received ${typeof skip}`);
+        throw new Error(`Filter "wrap_compare_latest_tag" arg 2 \`skip\` requires a number (positive integer), received ${typeof skip}`);
       }
       if (!Number.isInteger(skip) || skip < 0) {
-        throw new Error(`Filter "wrap_compare_latest_tag" arg 2 must be a positive integer, received ${skip}`);
+        throw new Error(`Filter "wrap_compare_latest_tag" arg 2 \`skip\` must be a positive integer, received ${skip}`);
       }
     }
     const url = await provider.getCompareTagUrlFromCurrentToLatest(currentTag, skip);
@@ -115469,7 +116148,7 @@ function registerTransformersToTemplateEngine(provider) {
     }
     const parsedCommitResult = safeParse(parseReferencesCommitSchema, commit);
     if (!parsedCommitResult.success) {
-      throw new Error(`Transformer "format_commit_references" arg 1 requires an object with shape { references: { prefix: string, issue: string }[] }, received ${JSON.stringify(commit, null, 2)}`);
+      throw new Error(`Transformer "format_commit_references" arg 1 \`commit\` requires an object with shape { references: { prefix: string, issue: string }[] }, received ${JSON.stringify(commit, null, 2)}`);
     }
     const { references } = parsedCommitResult.output;
     if (references.length === 0) return txt;
@@ -115525,6 +116204,9 @@ async function bootstrapOperation(provider, config, inputs) {
   if (config.mode === "review") {
     logger.stepStart("Starting: Get associated proposals");
     associatedProposalForCommit = await findMergedProposalByCommit(provider, workingBranchResult.name, inputs);
+    if (!triggerContext.commitHasAllowedType && !associatedProposalForCommit) {
+      throw new SafeExit("The trigger commit lacks an allowed type and has been verified not to be a merged release proposal");
+    }
     associatedProposalFromBranch = await findOpenProposal(provider, workingBranchResult.name, inputs);
     logger.stepFinish("Finished: Get associated proposals");
   }
