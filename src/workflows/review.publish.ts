@@ -101,8 +101,8 @@ export async function executeReviewPublishPhase(
 
   logger.stepStart("Starting: Execute publish pre commands");
   const preResult = await runCommands(
-    runSettings.config.commandHooks.publish,
-    "pre",
+    runSettings.config.commandHooks,
+    "prePublish",
   );
   if (preResult) {
     logger.stepFinish(
@@ -200,8 +200,8 @@ export async function executeReviewPublishPhase(
 
   logger.stepStart("Starting: Execute publish post commands");
   const postResult = await runCommands(
-    runSettings.config.commandHooks.publish,
-    "post",
+    runSettings.config.commandHooks,
+    "postPublish",
   );
   if (postResult) {
     logger.stepFinish(

@@ -2,7 +2,20 @@ import * as v from "@valibot/valibot";
 import { DOCS_EXT_REF_TOKEN } from "../../../token.ts";
 import { CommandSchema } from "./command.ts";
 
-export const CommandHookSchema = v.object({
+export const commandHookCommandsSchema = v.pipe(
+  v.optional(
+    v.union([CommandSchema, v.pipe(v.array(CommandSchema), v.nonEmpty())]),
+  ),
+  v.transform((input) => {
+    if (input !== undefined) return Array.isArray(input) ? input : [input];
+    return input;
+  }),
+);
+
+type _CommandHookCommandsInput = v.InferInput<typeof commandHookCommandsSchema>;
+type _CommandHookCommandsOutput = v.InferOutput<typeof commandHookCommandsSchema>;
+
+export const CommandHooksSchema = v.object({
   timeout: v.pipe(
     v.optional(
       v.pipe(
@@ -18,7 +31,7 @@ export const CommandHookSchema = v.object({
     ),
     v.metadata({
       description:
-        "Base default timeout (ms) for all commands in `pre` and `post`, can be overridden per command.\n" +
+        "Default timeout (ms) for all command hooks, can be overridden per command.\n" +
         "Use Infinity to never timeout (not recommended).\n" +
         "Default: 60000 (1 min)",
     }),
@@ -27,45 +40,76 @@ export const CommandHookSchema = v.object({
     v.optional(v.boolean(), false),
     v.metadata({
       description:
-        "Base default behavior for all commands in `pre` and `post`, can be overridden per command.\n" +
+        "Default behavior for all command hooks on error, can be overridden per command.\n" +
         "Default: false",
     }),
   ),
 
-  pre: v.pipe(
-    v.optional(
-      v.union([CommandSchema, v.pipe(v.array(CommandSchema), v.nonEmpty())]),
-    ),
-    v.transform((input) => {
-      if (input !== undefined) return Array.isArray(input) ? input : [input];
-      return input;
-    }),
+  preRun: v.pipe(
+    commandHookCommandsSchema,
     v.metadata({
-      description: "Commands to run before the operation.\n" +
+      description:
+        "Commands to run before the main operation. Each command runs from the repository root.\n" +
         "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
-        `List of exposed env variables: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
+        `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),
-  post: v.pipe(
-    v.optional(
-      v.union([CommandSchema, v.pipe(v.array(CommandSchema), v.nonEmpty())]),
-    ),
-    v.transform((input) => {
-      if (input !== undefined) return Array.isArray(input) ? input : [input];
-      return input;
-    }),
+
+  prePrepare: v.pipe(
+    commandHookCommandsSchema,
     v.metadata({
-      description: "Commands to run after the operation.\n" +
+      description:
+        "Commands to run before the proposal (PR, MR, ...) phase. Each command runs from the repository root.\n" +
         "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
-        `List of exposed env variables: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
+        `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
+    }),
+  ),
+  postPrepare: v.pipe(
+    commandHookCommandsSchema,
+    v.metadata({
+      description:
+        "Commands to run after the proposal (PR, MR, ...) phase. Each command runs from the repository root.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
+    }),
+  ),
+
+  prePublish: v.pipe(
+    commandHookCommandsSchema,
+    v.metadata({
+      description:
+        "Commands to run before the release phase. Each command runs from the repository root.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
+    }),
+  ),
+  postPublish: v.pipe(
+    commandHookCommandsSchema,
+    v.metadata({
+      description:
+        "Commands to run after the release phase. Each command runs from the repository root.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
+    }),
+  ),
+
+  postRun: v.pipe(
+    commandHookCommandsSchema,
+    v.metadata({
+      description:
+        "Commands to run after the main operation. Each command runs from the repository root.\n" +
+        "These commands will always run regardless of operation outcome (success, skipped or failure). " +
+        "It is recommended to check the outcome export variable if your script should only run under specific conditions.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),
 });
 
-type _CommandHookInput = v.InferInput<typeof CommandHookSchema>;
-export type CommandHookOutput = v.InferOutput<typeof CommandHookSchema>;
+type _CommandHooksInput = v.InferInput<typeof CommandHooksSchema>;
+export type CommandHooksOutput = v.InferOutput<typeof CommandHooksSchema>;
 
 export type CommandHookKind = Exclude<
-  keyof CommandHookOutput,
+  keyof CommandHooksOutput,
   "timeout" | "continueOnError"
 >;

@@ -109,8 +109,8 @@ export async function executeReviewPreparePhase(
 
   logger.stepStart("Starting: Execute prepare pre commands");
   const preResult = await runCommands(
-    runSettings.config.commandHooks.prepare,
-    "pre",
+    runSettings.config.commandHooks,
+    "prePrepare",
   );
   if (preResult) {
     logger.stepFinish(
@@ -252,8 +252,8 @@ export async function executeReviewPreparePhase(
 
   logger.stepStart("Starting: Execute prepare post commands");
   const postResult = await runCommands(
-    runSettings.config.commandHooks.prepare,
-    "post",
+    runSettings.config.commandHooks,
+    "postPrepare",
   );
   if (postResult) {
     logger.stepFinish(

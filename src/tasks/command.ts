@@ -1,23 +1,25 @@
 import { spawn } from "node:child_process";
 import process from "node:process";
 import { taskLogger } from "./logger.ts";
-import { isCommandHookValid } from "../utils/validations/command.ts";
 import type {
   CommandHookKind,
-  CommandHookOutput,
+  CommandHooksOutput,
 } from "../schemas/configs/modules/components/command-hook.ts";
 import { failedNonCriticalTasks } from "../main.ts";
 
 /** @throws if `continueOnError` is false and command fails */
 export async function runCommands(
-  commandHook: CommandHookOutput | undefined,
+  commandHooks: CommandHooksOutput | undefined,
   kind: CommandHookKind,
 ): Promise<string | undefined> {
-  if (!isCommandHookValid(commandHook, kind)) return undefined;
+  const commands = commandHooks?.[kind];
+  if (!commands || commands.length === 0) return undefined;
+  if (!commands.some((cmd) => Boolean(cmd.cmd))) {
+    return undefined;
+  }
 
-  const commands = commandHook[kind];
-  const baseTimeout = commandHook.timeout;
-  const baseContinueOnError = commandHook.continueOnError;
+  const baseTimeout = commandHooks.timeout;
+  const baseContinueOnError = commandHooks.continueOnError;
 
   let succeedCount = 0;
   let skippedCount = 0;

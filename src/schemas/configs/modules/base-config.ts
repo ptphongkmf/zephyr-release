@@ -3,7 +3,7 @@ import { DOCS_EXT_REF_TOKEN } from "../../token.ts";
 import { TimeZoneSchema } from "./components/timezone.ts";
 import { CommitTypeSchema } from "./components/commit-type.ts";
 import { VersionFileSchema } from "./components/version-file.ts";
-import { CommandHookSchema } from "./components/command-hook.ts";
+import { CommandHooksSchema } from "./components/command-hook.ts";
 import { SEMVER_REGEX } from "../../../constants/semver.ts";
 import { DEFAULT_COMMIT_TYPES } from "../../../constants/defaults/commit.ts";
 import { transformObjKeyToKebabCase } from "../../../utils/transformers/object.ts";
@@ -12,6 +12,8 @@ import { RuntimeConfigOverrideSchema } from "./components/runtime-config-overrid
 import { ExecutionModes } from "../../../constants/execution-modes.ts";
 import { ReviewConfigSchema } from "./review-config.ts";
 import { AutoConfigSchema } from "./auto-config.ts";
+
+
 
 export const BaseCoreConfigSchema = v.object({
   name: v.pipe(
@@ -136,37 +138,7 @@ type _BaseConfigOutput = v.InferOutput<typeof BaseCoreConfigSchema>;
 
 export const BaseLifecycleConfigSchema = v.object({
   commandHooks: v.pipe(
-    v.optional(
-      v.object({
-        base: v.pipe(
-          v.optional(CommandHookSchema, {}),
-          v.metadata({
-            description:
-              "Pre/post commands to run around the main operation. Each command runs from the repository root.\n" +
-              "Post commands will always run regardless of operation outcome (success, skipped or failure). " +
-              "It is recommended to check the outcome export variable if your script should only run under specific conditions.\n" +
-              `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
-          }),
-        ),
-        prepare: v.pipe(
-          v.optional(CommandHookSchema, {}),
-          v.metadata({
-            description:
-              "Pre/post commands to run around the proposal (PR, MR, ...) operation. Each command runs from the repository root.\n" +
-              `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
-          }),
-        ),
-        publish: v.pipe(
-          v.optional(CommandHookSchema, {}),
-          v.metadata({
-            description:
-              "Pre/post commands to run around the release operation. Each command runs from the repository root.\n" +
-              `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
-          }),
-        ),
-      }),
-      {},
-    ),
+    v.optional(CommandHooksSchema, {}),
     v.metadata({
       description: "Command hooks to run at different phases of the operation.",
     }),
