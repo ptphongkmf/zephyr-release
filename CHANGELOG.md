@@ -1,5 +1,55 @@
 # Changelog
 
+<br>
+
+<!-- CHANGELOG-BODY-START -->
+## [0.10.0](https://github.com/ptphongkmf/zephyr-release/compare/v0.9.0...v0.10.0) (2026-05-23) <!-- timezone: Asia/Ho_Chi_Minh -->
+
+### Features
+
+- add `fileReleaseTemplate` to changelog config to make use of 3d0ed08 ([cf828f7](https://github.com/ptphongkmf/zephyr-release/commit/cf828f719643ef13f3a10264a535f65a9769291e))
+- add `releaseSectionHeadingTemplate` option to changelog config ([ce8ead5](https://github.com/ptphongkmf/zephyr-release/commit/ce8ead5775da89b036773b08efa3d8ea211bb933))
+- add alternative templates for changelog config ([bf12ed9](https://github.com/ptphongkmf/zephyr-release/commit/bf12ed92770057aa1d757bbb0c160c10757d0598))
+- add author and commiter name, email, date to changelog entry special patterns ([da89103](https://github.com/ptphongkmf/zephyr-release/commit/da89103167b7ff7aa4198a44c90a08d0c1a83c78))
+- add changelog `commitGroupMode` and `commitSortOrder` options ([f44cc37](https://github.com/ptphongkmf/zephyr-release/commit/f44cc37c87bcf424e7f81f73b0abe19eb2b81bcf))
+- add default value for `releaseSectionHeadingTemplateAlt` and *path variant for section headings ([bb15396](https://github.com/ptphongkmf/zephyr-release/commit/bb15396b958da6ce26223da423d30c032809a328))
+- add header and footer options to `release` config ([473b8f0](https://github.com/ptphongkmf/zephyr-release/commit/473b8f0a685d3e1a4fa964e23566c4361a9ee6dd))
+- change `bumpPatchForMinorPreStable` default value to `true` ([0de0177](https://github.com/ptphongkmf/zephyr-release/commit/0de017796b45dc9a2473140a92a3724efe267871))
+- change default tag type config from `annotated` to `lightweight` ([2098e6e](https://github.com/ptphongkmf/zephyr-release/commit/2098e6ee00fc89fe6381dc1453b6d8b6a9540ad8))
+- change default value for `headerTemplate` in review config ([d894414](https://github.com/ptphongkmf/zephyr-release/commit/d894414ec17409611850a5d6539dda1e6f812fc2))
+- handle bare `0.0.0` current version in `calculateNextVersion()` ([c82667e](https://github.com/ptphongkmf/zephyr-release/commit/c82667e8b778ebf072e20f6e6e46ad0ce9cc0a31))
+- improve description for `commandHooks` ([e727bf9](https://github.com/ptphongkmf/zephyr-release/commit/e727bf91a2ac637c1ab732a698bd3bc8188eb3da))
+- rework resolve commit logic ([1c7efd0](https://github.com/ptphongkmf/zephyr-release/commit/1c7efd02eab544fb3e3fe30f3b915c569830f6e3))
+- standardize version terminology to `currentVersion` and `nextVersion` ([86b55cc](https://github.com/ptphongkmf/zephyr-release/commit/86b55cc8db50d6147562ad8bc6d016a5c9cbc516))
+- support wider range of revert commit formats ([93e55c9](https://github.com/ptphongkmf/zephyr-release/commit/93e55c9db01c2b1802524213f2388b2be705ae1d))
+- update changelog entry, proposal header and footer default templates ([317509f](https://github.com/ptphongkmf/zephyr-release/commit/317509fbd71def1bbff1e4c15fceb7e8d17ff0e3))
+- update default value for `commitTypes` ([2146ef8](https://github.com/ptphongkmf/zephyr-release/commit/2146ef809dad1b75472c5cf36fa392cc572afb29))
+- update default value for `countBreakingAs` ([93ad3fd](https://github.com/ptphongkmf/zephyr-release/commit/93ad3fdb8d053bc02a0ac3419770f6c8fc40abf7))
+- update default value for `fileHeaderTemplate` again ([e5dc532](https://github.com/ptphongkmf/zephyr-release/commit/e5dc5326f5bc6179f99e5861857fd6ea90c5a84c))
+- update default value for commit `headerTemplate` and proposal `titleTemplate` ([0b9c750](https://github.com/ptphongkmf/zephyr-release/commit/0b9c7502d0244723e7831995f86453b7a0025584))
+- update default value for proposal and commit header ([9e41021](https://github.com/ptphongkmf/zephyr-release/commit/9e410217e703d5dda5987d797e6eded00dd048f7))
+- update default value of `commitGroupMode` ([adaaade](https://github.com/ptphongkmf/zephyr-release/commit/adaaade2f6652dc974ee42c151101c046f4717fd))
+- update header and footer default templates in review config ([b349fae](https://github.com/ptphongkmf/zephyr-release/commit/b349fae8cdd485a33a84ab1e75f955fc5810cb9c))
+
+### Bug Fixes
+
+- add missing spread for `additionalContext` in `resolveStringTemplate` ([cb3ee06](https://github.com/ptphongkmf/zephyr-release/commit/cb3ee06882c2991c8f139137421da86151a373f3))
+- allow `undefined` to pass through in `jsonValueNormalizer()` ([bee01b7](https://github.com/ptphongkmf/zephyr-release/commit/bee01b74d1a3735897f99bd1dd0fea1ca8422e54))
+- correct default value for `releaseHeaderTemplate` in changelog config ([86c56af](https://github.com/ptphongkmf/zephyr-release/commit/86c56af7c8ac11bd8ab4cb6f4b530384771fb923))
+- handle first release edge case in `wrap_compare_latest_tag` transformer ([3d76159](https://github.com/ptphongkmf/zephyr-release/commit/3d76159bc7219161793e919ce2fcfc9126e0278d))
+- only check commit bot signature in "auto" mode ([2079c29](https://github.com/ptphongkmf/zephyr-release/commit/2079c2902246d0ef216388c2df4675c12ace113f))
+- prevent early exit on merged proposal commits in bootstrap ([92681b0](https://github.com/ptphongkmf/zephyr-release/commit/92681b0ce92e2027915470907993d52601b48099))
+- replace Temporal API from f44cc37 with Date ([dada490](https://github.com/ptphongkmf/zephyr-release/commit/dada490304dfadb0fa7656bd2c19a87f6dbcc3fc))
+- resolve race condition in associated PR lookup for the GitHub API ([35a8b01](https://github.com/ptphongkmf/zephyr-release/commit/35a8b01009640b732725261f93b19843f905fce2))
+- rework logic for finding commit from trigger hash to latest tagged ([bb7a5d8](https://github.com/ptphongkmf/zephyr-release/commit/bb7a5d87a1ff0844652427a23c822162b4062731))
+- show hidden `commitTypes` in changelog if breaking ([d5f59c3](https://github.com/ptphongkmf/zephyr-release/commit/d5f59c32f57fde9e4afd0b80d378a6c465b1380a))
+- stop major and minor pre-stable changes from downgrading twice ([7c9b15e](https://github.com/ptphongkmf/zephyr-release/commit/7c9b15ec333c8f8d098bfb6c9dfc4d52a3232793))
+<!-- CHANGELOG-BODY-END -->
+
+<!-- ARCHIVED-CONTENT -->
+---
+# Changelog
+
 ## [0.9.0](https://github.com/Pandoriux/zephyr-release/compare/v0.8.0...v0.9.0) (2026-04-06)
 
 ### Features

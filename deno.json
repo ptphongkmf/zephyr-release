@@ -1,6 +1,6 @@
 {
   "name": "zephyr-release",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Zephyr Release is yet another automated tool for version bumping, changelog generation, and release publishing.",
   "license": "Apache-2.0",
 
