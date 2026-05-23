@@ -42,6 +42,7 @@ export const CommandHookSchema = v.object({
     }),
     v.metadata({
       description: "Commands to run before the operation.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
         `List of exposed env variables: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),
@@ -55,6 +56,7 @@ export const CommandHookSchema = v.object({
     }),
     v.metadata({
       description: "Commands to run after the operation.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
         `List of exposed env variables: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),

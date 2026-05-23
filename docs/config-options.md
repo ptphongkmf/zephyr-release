@@ -1532,10 +1532,10 @@ Base default behavior for all commands in `pre` and `post`, can be overridden pe
 
 ##### > base > pre (Optional)
 
-Type: `(string | object)[]`
+Type: `string | object | (string | object)[]`
 
 Commands to run before the operation.  
-Each command can be either a `string` or an `object`.  
+Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.  
 List of exposed env variables: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1568,10 +1568,10 @@ Continue or stop the process on commands error.
 
 ##### > base > post (Optional)
 
-Type: `(string | object)[]`
+Type: `string | object | (string | object)[]`
 
 Commands to run after the operation.  
-Each command can be either a `string` or an `object`.  
+Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.  
 List of exposed env variables: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
