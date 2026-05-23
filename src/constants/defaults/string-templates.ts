@@ -28,11 +28,11 @@ export const DEFAULT_RELEASE_SECTION_HEADING_TEMPLATE_ALT =
 
 // Commit
 export const DEFAULT_COMMIT_HEADER_TEMPLATE =
-  liquid`chore(release): v{{ nextVersion }}`;
+  liquid`chore: release v{{ nextVersion }}`;
 
 // Proposal (PR, MR, ...)
 export const DEFAULT_PROPOSAL_TITLE_TEMPLATE =
-  liquid`chore(release): v{{ nextVersion }}`;
+  liquid`chore: release v{{ nextVersion }}`;
 
 export const DEFAULT_PROPOSAL_HEADER_TEMPLATE = "# 🤖 Release Proposal";
 
