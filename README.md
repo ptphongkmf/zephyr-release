@@ -24,6 +24,15 @@ Zephyr Release is designed to integrate seamlessly into any environment, providi
   - **Prefer an agnostic, readable style?** The [kebab-case schema](./schemas/v1/config-v1.kebab.json) is perfect for a clean, language-neutral look.
 - **Dynamic Config Overrides:** Need to change settings on the fly? You can inject configuration overrides directly from your CI/CD workflow or generate them at runtime using custom scripts. [Learn more about dynamic overrides](#dynamic-configuration-overrides).
 
+### Extensible Workflows with Hooks
+
+Zephyr Release isn't a black box. You can easily plug into almost every step of the release process to run your own custom scripts, tests, or notifications using [`command-hooks`](./docs/command-hooks.md).
+
+- **Rich Execution Flow:** Whether you need to run something right before a proposal is made ([`pre-prepare`](./docs/config-options.md#command-hooks--pre-prepare-optional)), after a release is published ([`post-publish`](./docs/config-options.md#command-hooks--post-publish-optional)), or just a general cleanup at the very end ([`post-run`](./docs/config-options.md#command-hooks--post-run-optional)), there's a hook for that.
+- **Context Aware:** Your scripts don't run blind. Each hook gets access to a rich set of [environment variables](./docs/export-variables.md) like the next version, commit hashes, or dynamic template contexts to help your scripts do exactly what you need.
+
+[See the full list of available hooks here](./docs/command-hooks.md).
+
 ## Getting Started
 
 ### First, a config file
@@ -173,7 +182,7 @@ Sometimes a static configuration file is not enough. For example, you might want
 **1. Workflow Input Override:** You can generate configuration data in an earlier step of your CI/CD workflow and pass it directly into the operation using the [`config-override`](./docs/input-options.md#config-override-optional) input. This is great if your workflow already knows what needs to change before Zephyr Release even starts.
 
 **2. Runtime File Override:** If you need to calculate settings *during* the release process itself, you can use [`runtime-config-override`](./docs/config-options.md#runtime-config-override-optional).
-By pairing it with various [`command-hooks`](./docs/config-options.md#command-hooks-optional) options, you can run a custom script that generates a temporary JSON file on the runner. Zephyr Release will automatically read this file and merge it into your configuration after any of `base`, `prepare`, or `publish` hooks run.
+By pairing it with various [`command-hooks`](./docs/config-options.md#command-hooks-optional) options, you can run a custom script that generates a temporary JSON file on the runner. Zephyr Release will automatically read this file and merge it into your configuration after any command hook runs.
 
 ## Force a Specific Version
 

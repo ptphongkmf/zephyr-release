@@ -153,19 +153,22 @@ Some example [config files](./examples/).
     - [release \> footer-template-path (Optional)](#release--footer-template-path-optional)
     - [release \> assets (Optional)](#release--assets-optional)
   - [command-hooks (Optional)](#command-hooks-optional)
-    - [command-hooks \> base (Optional)](#command-hooks--base-optional)
-      - [\> base \> timeout (Optional)](#-base--timeout-optional)
-      - [\> base \> continue-on-error (Optional)](#-base--continue-on-error-optional)
-      - [\> base \> pre (Optional)](#-base--pre-optional)
-        - [\> pre \> cmd (Required)](#-pre--cmd-required)
-        - [\> pre \> timeout (Optional)](#-pre--timeout-optional)
-        - [\> pre \> continue-on-error (Optional)](#-pre--continue-on-error-optional)
-      - [\> base \> post (Optional)](#-base--post-optional)
-        - [\> post \> same properties as command-hooks \> base \> pree\`](#-post--same-properties-as-command-hooks--base--pree)
-    - [command-hooks \> prepare (Optional)](#command-hooks--prepare-optional)
-      - [\> prepare \> same properties as command-hooks \> basee\`](#-prepare--same-properties-as-command-hooks--basee)
-    - [command-hooks \> publish (Optional)](#command-hooks--publish-optional)
-      - [\> publish \> same properties as command-hooks \> basee\`](#-publish--same-properties-as-command-hooks--basee)
+    - [command-hooks \> timeout (Optional)](#command-hooks--timeout-optional)
+    - [command-hooks \> continue-on-error (Optional)](#command-hooks--continue-on-error-optional)
+    - [command-hooks \> pre-run (Optional)](#command-hooks--pre-run-optional)
+      - [\> pre-run \> cmd (Required)](#-pre-run--cmd-required)
+      - [\> pre-run \> timeout (Optional)](#-pre-run--timeout-optional)
+      - [\> pre-run \> continue-on-error (Optional)](#-pre-run--continue-on-error-optional)
+    - [command-hooks \> pre-prepare (Optional)](#command-hooks--pre-prepare-optional)
+      - [\> pre-prepare \> same properties as command-hooks \> pre-runn\`](#-pre-prepare--same-properties-as-command-hooks--pre-runn)
+    - [command-hooks \> post-prepare (Optional)](#command-hooks--post-prepare-optional)
+      - [\> post-prepare \> same properties as command-hooks \> pre-runn\`](#-post-prepare--same-properties-as-command-hooks--pre-runn)
+    - [command-hooks \> pre-publish (Optional)](#command-hooks--pre-publish-optional)
+      - [\> pre-publish \> same properties as command-hooks \> pre-runn\`](#-pre-publish--same-properties-as-command-hooks--pre-runn)
+    - [command-hooks \> post-publish (Optional)](#command-hooks--post-publish-optional)
+      - [\> post-publish \> same properties as command-hooks \> pre-runn\`](#-post-publish--same-properties-as-command-hooks--pre-runn)
+    - [command-hooks \> post-run (Optional)](#command-hooks--post-run-optional)
+      - [\> post-run \> same properties as command-hooks \> pre-runn\`](#-post-run--same-properties-as-command-hooks--pre-runn)
   - [runtime-config-override (Optional)](#runtime-config-override-optional)
     - [runtime-config-override \> path (Required)](#runtime-config-override--path-required)
     - [runtime-config-override \> format (Optional)](#runtime-config-override--format-optional)
@@ -1496,51 +1499,41 @@ List of local asset path(s) to attach to the release. Accepts a single string or
 ### command-hooks (Optional)
 
 Type: `object`  
-**Properties:** [`base`](#command-hooks--base-optional), [`prepare`](#command-hooks--prepare-optional), [`publish`](#command-hooks--publish-optional)
+**Properties:** [`timeout`](#command-hooks--timeout-optional), [`continue-on-error`](#command-hooks--continue-on-error-optional), [`pre-run`](#command-hooks--pre-run-optional), [`pre-prepare`](#command-hooks--pre-prepare-optional), [`post-prepare`](#command-hooks--post-prepare-optional), [`pre-publish`](#command-hooks--pre-publish-optional), [`post-publish`](#command-hooks--post-publish-optional), [`post-run`](#command-hooks--post-run-optional)
 
 Command hooks to run at different phases of the operation. Each command runs from the repository root.
 
 [⬆ Back to top](#table-of-content)
 
-#### command-hooks > base (Optional)
-
-Type: `object`
-
-Pre/post commands to run around the main operation. Each command runs from the repository root.  
-Post commands will always run regardless of operation outcome (success, skipped or failure). It is recommended to check the outcome export variable if your script should only run under specific conditions.  
-Available variables that cmds can use: see [Export operation variables](./export-variables.md).
-
-[⬆ Back to top](#table-of-content)
-
-##### > base > timeout (Optional)
+#### command-hooks > timeout (Optional)
 
 Type: `number | string`  
 Default: `60000` (1 min)
 
-Base default timeout (ms) for all commands in `pre` and `post`, can be overridden per command. Use `Infinity`, `"Infinity"`, or `"infinity"` to never timeout (not recommended).
+Default timeout (ms) for all command hooks, can be overridden per command. Use `Infinity`, `"Infinity"`, or `"infinity"` to never timeout (not recommended).
 
 [⬆ Back to top](#table-of-content)
 
-##### > base > continue-on-error (Optional)
+#### command-hooks > continue-on-error (Optional)
 
 Type: `boolean`  
 Default: `false`
 
-Base default behavior for all commands in `pre` and `post`, can be overridden per command.
+Default behavior for all command hooks on error, can be overridden per command.
 
 [⬆ Back to top](#table-of-content)
 
-##### > base > pre (Optional)
+#### command-hooks > pre-run (Optional)
 
 Type: `string | object | (string | object)[]`
 
-Commands to run before the operation.  
+Commands to run before the main operation. Each command runs from the repository root.  
 Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.  
-List of exposed env variables: see [Export operation variables](./export-variables.md).
+Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
 
-###### > pre > cmd (Required)
+##### > pre-run > cmd (Required)
 
 Type: `string`
 
@@ -1548,7 +1541,7 @@ The command string to execute.
 
 [⬆ Back to top](#table-of-content)
 
-###### > pre > timeout (Optional)
+##### > pre-run > timeout (Optional)
 
 Type: `number | string`  
 Default: Base default timeout
@@ -1557,7 +1550,7 @@ Timeout in milliseconds, use Infinity to never timeout (not recommended).
 
 [⬆ Back to top](#table-of-content)
 
-###### > pre > continue-on-error (Optional)
+##### > pre-run > continue-on-error (Optional)
 
 Type: `boolean`  
 Default: Base default continue-on-error
@@ -1566,63 +1559,104 @@ Continue or stop the process on commands error.
 
 [⬆ Back to top](#table-of-content)
 
-##### > base > post (Optional)
+#### command-hooks > pre-prepare (Optional)
 
 Type: `string | object | (string | object)[]`
 
-Commands to run after the operation.  
+Commands to run before the proposal (PR, MR, ...) phase. Each command runs from the repository root.  
 Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.  
-List of exposed env variables: see [Export operation variables](./export-variables.md).
-
-[⬆ Back to top](#table-of-content)
-
-###### > post > same properties as command-hooks > base > pree`
-
-Same as [`command-hooks > base > pre`](#-base--pre-optional).
-
-- [`cmd`](#-pre--cmd-required)
-- [`timeout`](#-pre--timeout-optional)
-- [`continue-on-error`](#-pre--continue-on-error-optional)
-
-[⬆ Back to top](#table-of-content)
-
-#### command-hooks > prepare (Optional)
-
-Type: `object`
-
-Pre/post commands to run around the proposal (PR, MR, ...) operation. Each command runs from the repository root.  
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
 
-##### > prepare > same properties as command-hooks > basee`
+##### > pre-prepare > same properties as command-hooks > pre-runn`
 
-Same as [`command-hooks > base`](#command-hooks--base-optional).
+Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
-- [`timeout`](#-base--timeout-optional)
-- [`continue-on-error`](#-base--continue-on-error-optional)
-- [`pre`](#-base--pre-optional)
-- [`post`](#-base--post-optional)
+- [`cmd`](#-pre-run--cmd-required)
+- [`timeout`](#-pre-run--timeout-optional)
+- [`continue-on-error`](#-pre-run--continue-on-error-optional)
 
 [⬆ Back to top](#table-of-content)
 
-#### command-hooks > publish (Optional)
+#### command-hooks > post-prepare (Optional)
 
-Type: `object`
+Type: `string | object | (string | object)[]`
 
-Pre/post commands to run around the release operation. Each command runs from the repository root.  
+Commands to run after the proposal (PR, MR, ...) phase. Each command runs from the repository root.  
+Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.  
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
 
-##### > publish > same properties as command-hooks > basee`
+##### > post-prepare > same properties as command-hooks > pre-runn`
 
-Same as [`command-hooks > base`](#command-hooks--base-optional).
+Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
-- [`timeout`](#-base--timeout-optional)
-- [`continue-on-error`](#-base--continue-on-error-optional)
-- [`pre`](#-base--pre-optional)
-- [`post`](#-base--post-optional)
+- [`cmd`](#-pre-run--cmd-required)
+- [`timeout`](#-pre-run--timeout-optional)
+- [`continue-on-error`](#-pre-run--continue-on-error-optional)
+
+[⬆ Back to top](#table-of-content)
+
+#### command-hooks > pre-publish (Optional)
+
+Type: `string | object | (string | object)[]`
+
+Commands to run before the release phase. Each command runs from the repository root.  
+Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.  
+Available variables that cmds can use: see [Export operation variables](./export-variables.md).
+
+[⬆ Back to top](#table-of-content)
+
+##### > pre-publish > same properties as command-hooks > pre-runn`
+
+Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
+
+- [`cmd`](#-pre-run--cmd-required)
+- [`timeout`](#-pre-run--timeout-optional)
+- [`continue-on-error`](#-pre-run--continue-on-error-optional)
+
+[⬆ Back to top](#table-of-content)
+
+#### command-hooks > post-publish (Optional)
+
+Type: `string | object | (string | object)[]`
+
+Commands to run after the release phase. Each command runs from the repository root.  
+Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.  
+Available variables that cmds can use: see [Export operation variables](./export-variables.md).
+
+[⬆ Back to top](#table-of-content)
+
+##### > post-publish > same properties as command-hooks > pre-runn`
+
+Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
+
+- [`cmd`](#-pre-run--cmd-required)
+- [`timeout`](#-pre-run--timeout-optional)
+- [`continue-on-error`](#-pre-run--continue-on-error-optional)
+
+[⬆ Back to top](#table-of-content)
+
+#### command-hooks > post-run (Optional)
+
+Type: `string | object | (string | object)[]`
+
+Commands to run after the main operation. Each command runs from the repository root.  
+These commands will always run regardless of operation outcome (success, skipped or failure). It is recommended to check the outcome export variable if your script should only run under specific conditions.  
+Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.  
+Available variables that cmds can use: see [Export operation variables](./export-variables.md).
+
+[⬆ Back to top](#table-of-content)
+
+##### > post-run > same properties as command-hooks > pre-runn`
+
+Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
+
+- [`cmd`](#-pre-run--cmd-required)
+- [`timeout`](#-pre-run--timeout-optional)
+- [`continue-on-error`](#-pre-run--continue-on-error-optional)
 
 [⬆ Back to top](#table-of-content)
 
@@ -1679,7 +1713,7 @@ A discriminated union based on the `type` field. Defines the strategy for automa
 - `token` (Required): The conventional commit footer token to look for (e.g., `"Autorelease"`).
 - `value` (Optional): The specific value the footer token must have (e.g., `"true"`). If omitted, only the token's presence is required.
 
-**Type: `"flag"`** - Triggers a release based on a strict boolean flag. Ideal for dynamic configuration overrides and custom script evaluations. The strategy will be evaluated after the cmd hooks `base.pre` and `prepare.pre` run.
+**Type: `"flag"`** - Triggers a release based on a strict boolean flag. Ideal for dynamic configuration overrides and custom script evaluations. The strategy will be evaluated after the cmd hooks `pre-run` and `pre-prepare` run.
 
 - `type` (Required): `"flag"`
 - `value` (Optional): A hardcoded boolean flag to explicitly force or skip the release trigger. Default: `false`

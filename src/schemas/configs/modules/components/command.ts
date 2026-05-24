@@ -24,14 +24,14 @@ export const CommandSchema = v.pipe(
         v.metadata({
           description:
             "Timeout in milliseconds, use Infinity to never timeout (not recommended).\n" +
-            "Defaults to `commandHook` base `timeout` value",
+            "Defaults to `commandHooks` root `timeout` value",
         }),
       ),
       continueOnError: v.pipe(
         v.optional(v.boolean()),
         v.metadata({
           description: "Continue or stop the process on commands error.\n" +
-            "Defaults to `commandHook` base `continueOnError` value",
+            "Defaults to `commandHooks` root `continueOnError` value",
         }),
       ),
     }),
