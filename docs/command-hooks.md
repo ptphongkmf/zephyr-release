@@ -20,23 +20,39 @@ This phase runs when creating or updating a release proposal.
 
 2. **Run [`command-hooks.pre-run`](./config-options.md#command-hooks--pre-run-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
 
-3. Calculate the next version and resolve commits.
+3. Parse commits.
 
-4. Export pre-prepare operation variables.
+4. Export pre-calculate-version operation variables.
 
-5. **Run [`command-hooks.pre-prepare`](./config-options.md#command-hooks--pre-prepare-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
+5. **Run [`command-hooks.pre-calculate-version`](./config-options.md#command-hooks--pre-calculate-version-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
 
-6. Generate changelog release content and prepare changes.
+6. Calculate the next version.
 
-7. Commit changes to the working branch and create/update the proposal.
+7. Export post-calculate-version operation variables.
 
-8. Export post-prepare operation variables.
+8. **Run [`command-hooks.post-calculate-version`](./config-options.md#command-hooks--post-calculate-version-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
 
-9. **Run [`command-hooks.post-prepare`](./config-options.md#command-hooks--post-prepare-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
+9. Generate changelog release content and prepare changes in working directory.
 
-10. Export final operation variables.
+10. Export pre-commit operation variables.
 
-11. **Run [`command-hooks.post-run`](./config-options.md#command-hooks--post-run-optional) commands.**
+11. **Run [`command-hooks.pre-commit`](./config-options.md#command-hooks--pre-commit-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
+
+12. Commit changes to the working branch.
+
+13. Export post-commit operation variables.
+
+14. **Run [`command-hooks.post-commit`](./config-options.md#command-hooks--post-commit-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
+
+15. Create/update the proposal.
+
+16. Export post-proposal operation variables.
+
+17. **Run [`command-hooks.post-proposal`](./config-options.md#command-hooks--post-proposal-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
+
+18. Export final operation variables.
+
+19. **Run [`command-hooks.post-run`](./config-options.md#command-hooks--post-run-optional) commands.**
 
 #### Publish Phase
 
@@ -48,23 +64,27 @@ This phase runs when merging a release proposal, triggering the actual release. 
 
 3. Generate changelog release content and extract the next version.
 
-4. Export pre-publish operation variables.
+4. Export pre-tag operation variables.
 
-5. **Run [`command-hooks.pre-publish`](./config-options.md#command-hooks--pre-publish-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
+5. **Run [`command-hooks.pre-tag`](./config-options.md#command-hooks--pre-tag-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
 
 6. Create the Git tag.
 
-7. *(If [`release.create-release`](./config-options.md#release--create-release-optional) is enabled)* Create the platform release.
+7. *(If [`release.create-release`](./config-options.md#release--create-release-optional) is enabled)* Export pre-release operation variables.
 
-8. *(If [`release.create-release`](./config-options.md#release--create-release-optional) is enabled)* Attach release assets.
+8. *(If [`release.create-release`](./config-options.md#release--create-release-optional) is enabled)* **Run [`command-hooks.pre-release`](./config-options.md#command-hooks--pre-release-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
 
-9. Export post-publish operation variables.
+9. *(If [`release.create-release`](./config-options.md#release--create-release-optional) is enabled)* Create the platform release.
 
-10. **Run [`command-hooks.post-publish`](./config-options.md#command-hooks--post-publish-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
+10. *(If [`release.create-release`](./config-options.md#release--create-release-optional) is enabled)* Attach release assets.
 
-11. Export final operation variables.
+11. Export post-release operation variables.
 
-12. **Run [`command-hooks.post-run`](./config-options.md#command-hooks--post-run-optional) commands.**
+12. **Run [`command-hooks.post-release`](./config-options.md#command-hooks--post-release-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
+
+13. Export final operation variables.
+
+14. **Run [`command-hooks.post-run`](./config-options.md#command-hooks--post-run-optional) commands.**
 
 ### Auto Mode
 
@@ -74,32 +94,48 @@ In auto mode, the operation executes both the prepare and publish steps sequenti
 
 2. **Run [`command-hooks.pre-run`](./config-options.md#command-hooks--pre-run-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
 
-3. Calculate the next version and resolve commits.
+3. Parse commits.
 
-4. Export pre-prepare operation variables.
+4. Export pre-calculate-version operation variables.
 
-5. **Run [`command-hooks.pre-prepare`](./config-options.md#command-hooks--pre-prepare-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
+5. **Run [`command-hooks.pre-calculate-version`](./config-options.md#command-hooks--pre-calculate-version-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
 
-6. Generate changelog release content, prepare changes, and commit directly to the target branch.
+6. Calculate the next version.
 
-7. Export post-prepare operation variables.
+7. Export post-calculate-version operation variables.
 
-8. **Run [`command-hooks.post-prepare`](./config-options.md#command-hooks--post-prepare-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
+8. **Run [`command-hooks.post-calculate-version`](./config-options.md#command-hooks--post-calculate-version-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
 
-9. *(If [`tag.create-tag`](./config-options.md#tag--create-tag-optional) is enabled)* Export pre-publish operation variables.
+9. Generate changelog release content and prepare changes in working directory.
 
-10. *(If [`tag.create-tag`](./config-options.md#tag--create-tag-optional) is enabled)* **Run [`command-hooks.pre-publish`](./config-options.md#command-hooks--pre-publish-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
+10. Export pre-commit operation variables.
 
-11. *(If [`tag.create-tag`](./config-options.md#tag--create-tag-optional) is enabled)* Create the Git tag.
+11. **Run [`command-hooks.pre-commit`](./config-options.md#command-hooks--pre-commit-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
 
-12. *(If [`tag.create-tag`](./config-options.md#tag--create-tag-optional) and [`release.create-release`](./config-options.md#release--create-release-optional) are enabled)* Create the platform release.
+12. Commit changes directly to the target branch.
 
-13. *(If [`tag.create-tag`](./config-options.md#tag--create-tag-optional) and [`release.create-release`](./config-options.md#release--create-release-optional) are enabled)* Attach release assets.
+13. Export post-commit operation variables.
 
-14. *(If [`tag.create-tag`](./config-options.md#tag--create-tag-optional) is enabled)* Export post-publish operation variables.
+14. **Run [`command-hooks.post-commit`](./config-options.md#command-hooks--post-commit-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
 
-15. *(If [`tag.create-tag`](./config-options.md#tag--create-tag-optional) is enabled)* **Run [`command-hooks.post-publish`](./config-options.md#command-hooks--post-publish-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
+15. *(If [`tag.create-tag`](./config-options.md#tag--create-tag-optional) is enabled)* Export pre-tag operation variables.
 
-16. Export final operation variables.
+16. *(If [`tag.create-tag`](./config-options.md#tag--create-tag-optional) is enabled)* **Run [`command-hooks.pre-tag`](./config-options.md#command-hooks--pre-tag-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
 
-17. **Run [`command-hooks.post-run`](./config-options.md#command-hooks--post-run-optional) commands.**
+17. *(If [`tag.create-tag`](./config-options.md#tag--create-tag-optional) is enabled)* Create the Git tag.
+
+18. *(If [`tag.create-tag`](./config-options.md#tag--create-tag-optional) and [`release.create-release`](./config-options.md#release--create-release-optional) are enabled)* Export pre-release operation variables.
+
+19. *(If [`tag.create-tag`](./config-options.md#tag--create-tag-optional) and [`release.create-release`](./config-options.md#release--create-release-optional) are enabled)* **Run [`command-hooks.pre-release`](./config-options.md#command-hooks--pre-release-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
+
+20. *(If [`tag.create-tag`](./config-options.md#tag--create-tag-optional) and [`release.create-release`](./config-options.md#release--create-release-optional) are enabled)* Create the platform release.
+
+21. *(If [`tag.create-tag`](./config-options.md#tag--create-tag-optional) and [`release.create-release`](./config-options.md#release--create-release-optional) are enabled)* Attach release assets.
+
+22. *(If [`tag.create-tag`](./config-options.md#tag--create-tag-optional) is enabled)* Export post-release operation variables.
+
+23. *(If [`tag.create-tag`](./config-options.md#tag--create-tag-optional) is enabled)* **Run [`command-hooks.post-release`](./config-options.md#command-hooks--post-release-optional) commands.** *(If overridden runtime config is returned, it applies moving forward).*
+
+24. Export final operation variables.
+
+25. **Run [`command-hooks.post-run`](./config-options.md#command-hooks--post-run-optional) commands.**

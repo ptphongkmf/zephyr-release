@@ -2,7 +2,7 @@
 
 All possible config options of the Zephyr Release Configuration file.
 
-Most options are optional - if you don't provide them, default values will be used.  
+Most options are optional - if you don't provide them, default values will be used.\
 Required options:
 
 - [version-files](#version-files-required)
@@ -159,14 +159,22 @@ Some example [config files](./examples/).
       - [\> pre-run \> cmd (Required)](#-pre-run--cmd-required)
       - [\> pre-run \> timeout (Optional)](#-pre-run--timeout-optional)
       - [\> pre-run \> continue-on-error (Optional)](#-pre-run--continue-on-error-optional)
-    - [command-hooks \> pre-prepare (Optional)](#command-hooks--pre-prepare-optional)
-      - [\> pre-prepare \> same properties as command-hooks \> pre-runn\`](#-pre-prepare--same-properties-as-command-hooks--pre-runn)
-    - [command-hooks \> post-prepare (Optional)](#command-hooks--post-prepare-optional)
-      - [\> post-prepare \> same properties as command-hooks \> pre-runn\`](#-post-prepare--same-properties-as-command-hooks--pre-runn)
-    - [command-hooks \> pre-publish (Optional)](#command-hooks--pre-publish-optional)
-      - [\> pre-publish \> same properties as command-hooks \> pre-runn\`](#-pre-publish--same-properties-as-command-hooks--pre-runn)
-    - [command-hooks \> post-publish (Optional)](#command-hooks--post-publish-optional)
-      - [\> post-publish \> same properties as command-hooks \> pre-runn\`](#-post-publish--same-properties-as-command-hooks--pre-runn)
+    - [command-hooks \> pre-calculate-version (Optional)](#command-hooks--pre-calculate-version-optional)
+      - [\> pre-calculate-version \> same properties as command-hooks \> pre-runn\`](#-pre-calculate-version--same-properties-as-command-hooks--pre-runn)
+    - [command-hooks \> post-calculate-version (Optional)](#command-hooks--post-calculate-version-optional)
+      - [\> post-calculate-version \> same properties as command-hooks \> pre-runn\`](#-post-calculate-version--same-properties-as-command-hooks--pre-runn)
+    - [command-hooks \> pre-commit (Optional)](#command-hooks--pre-commit-optional)
+      - [\> pre-commit \> same properties as command-hooks \> pre-runn\`](#-pre-commit--same-properties-as-command-hooks--pre-runn)
+    - [command-hooks \> post-commit (Optional)](#command-hooks--post-commit-optional)
+      - [\> post-commit \> same properties as command-hooks \> pre-runn\`](#-post-commit--same-properties-as-command-hooks--pre-runn)
+    - [command-hooks \> post-proposal (Optional)](#command-hooks--post-proposal-optional)
+      - [\> post-proposal \> same properties as command-hooks \> pre-runn\`](#-post-proposal--same-properties-as-command-hooks--pre-runn)
+    - [command-hooks \> pre-tag (Optional)](#command-hooks--pre-tag-optional)
+      - [\> pre-tag \> same properties as command-hooks \> pre-runn\`](#-pre-tag--same-properties-as-command-hooks--pre-runn)
+    - [command-hooks \> pre-release (Optional)](#command-hooks--pre-release-optional)
+      - [\> pre-release \> same properties as command-hooks \> pre-runn\`](#-pre-release--same-properties-as-command-hooks--pre-runn)
+    - [command-hooks \> post-release (Optional)](#command-hooks--post-release-optional)
+      - [\> post-release \> same properties as command-hooks \> pre-runn\`](#-post-release--same-properties-as-command-hooks--pre-runn)
     - [command-hooks \> post-run (Optional)](#command-hooks--post-run-optional)
       - [\> post-run \> same properties as command-hooks \> pre-runn\`](#-post-run--same-properties-as-command-hooks--pre-runn)
   - [runtime-config-override (Optional)](#runtime-config-override-optional)
@@ -180,7 +188,7 @@ Some example [config files](./examples/).
 
 ### name (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: `""`
 
 The project name used in [string templates](./string-templates-and-patterns.md) (available as `{{ name }}`).
@@ -189,10 +197,10 @@ The project name used in [string templates](./string-templates-and-patterns.md) 
 
 ### time-zone (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: `"UTC"`
 
-IANA time zone used to format and display times.  
+IANA time zone used to format and display times.\
 This value is also available for use in [string templates](./string-templates-and-patterns.md) as `{{ timeZone }}`.
 
 [⬆ Back to top](#table-of-content)
@@ -209,7 +217,7 @@ Custom string patterns to use in templates. The key is the pattern name, availab
 
 ### mode (Optional)
 
-Type: `"review" | "auto"`  
+Type: `"review" | "auto"`\
 Default: `"review"`
 
 Defines the execution strategy.
@@ -223,7 +231,7 @@ If choosing `"auto"`, see [`auto > trigger-strategy`](#auto--trigger-strategy-op
 
 ### review (Optional)
 
-Type: `object`  
+Type: `object`\
 **Properties:** [`draft`](#review--draft-optional), [`working-branch-name-template`](#review--working-branch-name-template-optional), [`title-template`](#review--title-template-optional), [`title-template-path`](#review--title-template-path-optional), [`header-template`](#review--header-template-optional), [`header-template-path`](#review--header-template-path-optional), [`body-template`](#review--body-template-optional), [`body-template-path`](#review--body-template-path-optional), [`footer-template`](#review--footer-template-optional), [`footer-template-path`](#review--footer-template-path-optional), [`labels`](#review--labels-optional), [`assignees`](#review--assignees-optional), [`reviewers`](#review--reviewers-optional)
 
 Configuration specific to the `"review"` execution `mode`. Defines how release proposals (such as PRs, MRs, ...) are generated, formatted, and tracked.
@@ -232,7 +240,7 @@ Configuration specific to the `"review"` execution `mode`. Defines how release p
 
 #### review > draft (Optional)
 
-Type: `boolean`  
+Type: `boolean`\
 Default: `false`
 
 If enabled, the proposal will be created as draft.
@@ -241,10 +249,10 @@ If enabled, the proposal will be created as draft.
 
 #### review > working-branch-name-template (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: [`DEFAULT_WORKING_BRANCH_NAME_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for branch name that Zephyr Release will use.  
+String template for branch name that Zephyr Release will use.\
 Allowed patterns to use are: fixed base string patterns.
 
 **Note on Immutability:** This property is considered a core structural configuration and is **immutable at runtime**. It cannot be overridden by a [`runtime-config-override`](#runtime-config-override-optional) file. This ensures that the branch naming strategy remains consistent throughout the entire release process, preventing potential conflicts or unexpected branch creations during dynamic configuration updates.
@@ -253,10 +261,10 @@ Allowed patterns to use are: fixed base string patterns.
 
 #### review > title-template (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: [`DEFAULT_PROPOSAL_TITLE_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for proposal title, using with string patterns like {{ nextVersion }}.  
+String template for proposal title, using with string patterns like {{ nextVersion }}.\
 Allowed patterns to use are: all fixed and dynamic string patterns.
 
 [⬆ Back to top](#table-of-content)
@@ -265,17 +273,17 @@ Allowed patterns to use are: all fixed and dynamic string patterns.
 
 Type: `string`
 
-Path to text file containing proposal title template. Overrides `title-template` when both are provided.  
+Path to text file containing proposal title template. Overrides `title-template` when both are provided.\
 To customize whether this file is fetched locally or remotely, see [source mode](./input-options.md#source-mode-optional).
 
 [⬆ Back to top](#table-of-content)
 
 #### review > header-template (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: [`DEFAULT_PROPOSAL_HEADER_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for proposal header, using with string patterns like {{ nextVersion }}.  
+String template for proposal header, using with string patterns like {{ nextVersion }}.\
 Allowed patterns to use are: all fixed and dynamic string patterns.
 
 [⬆ Back to top](#table-of-content)
@@ -284,17 +292,17 @@ Allowed patterns to use are: all fixed and dynamic string patterns.
 
 Type: `string`
 
-Path to text file containing proposal header template. Overrides `header-template` when both are provided.  
+Path to text file containing proposal header template. Overrides `header-template` when both are provided.\
 To customize whether this file is fetched locally or remotely, see [source mode](./input-options.md#source-mode-optional).
 
 [⬆ Back to top](#table-of-content)
 
 #### review > body-template (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: [`DEFAULT_PROPOSAL_BODY_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for proposal body, using with string patterns like {{ changelogRelease }}.  
+String template for proposal body, using with string patterns like {{ changelogRelease }}.\
 Allowed patterns to use are: all fixed and dynamic string patterns.
 
 [⬆ Back to top](#table-of-content)
@@ -303,17 +311,17 @@ Allowed patterns to use are: all fixed and dynamic string patterns.
 
 Type: `string`
 
-Path to text file containing proposal body template. Overrides `body-template` when both are provided.  
+Path to text file containing proposal body template. Overrides `body-template` when both are provided.\
 To customize whether this file is fetched locally or remotely, see [source mode](./input-options.md#source-mode-optional).
 
 [⬆ Back to top](#table-of-content)
 
 #### review > footer-template (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: [`DEFAULT_PROPOSAL_FOOTER_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for proposal footer, using with string patterns.  
+String template for proposal footer, using with string patterns.\
 Allowed patterns to use are: all fixed and dynamic string patterns.
 
 [⬆ Back to top](#table-of-content)
@@ -322,14 +330,14 @@ Allowed patterns to use are: all fixed and dynamic string patterns.
 
 Type: `string`
 
-Path to text file containing proposal footer template. Overrides `footer-template` when both are provided.  
+Path to text file containing proposal footer template. Overrides `footer-template` when both are provided.\
 To customize whether this file is fetched locally or remotely, see [source mode](./input-options.md#source-mode-optional).
 
 [⬆ Back to top](#table-of-content)
 
 #### review > labels (Optional)
 
-Type: `object`  
+Type: `object`\
 Default: `{}`
 
 Labels to attach and remove from proposals on different stages.
@@ -362,7 +370,7 @@ Label description.
 
 ###### > on-create > color (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: `"#ededed"`
 
 The hexadecimal color code for the label, in standard format with the leading #.
@@ -371,7 +379,7 @@ The hexadecimal color code for the label, in standard format with the leading #.
 
 ###### > on-create > create-if-missing (Optional)
 
-Type: `boolean`  
+Type: `boolean`\
 Default: `false`
 
 If enabled, the label will be created if it does not exist on the platform.
@@ -428,7 +436,7 @@ Same as [`review > labels > on-create`](#-labels--on-create-optional).
 
 Type: `string | string[]`
 
-A list of user identifiers to assign to the release proposal.  
+A list of user identifiers to assign to the release proposal.\
 Use the platform's expected format (e.g., usernames).
 
 [⬆ Back to top](#table-of-content)
@@ -437,14 +445,14 @@ Use the platform's expected format (e.g., usernames).
 
 Type: `string | string[]`
 
-A list of user or team identifiers requested to review the release proposal.  
+A list of user or team identifiers requested to review the release proposal.\
 Use the platform's expected format (e.g., usernames or team slugs).
 
 [⬆ Back to top](#table-of-content)
 
 ### auto (Optional)
 
-Type: `object`  
+Type: `object`
 
 Configuration specific to the `"auto"` execution `mode`. Defines the conditions and strategies for bypassing proposals and committing releases directly.
 
@@ -452,10 +460,10 @@ Configuration specific to the `"auto"` execution `mode`. Defines the conditions 
 
 #### auto > trigger-strategy (Optional)
 
-Type: [`AutoStrategy`](#autostrategy)  
+Type: [`AutoStrategy`](#autostrategy)\
 Default: `{ type: "commit-types" }`
 
-Strategy that determines whether an automated release should be triggered when base [`mode`](#mode-optional) is set to `"auto"`.  
+Strategy that determines whether an automated release should be triggered when base [`mode`](#mode-optional) is set to `"auto"`.\
 Defines the conditions under which a release will be automatically triggered and committed directly to the branch.
 
 [⬆ Back to top](#table-of-content)
@@ -470,7 +478,7 @@ The strategy type used for automated releases. See [`AutoStrategy`](#autostrateg
 
 ### initial-version (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: `"0.1.0"`
 
 The initial semantic version used when a project has no existing version defined in its main version file, or the existing is `0.0.0` (typically during the first setup or initialization of a project).
@@ -487,8 +495,8 @@ Type: `object | object[]`
 
 Version file(s). Accepts a single file object or an array of file objects. If a single object, it becomes the primary file. If arrays, the first file with `primary: true` becomes the primary; if none are marked, the first file in the array will be.
 
-The **primary file** serves as the main source of truth for the project's version.  
-When reading or bumping versions, the action uses the primary file's version to determine the current and next version.  
+The **primary file** serves as the main source of truth for the project's version.\
+When reading or bumping versions, the action uses the primary file's version to determine the current and next version.\
 Other version files (if any) are then synchronized to match the primary version.
 
 [⬆ Back to top](#table-of-content)
@@ -503,7 +511,7 @@ Path to the version file, relative to the project root. To customize whether thi
 
 #### version-files > format (Optional)
 
-Type: `"auto" | "json" | "jsonc" | "json5" | "yaml" | "toml" | "txt"`  
+Type: `"auto" | "json" | "jsonc" | "json5" | "yaml" | "toml" | "txt"`\
 Default: `"auto"`
 
 Defines the file format.
@@ -512,7 +520,7 @@ Defines the file format.
 
 #### version-files > extractor (Optional)
 
-Type: `"auto" | "json-path" | "regex"`  
+Type: `"auto" | "json-path" | "regex"`\
 Default: `"auto"`
 
 Defines how the version should be located inside the parsed output.
@@ -529,7 +537,7 @@ The lookup used by the chosen extractor. For `json-path`, this is the JSON path 
 
 #### version-files > primary (Optional)
 
-Type: `boolean`  
+Type: `boolean`\
 Default: `false`
 
 Marks this file as the primary source of truth for the current version.
@@ -538,7 +546,7 @@ Marks this file as the primary source of truth for the current version.
 
 ### commit-types (Optional)
 
-Type: `array of objects`  
+Type: `array of objects`\
 Default: [`DEFAULT_COMMIT_TYPES`](../src/constants/defaults/commit.ts)
 
 **Properties:** [`type`](#commit-types--type-required), [`section`](#commit-types--section-optional), [`sectionAlt`](#commit-types--sectionalt-optional), [`hidden`](#commit-types--hidden-optional)
@@ -573,7 +581,7 @@ Changelog alternative section heading for this commit type. When empty, the `sec
 
 #### commit-types > hidden (Optional)
 
-Type: `boolean`  
+Type: `boolean`\
 Default: `false`
 
 Exclude this commit type from changelog generation (does not affect version bump calculation).
@@ -582,7 +590,7 @@ Exclude this commit type from changelog generation (does not affect version bump
 
 ### max-commits-to-resolve (Optional)
 
-Type: `number`  
+Type: `number`\
 Default: `100`
 
 The maximum number of commits allowed to resolve, the rest will be truncated.
@@ -611,7 +619,7 @@ While this property overrides standard behavior, it **does not** override your s
 
 ### allowed-release-as-commit-types (Optional)
 
-Type: `string | string[]`  
+Type: `string | string[]`\
 Default: `"<ALL>"`
 
 List of commit type(s) allowed to trigger `release-as`. Accepts a single string or an array of strings.
@@ -629,7 +637,7 @@ About `release-as`: [README.md → Force a Specific Version](../README.md#force-
 
 ### bump-strategy (Optional)
 
-Type: `object`  
+Type: `object`\
 **Properties:** [`bump-minor-for-major-pre-stable`](#bump-strategy--bump-minor-for-major-pre-stable-optional), [`bump-patch-for-minor-pre-stable`](#bump-strategy--bump-patch-for-minor-pre-stable-optional), [`major`](#bump-strategy--major-optional), [`minor`](#bump-strategy--minor-optional), [`patch`](#bump-strategy--patch-optional), [`prerelease`](#bump-strategy--prerelease-optional), [`build`](#bump-strategy--build-optional)
 
 Configuration options that determine how version numbers are calculated.
@@ -638,7 +646,7 @@ Configuration options that determine how version numbers are calculated.
 
 #### bump-strategy > treat-major-as-minor-pre-stable (Optional)
 
-Type: `boolean`  
+Type: `boolean`\
 Default: `true`
 
 Treats major changes as minor version bumps in pre-1.0 (0.x.x) releases.
@@ -647,7 +655,7 @@ Treats major changes as minor version bumps in pre-1.0 (0.x.x) releases.
 
 #### bump-strategy > treat-minor-as-patch-pre-stable (Optional)
 
-Type: `boolean`  
+Type: `boolean`\
 Default: `true`
 
 Treats minor changes as patch version bumps in pre-1.0 (0.x.x) releases.
@@ -656,7 +664,7 @@ Treats minor changes as patch version bumps in pre-1.0 (0.x.x) releases.
 
 #### bump-strategy > major (Optional)
 
-Type: `object`  
+Type: `object`\
 Default: [`DEFAULT_MAJOR_BUMP_STRATEGY`](../src/constants/defaults/bump-strategy.ts)
 
 Strategy for major version bumps (x.0.0).
@@ -673,17 +681,17 @@ Array of commit types (from base [`commit-types`](#commit-types-optional)) that 
 
 ##### > major > count-breaking-as (Optional)
 
-Type: `"none" | "commit" | "bump"`  
+Type: `"none" | "commit" | "bump"`\
 Default: `"commit"`
 
-How to treat breaking changes regardless of `types`.  
+How to treat breaking changes regardless of `types`.\
 Usually this should only be set for a single semver level (major, minor, or patch) to avoid double counting.
 
 [⬆ Back to top](#table-of-content)
 
 ##### > major > commits-per-bump (Optional)
 
-Type: `number | string`  
+Type: `number | string`\
 Default: `Infinity`
 
 Number of commits required for each additional bump after the first. Use `Infinity`, `"Infinity"`, or `"infinity"` to always bump once, unless `countBreakingAs` is set to `"bump"`.
@@ -694,7 +702,7 @@ Note: In JSON/JSONC files you can use `"Infinity"` or `"infinity"`; in JSON5 you
 
 #### bump-strategy > minor (Optional)
 
-Type: `object`  
+Type: `object`\
 Default: [`DEFAULT_MINOR_BUMP_STRATEGY`](../src/constants/defaults/bump-strategy.ts)
 
 Strategy for minor version bumps (0.x.0).
@@ -713,7 +721,7 @@ Same as [`bump-strategy > major`](#bump-strategy--major-optional).
 
 #### bump-strategy > patch (Optional)
 
-Type: `object`  
+Type: `object`\
 Default: [`DEFAULT_PATCH_BUMP_STRATEGY`](../src/constants/defaults/bump-strategy.ts)
 
 Strategy for patch version bumps (0.0.x).
@@ -732,7 +740,7 @@ Same as [`bump-strategy > major`](#bump-strategy--major-optional).
 
 #### bump-strategy > prerelease (Optional)
 
-Type: `object`  
+Type: `object`\
 Default: `{}`
 
 Strategy for bumping prerelease version (1.2.3-x.x).
@@ -741,7 +749,7 @@ Strategy for bumping prerelease version (1.2.3-x.x).
 
 ##### > prerelease > enabled (Optional)
 
-Type: `boolean`  
+Type: `boolean`\
 Default: `false`
 
 Enable/disable handling of SemVer extensions (pre-release identifiers / build metadata).
@@ -758,7 +766,7 @@ Overrides extension items to use for the next version. When provided, these valu
 
 ##### > prerelease > treat-override-as-significant (Optional)
 
-Type: `boolean`  
+Type: `boolean`\
 Default: `false`
 
 If set to `true`, the presence of an `override` is strictly treated as a structural change. This immediately triggers resets on any dependent version components (e.g., resetting the Build number). If `false`, overrides are treated as volatile/dynamic and ignored by reset logic.
@@ -783,7 +791,7 @@ The extension type. See [`SemverExtension`](#semverextension) for full configura
 
 #### bump-strategy > build (Optional)
 
-Type: `object`  
+Type: `object`\
 Default: `{}`
 
 Strategy for bumping build metadata (1.2.3+x.x).
@@ -803,7 +811,7 @@ Same as [`bump-strategy > prerelease`](#bump-strategy--prerelease-optional).
 
 ### changelog (Optional)
 
-Type: `object`  
+Type: `object`\
 **Properties:** [`write-to-file`](#changelog--write-to-file-optional), [`path`](#changelog--path-optional), [`commit-group-mode`](#changelog--commit-group-mode-optional), [`commit-sort-order`](#changelog--commit-sort-order-optional), [`file-header-template`](#changelog--file-header-template-optional), [`file-header-template-path`](#changelog--file-header-template-path-optional), [`file-release-template`](#changelog--file-release-template-optional), [`file-release-template-path`](#changelog--file-release-template-path-optional), [`file-footer-template`](#changelog--file-footer-template-optional), [`file-footer-template-path`](#changelog--file-footer-template-path-optional), [`release-header-template`](#changelog--release-header-template-optional), [`release-header-template-path`](#changelog--release-header-template-path-optional), [`release-section-heading-template`](#changelog--release-section-heading-template-optional), [`release-section-entry-template`](#changelog--release-section-entry-template-optional), [`release-section-entry-template-path`](#changelog--release-section-entry-template-path-optional), [`release-breaking-section-heading`](#changelog--release-breaking-section-heading-optional), [`release-breaking-section-entry-template`](#changelog--release-breaking-section-entry-template-optional), [`release-breaking-section-entry-template-path`](#changelog--release-breaking-section-entry-template-path-optional), [`release-footer-template`](#changelog--release-footer-template-optional), [`release-footer-template-path`](#changelog--release-footer-template-path-optional), [`release-body-override`](#changelog--release-body-override-optional), [`release-body-override-path`](#changelog--release-body-override-path-optional), [`release-header-template-alt`](#changelog--release-header-template-alt-optional), [`release-header-template-alt-path`](#changelog--release-header-template-alt-path-optional), [`release-section-heading-template-alt`](#changelog--release-section-heading-template-alt-optional), [`release-section-entry-template-alt`](#changelog--release-section-entry-template-alt-optional), [`release-section-entry-template-alt-path`](#changelog--release-section-entry-template-alt-path-optional), [`release-breaking-section-heading-alt`](#changelog--release-breaking-section-heading-alt-optional), [`release-breaking-section-entry-template-alt`](#changelog--release-breaking-section-entry-template-alt-optional), [`release-breaking-section-entry-template-alt-path`](#changelog--release-breaking-section-entry-template-alt-path-optional), [`release-body-override-alt`](#changelog--release-body-override-alt-optional), [`release-body-override-alt-path`](#changelog--release-body-override-alt-path-optional), [`release-footer-template-alt`](#changelog--release-footer-template-alt-optional), [`release-footer-template-alt-path`](#changelog--release-footer-template-alt-path-optional)
 
 Configuration specific to changelogs. All generated changelog content are available in string templates as `{{ changelogRelease }}` (release header + body) or `{{ changelogReleaseHeader }}` and `{{ changelogReleaseBody }}`.
@@ -812,7 +820,7 @@ Configuration specific to changelogs. All generated changelog content are availa
 
 #### changelog > write-to-file (Optional)
 
-Type: `boolean`  
+Type: `boolean`\
 Default: `true`
 
 Enable/disable writing changelog to file. When disabled, changelogs are still generated for proposals, releases and [string templates](./string-templates-and-patterns.md) but they won't be written to file.
@@ -821,7 +829,7 @@ Enable/disable writing changelog to file. When disabled, changelogs are still ge
 
 #### changelog > path (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: `"CHANGELOG.md"`
 
 Path to the file where the generated changelog will be written to, relative to the project root.
@@ -832,7 +840,7 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 
 #### changelog > commit-group-mode (Optional)
 
-Type: `"none" | "scope-first" | "scope-last"`  
+Type: `"none" | "scope-first" | "scope-last"`\
 Default: `"scope-last"`
 
 Defines how commits are sub-grouped within their respective changelog sections (Features, Fixes, etc.).
@@ -845,7 +853,7 @@ Defines how commits are sub-grouped within their respective changelog sections (
 
 #### changelog > commit-sort-order (Optional)
 
-Type: `"alphabetical" | "oldest-first" | "newest-first"`  
+Type: `"alphabetical" | "oldest-first" | "newest-first"`\
 Default: `"alphabetical"`
 
 Defines the sorting algorithm used to order the commits (and their groups, if a grouping mode is used).
@@ -858,10 +866,10 @@ Defines the sorting algorithm used to order the commits (and their groups, if a 
 
 #### changelog > file-header-template (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: [`DEFAULT_CHANGELOG_FILE_HEADER_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for changelog file header, using with string patterns like `{{ nextVersion }}`. Placed above any changelog content.  
+String template for changelog file header, using with string patterns like `{{ nextVersion }}`. Placed above any changelog content.\
 Allowed patterns to use are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
@@ -878,10 +886,10 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 
 #### changelog > file-release-template (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: [`DEFAULT_CHANGELOG_RELEASE_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for the individual release block inserted into the changelog file.  
+String template for the individual release block inserted into the changelog file.\
 To use your alternative configuration, set this to `"{{ changelogReleaseAlt }}"`.
 
 [⬆ Back to top](#table-of-content)
@@ -900,7 +908,7 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 
 Type: `string`
 
-String template for changelog file footer, using with string patterns like `{{ nextVersion }}`. Placed below any changelog content.  
+String template for changelog file footer, using with string patterns like `{{ nextVersion }}`. Placed below any changelog content.\
 Allowed patterns to use are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
@@ -917,10 +925,10 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 
 #### changelog > release-header-template (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: `"## {{ tagName | md_link_compare_tag_from_current_to_latest }} ({{- YYYY }}-{{ MM }}-{{ DD }}) <!-- time-zone: {{ timeZone }} -->"`
 
-String template for header of a changelog release, using with string patterns like `{{ nextVersion }}`.  
+String template for header of a changelog release, using with string patterns like `{{ nextVersion }}`.\
 Allowed patterns to use are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
@@ -937,10 +945,10 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 
 #### changelog > release-section-heading-template (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: [`DEFAULT_RELEASE_SECTION_HEADING_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for heading of a changelog release section, using with string patterns like `{{ section }}`.  
+String template for heading of a changelog release section, using with string patterns like `{{ section }}`.\
 Allowed patterns to use are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 Additionally, you can use a special dynamic pattern (see [patterns docs](./string-templates-and-patterns.md#changelog-section-heading) for more details):
@@ -962,10 +970,10 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 
 #### changelog > release-section-entry-template (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: [`DEFAULT_RELEASE_SECTION_ENTRY_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for each entries in the changelog release sections.  
+String template for each entries in the changelog release sections.\
 Allowed patterns to use are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns) and [dynamic patterns](./string-templates-and-patterns.md#dynamic-string-patterns).
 
 Additionally, you can use a special set of dynamic patterns (see [patterns docs](./string-templates-and-patterns.md#changelog-entries) for more details):
@@ -1000,7 +1008,7 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 
 #### changelog > release-breaking-section-heading (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: `"⚠ BREAKING CHANGES"`
 
 Heading of a changelog release BREAKING section.
@@ -1009,10 +1017,10 @@ Heading of a changelog release BREAKING section.
 
 #### changelog > release-breaking-section-entry-template (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: [`DEFAULT_RELEASE_BREAKING_SECTION_ENTRY_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-Basically the same as `release-section-entry-template`, but for breaking changes specifically. If not provided, falls back to `release-section-entry-template`.  
+Basically the same as `release-section-entry-template`, but for breaking changes specifically. If not provided, falls back to `release-section-entry-template`.\
 Allowed patterns to use are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns) and [dynamic patterns](./string-templates-and-patterns.md#dynamic-string-patterns).
 
 [⬆ Back to top](#table-of-content)
@@ -1049,7 +1057,7 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 
 Type: `string`
 
-String template for footer of a changelog release, using with string patterns.  
+String template for footer of a changelog release, using with string patterns.\
 Allowed patterns to use are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
@@ -1084,7 +1092,7 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 
 #### changelog > release-section-heading-template-alt (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: [`DEFAULT_RELEASE_SECTION_HEADING_TEMPLATE_ALT`](../src/constants/defaults/string-templates.ts)
 
 String template for alternative heading of a changelog release section. Allowed string patterns and special dynamic patterns are the same as [`release-section-heading-template`](#changelog--release-section-heading-template-optional).
@@ -1183,7 +1191,7 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 
 ### commit (Optional)
 
-Type: `object`  
+Type: `object`\
 **Properties:** [`local-changes-to-commit`](#commit--local-changes-to-commit-optional), [`header-template`](#commit--header-template-optional), [`header-template-path`](#commit--header-template-path-optional), [`body-template`](#commit--body-template-optional), [`body-template-path`](#commit--body-template-path-optional), [`footer-template`](#commit--footer-template-optional), [`footer-template-path`](#commit--footer-template-path-optional)
 
 Configuration specific to commits. These templates are used to build the commit message when Zephyr Release creates a commit.
@@ -1202,10 +1210,10 @@ To include all changes, you can use a glob pattern such as `"**/*"`.
 
 #### commit > header-template (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: [`DEFAULT_COMMIT_HEADER_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for commit header, using with string patterns like `{{ nextVersion }}`. You can optionally include a CI skip token here (or body/footer) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` for GitHub, GitLab, and Bitbucket).  
+String template for commit header, using with string patterns like `{{ nextVersion }}`. You can optionally include a CI skip token here (or body/footer) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` for GitHub, GitLab, and Bitbucket).\
 Allowed patterns to use are: [all fixed and dynamic string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
@@ -1224,7 +1232,7 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 
 Type: `string`
 
-String template for commit body, using with string patterns like `{{ changelogRelease }}`. You can optionally include a CI skip token here (or header/footer) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` for GitHub, GitLab, and Bitbucket).  
+String template for commit body, using with string patterns like `{{ changelogRelease }}`. You can optionally include a CI skip token here (or header/footer) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` for GitHub, GitLab, and Bitbucket).\
 Allowed patterns to use are: [all fixed and dynamic string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
@@ -1243,7 +1251,7 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 
 Type: `string`
 
-String template for commit footer, using with string patterns. You can optionally include a CI skip token here (or header/body) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` for GitHub, GitLab, and Bitbucket).  
+String template for commit footer, using with string patterns. You can optionally include a CI skip token here (or header/body) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` for GitHub, GitLab, and Bitbucket).\
 Allowed patterns to use are: [all fixed and dynamic string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
@@ -1260,7 +1268,7 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 
 ### tag (Optional)
 
-Type: `object`  
+Type: `object`\
 **Properties:** [`create-tag`](#tag--create-tag-optional), [`name-template`](#tag--name-template-optional), [`type`](#tag--type-optional), [`message-template`](#tag--message-template-optional), [`message-template-path`](#tag--message-template-path-optional), [`tagger`](#tag--tagger-optional)
 
 Configuration specific to tags.
@@ -1269,7 +1277,7 @@ Configuration specific to tags.
 
 #### tag > create-tag (Optional)
 
-Type: `boolean`  
+Type: `boolean`\
 Default: `true`
 
 Enable/disable tag creation. If disabled, create release note will also be skipped.
@@ -1278,17 +1286,17 @@ Enable/disable tag creation. If disabled, create release note will also be skipp
 
 #### tag > name-template (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: [`DEFAULT_TAG_NAME_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for tag name, using with string patterns like `{{ nextVersion }}`. Available in [string templates](./string-templates-and-patterns.md) as `{{ tagName }}`.  
+String template for tag name, using with string patterns like `{{ nextVersion }}`. Available in [string templates](./string-templates-and-patterns.md) as `{{ tagName }}`.\
 Allowed patterns to use in template are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns) (except `{{ tagName }}` itself).
 
 [⬆ Back to top](#table-of-content)
 
 #### tag > type (Optional)
 
-Type: `"lightweight" | "annotated" | "signed"`  
+Type: `"lightweight" | "annotated" | "signed"`\
 Default: `"lightweight"`
 
 The type of Git tag to create.
@@ -1309,10 +1317,10 @@ Furthermore, if you are using temporary or shared cloud runners, you should alwa
 
 #### tag > message-template (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: [`DEFAULT_TAG_MESSAGE_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for the Git annotated or signed tag message.  
+String template for the Git annotated or signed tag message.\
 Allowed patterns to use are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
@@ -1321,8 +1329,7 @@ Allowed patterns to use are: [all string patterns](./string-templates-and-patter
 
 Type: `string`
 
-Path to text file containing Git annotated or signed tag message template. Overrides `message-template` when both are provided.
-To customize whether this file is fetched locally or remotely, see [source mode](./input-options.md#source-mode-optional).
+Path to text file containing Git annotated or signed tag message template. Overrides `message-template` when both are provided. To customize whether this file is fetched locally or remotely, see [source mode](./input-options.md#source-mode-optional).
 
 [⬆ Back to top](#table-of-content)
 
@@ -1354,20 +1361,20 @@ The email of the tag creator.
 
 Type: `string`
 
-Override the Git tag timestamp.  
+Override the Git tag timestamp.\
 Can be one of these options:
 
 - `"now"`: The moment the operation creates the tag.
 - `"commit-date"`: The Git committer date.
 - `"author-date"`: The Git author date.
-- Or a specific ISO 8601 date string.  
-If omitted, defaults to the platform native behavior (recommended).
+- Or a specific ISO 8601 date string.\
+  If omitted, defaults to the platform native behavior (recommended).
 
 [⬆ Back to top](#table-of-content)
 
 ### release (Optional)
 
-Type: `object`  
+Type: `object`\
 **Properties:** [`create-release`](#release--create-release-optional), [`prerelease`](#release--prerelease-optional), [`draft`](#release--draft-optional), [`set-latest`](#release--set-latest-optional), [`title-template`](#release--title-template-optional), [`title-template-path`](#release--title-template-path-optional), [`header-template`](#release--header-template-optional), [`header-template-path`](#release--header-template-path-optional), [`body-template`](#release--body-template-optional), [`body-template-path`](#release--body-template-path-optional), [`footer-template`](#release--footer-template-optional), [`footer-template-path`](#release--footer-template-path-optional), [`assets`](#release--assets-optional)
 
 Configuration specific to releases.
@@ -1376,7 +1383,7 @@ Configuration specific to releases.
 
 #### release > create-release (Optional)
 
-Type: `boolean`  
+Type: `boolean`\
 Default: `true`
 
 Enable/disable release creation.
@@ -1385,7 +1392,7 @@ Enable/disable release creation.
 
 #### release > prerelease (Optional)
 
-Type: `boolean`  
+Type: `boolean`\
 Default: `false`
 
 If enabled, the release will be marked as prerelease.
@@ -1394,7 +1401,7 @@ If enabled, the release will be marked as prerelease.
 
 #### release > draft (Optional)
 
-Type: `boolean`  
+Type: `boolean`\
 Default: `false`
 
 If enabled, the release will be created as draft.
@@ -1403,7 +1410,7 @@ If enabled, the release will be created as draft.
 
 #### release > set-latest (Optional)
 
-Type: `boolean`  
+Type: `boolean`\
 Default: `true`
 
 If enabled, the release will be set as the latest release.
@@ -1412,10 +1419,10 @@ If enabled, the release will be set as the latest release.
 
 #### release > title-template (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: [`DEFAULT_RELEASE_TITLE_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for release note title, using with string patterns like `{{ tagName }}`.  
+String template for release note title, using with string patterns like `{{ tagName }}`.\
 Allowed patterns to use are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
@@ -1434,7 +1441,7 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 
 Type: `string`
 
-String template for release note header, using with string patterns.  
+String template for release note header, using with string patterns.\
 Allowed patterns to use are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
@@ -1451,10 +1458,10 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 
 #### release > body-template (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: [`DEFAULT_RELEASE_BODY_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for release note body, using with string patterns like `{{ changelogRelease }}`.  
+String template for release note body, using with string patterns like `{{ changelogRelease }}`.\
 Allowed patterns to use are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
@@ -1473,7 +1480,7 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 
 Type: `string`
 
-String template for release note footer, using with string patterns.  
+String template for release note footer, using with string patterns.\
 Allowed patterns to use are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
@@ -1498,8 +1505,8 @@ List of local asset path(s) to attach to the release. Accepts a single string or
 
 ### command-hooks (Optional)
 
-Type: `object`  
-**Properties:** [`timeout`](#command-hooks--timeout-optional), [`continue-on-error`](#command-hooks--continue-on-error-optional), [`pre-run`](#command-hooks--pre-run-optional), [`pre-prepare`](#command-hooks--pre-prepare-optional), [`post-prepare`](#command-hooks--post-prepare-optional), [`pre-publish`](#command-hooks--pre-publish-optional), [`post-publish`](#command-hooks--post-publish-optional), [`post-run`](#command-hooks--post-run-optional)
+Type: `object`\
+**Properties:** [`timeout`](#command-hooks--timeout-optional), [`continue-on-error`](#command-hooks--continue-on-error-optional), [`pre-run`](#command-hooks--pre-run-optional), [`pre-calculate-version`](#command-hooks--pre-calculate-version-optional), [`post-calculate-version`](#command-hooks--post-calculate-version-optional), [`pre-commit`](#command-hooks--pre-commit-optional), [`post-commit`](#command-hooks--post-commit-optional), [`post-proposal`](#command-hooks--post-proposal-optional), [`pre-tag`](#command-hooks--pre-tag-optional), [`pre-release`](#command-hooks--pre-release-optional), [`post-release`](#command-hooks--post-release-optional), [`post-run`](#command-hooks--post-run-optional)
 
 Command hooks to run at different phases of the operation. Each command runs from the repository root.
 
@@ -1507,7 +1514,7 @@ Command hooks to run at different phases of the operation. Each command runs fro
 
 #### command-hooks > timeout (Optional)
 
-Type: `number | string`  
+Type: `number | string`\
 Default: `60000` (1 min)
 
 Default timeout (ms) for all command hooks, can be overridden per command. Use `Infinity`, `"Infinity"`, or `"infinity"` to never timeout (not recommended).
@@ -1516,7 +1523,7 @@ Default timeout (ms) for all command hooks, can be overridden per command. Use `
 
 #### command-hooks > continue-on-error (Optional)
 
-Type: `boolean`  
+Type: `boolean`\
 Default: `false`
 
 Default behavior for all command hooks on error, can be overridden per command.
@@ -1527,8 +1534,8 @@ Default behavior for all command hooks on error, can be overridden per command.
 
 Type: `string | object | (string | object)[]`
 
-Commands to run before the main operation. Each command runs from the repository root.  
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.  
+Commands to run at the very start of the operation, before any actions are taken. Each command runs from the repository root.\
+Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1543,7 +1550,7 @@ The command string to execute.
 
 ##### > pre-run > timeout (Optional)
 
-Type: `number | string`  
+Type: `number | string`\
 Default: Base default timeout
 
 Timeout in milliseconds, use Infinity to never timeout (not recommended).
@@ -1552,24 +1559,25 @@ Timeout in milliseconds, use Infinity to never timeout (not recommended).
 
 ##### > pre-run > continue-on-error (Optional)
 
-Type: `boolean`  
+Type: `boolean`\
 Default: Base default continue-on-error
 
 Continue or stop the process on commands error.
 
 [⬆ Back to top](#table-of-content)
 
-#### command-hooks > pre-prepare (Optional)
+#### command-hooks > pre-calculate-version (Optional)
 
 Type: `string | object | (string | object)[]`
 
-Commands to run before the proposal (PR, MR, ...) phase. Each command runs from the repository root.  
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.  
+Commands to run after commits are parsed but before version calculation. Each command runs from the repository root.\
+Useful for injecting `runtimeConfigOverride` to manipulate bump logic based on commit data.\
+Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
 
-##### > pre-prepare > same properties as command-hooks > pre-runn`
+##### > pre-calculate-version > same properties as command-hooks > pre-runn`
 
 Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
@@ -1579,17 +1587,18 @@ Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
 [⬆ Back to top](#table-of-content)
 
-#### command-hooks > post-prepare (Optional)
+#### command-hooks > post-calculate-version (Optional)
 
 Type: `string | object | (string | object)[]`
 
-Commands to run after the proposal (PR, MR, ...) phase. Each command runs from the repository root.  
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.  
+Commands to run after version is calculated but before files are modified. Each command runs from the repository root.\
+Useful for syncing external metadata using the newly resolved `nextVersion`.\
+Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
 
-##### > post-prepare > same properties as command-hooks > pre-runn`
+##### > post-calculate-version > same properties as command-hooks > pre-runn`
 
 Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
@@ -1599,17 +1608,18 @@ Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
 [⬆ Back to top](#table-of-content)
 
-#### command-hooks > pre-publish (Optional)
+#### command-hooks > pre-commit (Optional)
 
 Type: `string | object | (string | object)[]`
 
-Commands to run before the release phase. Each command runs from the repository root.  
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.  
+Commands to run after changelog and version files are written to disk, but before `git commit`. Each command runs from the repository root.\
+Useful for running formatters, linters, or custom replacements on the generated files before they enter git history.\
+Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
 
-##### > pre-publish > same properties as command-hooks > pre-runn`
+##### > pre-commit > same properties as command-hooks > pre-runn`
 
 Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
@@ -1619,17 +1629,101 @@ Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
 [⬆ Back to top](#table-of-content)
 
-#### command-hooks > post-publish (Optional)
+#### command-hooks > post-commit (Optional)
 
 Type: `string | object | (string | object)[]`
 
-Commands to run after the release phase. Each command runs from the repository root.  
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.  
+Commands to run after changes are committed and pushed. Each command runs from the repository root.\
+Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
 
-##### > post-publish > same properties as command-hooks > pre-runn`
+##### > post-commit > same properties as command-hooks > pre-runn`
+
+Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
+
+- [`cmd`](#-pre-run--cmd-required)
+- [`timeout`](#-pre-run--timeout-optional)
+- [`continue-on-error`](#-pre-run--continue-on-error-optional)
+
+[⬆ Back to top](#table-of-content)
+
+#### command-hooks > post-proposal (Optional)
+
+Type: `string | object | (string | object)[]`
+
+Commands to run after the Release Proposal (PR, MR, ...) is created or updated. Each command runs from the repository root.\
+Useful for triggering downstream CI jobs or proposal review notifications.\
+Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Available variables that cmds can use: see [Export operation variables](./export-variables.md).
+
+[⬆ Back to top](#table-of-content)
+
+##### > post-proposal > same properties as command-hooks > pre-runn`
+
+Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
+
+- [`cmd`](#-pre-run--cmd-required)
+- [`timeout`](#-pre-run--timeout-optional)
+- [`continue-on-error`](#-pre-run--continue-on-error-optional)
+
+[⬆ Back to top](#table-of-content)
+
+#### command-hooks > pre-tag (Optional)
+
+Type: `string | object | (string | object)[]`
+
+Commands to run before the Git tag is created. Each command runs from the repository root.\
+Useful for final guardrails or external API sanity checks before cutting the permanent tag.\
+Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Available variables that cmds can use: see [Export operation variables](./export-variables.md).
+
+[⬆ Back to top](#table-of-content)
+
+##### > pre-tag > same properties as command-hooks > pre-runn`
+
+Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
+
+- [`cmd`](#-pre-run--cmd-required)
+- [`timeout`](#-pre-run--timeout-optional)
+- [`continue-on-error`](#-pre-run--continue-on-error-optional)
+
+[⬆ Back to top](#table-of-content)
+
+#### command-hooks > pre-release (Optional)
+
+Type: `string | object | (string | object)[]`
+
+Commands to run after the Git tag is created but before the platform release (GitHub Release, etc.). Each command runs from the repository root.\
+Useful for building/compiling binaries so they can be atomically attached during the release creation step.\
+Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Available variables that cmds can use: see [Export operation variables](./export-variables.md).
+
+[⬆ Back to top](#table-of-content)
+
+##### > pre-release > same properties as command-hooks > pre-runn`
+
+Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
+
+- [`cmd`](#-pre-run--cmd-required)
+- [`timeout`](#-pre-run--timeout-optional)
+- [`continue-on-error`](#-pre-run--continue-on-error-optional)
+
+[⬆ Back to top](#table-of-content)
+
+#### command-hooks > post-release (Optional)
+
+Type: `string | object | (string | object)[]`
+
+Commands to run after the platform release is fully live and assets are attached. Each command runs from the repository root.\
+Useful for announcements, webhooks, and publishing packages to external registries.\
+Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Available variables that cmds can use: see [Export operation variables](./export-variables.md).
+
+[⬆ Back to top](#table-of-content)
+
+##### > post-release > same properties as command-hooks > pre-runn`
 
 Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
@@ -1643,9 +1737,9 @@ Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
 Type: `string | object | (string | object)[]`
 
-Commands to run after the main operation. Each command runs from the repository root.  
-These commands will always run regardless of operation outcome (success, skipped or failure). It is recommended to check the outcome export variable if your script should only run under specific conditions.  
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.  
+Commands to run after the main operation. Each command runs from the repository root.\
+These commands will always run regardless of operation outcome (success, skipped or failure). It is recommended to check the outcome export variable if your script should only run under specific conditions.\
+Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1662,7 +1756,7 @@ Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
 ### runtime-config-override (Optional)
 
-Type: `object`  
+Type: `object`\
 **Properties:** [`path`](#runtime-config-override--path-required), [`format`](#runtime-config-override--format-optional)
 
 A dynamic configuration file to deep-merge over the resolved config at runtime, typically generated by a [`command-hooks`](#command-hooks-optional) script.
@@ -1687,7 +1781,7 @@ Path to the runtime override config file, read from the local filesystem.
 
 #### runtime-config-override > format (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: `"auto"`
 
 Config file format. Allowed values: `auto`, `json`, `jsonc`, `json5`, `yaml`, `toml`.
@@ -1713,7 +1807,7 @@ A discriminated union based on the `type` field. Defines the strategy for automa
 - `token` (Required): The conventional commit footer token to look for (e.g., `"Autorelease"`).
 - `value` (Optional): The specific value the footer token must have (e.g., `"true"`). If omitted, only the token's presence is required.
 
-**Type: `"flag"`** - Triggers a release based on a strict boolean flag. Ideal for dynamic configuration overrides and custom script evaluations. The strategy will be evaluated after the cmd hooks `pre-run` and `pre-prepare` run.
+**Type: `"flag"`** - Triggers a release based on a strict boolean flag. Ideal for dynamic configuration overrides and custom script evaluations. The strategy will be evaluated after the cmd hooks `pre-run` and `pre-calculate-version` run.
 
 - `type` (Required): `"flag"`
 - `value` (Optional): A hardcoded boolean flag to explicitly force or skip the release trigger. Default: `false`

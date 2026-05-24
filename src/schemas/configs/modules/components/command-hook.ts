@@ -13,7 +13,9 @@ export const commandHookCommandsSchema = v.pipe(
 );
 
 type _CommandHookCommandsInput = v.InferInput<typeof commandHookCommandsSchema>;
-type _CommandHookCommandsOutput = v.InferOutput<typeof commandHookCommandsSchema>;
+type _CommandHookCommandsOutput = v.InferOutput<
+  typeof commandHookCommandsSchema
+>;
 
 export const CommandHooksSchema = v.object({
   timeout: v.pipe(
@@ -49,45 +51,89 @@ export const CommandHooksSchema = v.object({
     commandHookCommandsSchema,
     v.metadata({
       description:
-        "Commands to run before the main operation. Each command runs from the repository root.\n" +
+        "Commands to run at the very start of the operation, before any actions are taken. Each command runs from the repository root.\n" +
         "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
         `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),
 
-  prePrepare: v.pipe(
+  preCalculateVersion: v.pipe(
     commandHookCommandsSchema,
     v.metadata({
       description:
-        "Commands to run before the proposal (PR, MR, ...) phase. Each command runs from the repository root.\n" +
+        "Commands to run after commits are parsed but before version calculation. Each command runs from the repository root.\n" +
+        "Useful for injecting `runtimeConfigOverride` to manipulate bump logic based on commit data.\n" +
         "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
         `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),
-  postPrepare: v.pipe(
+  postCalculateVersion: v.pipe(
     commandHookCommandsSchema,
     v.metadata({
       description:
-        "Commands to run after the proposal (PR, MR, ...) phase. Each command runs from the repository root.\n" +
+        "Commands to run after version is calculated but before files are modified. Each command runs from the repository root.\n" +
+        "Useful for syncing external metadata using the newly resolved `nextVersion`.\n" +
         "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
         `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),
 
-  prePublish: v.pipe(
+  preCommit: v.pipe(
     commandHookCommandsSchema,
     v.metadata({
       description:
-        "Commands to run before the release phase. Each command runs from the repository root.\n" +
+        "Commands to run after changelog and version files are written to disk, but before `git commit`. Each command runs from the repository root.\n" +
+        "Useful for running formatters, linters, or custom replacements on the generated files before they enter git history.\n" +
         "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
         `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),
-  postPublish: v.pipe(
+  postCommit: v.pipe(
     commandHookCommandsSchema,
     v.metadata({
       description:
-        "Commands to run after the release phase. Each command runs from the repository root.\n" +
+        "Commands to run after changes are committed and pushed. Each command runs from the repository root.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
+    }),
+  ),
+  postProposal: v.pipe(
+    commandHookCommandsSchema,
+    v.metadata({
+      description:
+        "Commands to run after the Release Proposal (PR, MR, ...) is created or updated. Each command runs from the repository root.\n" +
+        "Useful for triggering downstream CI jobs or proposal review notifications.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
+    }),
+  ),
+
+  preTag: v.pipe(
+    commandHookCommandsSchema,
+    v.metadata({
+      description:
+        "Commands to run before the Git tag is created. Each command runs from the repository root.\n" +
+        "Useful for final guardrails or external API sanity checks before cutting the permanent tag.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
+    }),
+  ),
+  preRelease: v.pipe(
+    commandHookCommandsSchema,
+    v.metadata({
+      description:
+        "Commands to run after the Git tag is created but before the platform release (GitHub Release, etc.). Each command runs from the repository root.\n" +
+        "Useful for building/compiling binaries so they can be atomically attached during the release creation step.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
+    }),
+  ),
+  postRelease: v.pipe(
+    commandHookCommandsSchema,
+    v.metadata({
+      description:
+        "Commands to run after the platform release is fully live and assets are attached. Each command runs from the repository root.\n" +
+        "Useful for announcements, webhooks, and publishing packages to external registries.\n" +
         "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
         `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),

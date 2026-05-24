@@ -24,8 +24,11 @@ import {
 import { generatePrepareChangelogReleaseContent } from "../tasks/changelog.ts";
 import { runCommands } from "../tasks/command.ts";
 import {
-  exportPostPrepareOperationVariables,
-  exportPrePrepareOperationVariables,
+  exportPostCalculateVersionVariables,
+  exportPostCommitVariables,
+  exportPostProposalVariables,
+  exportPreCalculateVersionVariables,
+  exportPreCommitVariables,
 } from "../tasks/export-variables.ts";
 import type { OperationRunSettings } from "../types/operation-context.ts";
 import { addLabelsToProposalOnCreate } from "../tasks/label.ts";
@@ -67,6 +70,59 @@ export async function executeReviewPreparePhase(
   );
   logger.stepFinish("Finished: Resolve commits from trigger to last release");
 
+  // preCalculateVersion hook
+  // Commits are parsed, version is NOT calculated yet.
+  logger.debugStepStart("Starting: Export pre calculate version variables");
+  await exportPreCalculateVersionVariables(
+    provider,
+    resolvedCommitsResult.entries,
+  );
+  logger.debugStepFinish("Finished: Export pre calculate version variables");
+
+  logger.stepStart("Starting: Execute pre calculate version commands");
+  const preCalculateVersionResult = await runCommands(
+    runSettings.config.commandHooks,
+    "preCalculateVersion",
+  );
+  if (preCalculateVersionResult) {
+    logger.stepFinish(
+      `Finished: Execute pre calculate version commands. ${preCalculateVersionResult}`,
+    );
+  } else {
+    logger.stepSkip("Skipped: Execute pre calculate version commands (empty)");
+  }
+
+  logger.stepStart(
+    "Starting: Resolve runtime config override (pre calculate version commands)",
+  );
+  const _preCalculateVersionRuntimeConfigResult =
+    await resolveRuntimeConfigOverride(
+      runSettings.rawConfig,
+      runSettings.config,
+      runSettings.inputs.workspacePath,
+    );
+  if (_preCalculateVersionRuntimeConfigResult) {
+    runSettings = {
+      ...runSettings,
+      rawConfig: _preCalculateVersionRuntimeConfigResult.rawResolvedRuntime,
+      config: _preCalculateVersionRuntimeConfigResult.resolvedRuntime,
+    };
+    await synchronizeRuntimeStateAfterOverride({
+      provider,
+      config: runSettings.config,
+      rawConfig: runSettings.rawConfig,
+      triggerBranchName: runSettings.inputs.triggerBranchName,
+    });
+    logger.stepFinish(
+      "Finished: Resolve runtime config override (pre calculate version commands)",
+    );
+  } else {
+    logger.stepSkip(
+      "Skipped: Resolve runtime config override (pre calculate version commands)",
+    );
+  }
+
+  // Calculate version
   logger.stepStart("Starting: Calculate next version");
   const nextVersion = calculateNextVersion(
     resolvedCommitsResult,
@@ -98,41 +154,43 @@ export async function executeReviewPreparePhase(
     "Finished: Create fixed current version, next version and tag string pattern context",
   );
 
-  logger.debugStepStart("Starting: Export pre prepare operation variables");
-  await exportPrePrepareOperationVariables(
+  // postCalculateVersion hook
+  // Version is locked in, no files modified yet.
+  logger.debugStepStart("Starting: Export post calculate version variables");
+  await exportPostCalculateVersionVariables(
     provider,
-    resolvedCommitsResult.entries,
     currentVersion,
     nextVersion,
   );
-  logger.debugStepFinish("Finished: Export pre prepare operation variables");
+  logger.debugStepFinish("Finished: Export post calculate version variables");
 
-  logger.stepStart("Starting: Execute prepare pre commands");
-  const preResult = await runCommands(
+  logger.stepStart("Starting: Execute post calculate version commands");
+  const postCalculateVersionResult = await runCommands(
     runSettings.config.commandHooks,
-    "prePrepare",
+    "postCalculateVersion",
   );
-  if (preResult) {
+  if (postCalculateVersionResult) {
     logger.stepFinish(
-      `Finished: Execute prepare pre commands. ${preResult}`,
+      `Finished: Execute post calculate version commands. ${postCalculateVersionResult}`,
     );
   } else {
-    logger.stepSkip("Skipped: Execute prepare pre commands (empty)");
+    logger.stepSkip("Skipped: Execute post calculate version commands (empty)");
   }
 
   logger.stepStart(
-    "Starting: Resolve runtime config override (prepare pre commands)",
+    "Starting: Resolve runtime config override (post calculate version commands)",
   );
-  const _preparePreRuntimeConfigResult = await resolveRuntimeConfigOverride(
-    runSettings.rawConfig,
-    runSettings.config,
-    runSettings.inputs.workspacePath,
-  );
-  if (_preparePreRuntimeConfigResult) {
+  const _postCalculateVersionRuntimeConfigResult =
+    await resolveRuntimeConfigOverride(
+      runSettings.rawConfig,
+      runSettings.config,
+      runSettings.inputs.workspacePath,
+    );
+  if (_postCalculateVersionRuntimeConfigResult) {
     runSettings = {
       ...runSettings,
-      rawConfig: _preparePreRuntimeConfigResult.rawResolvedRuntime,
-      config: _preparePreRuntimeConfigResult.resolvedRuntime,
+      rawConfig: _postCalculateVersionRuntimeConfigResult.rawResolvedRuntime,
+      config: _postCalculateVersionRuntimeConfigResult.resolvedRuntime,
     };
     await synchronizeRuntimeStateAfterOverride({
       provider,
@@ -143,14 +201,15 @@ export async function executeReviewPreparePhase(
       currentVersion,
     });
     logger.stepFinish(
-      "Finished: Resolve runtime config override (prepare pre commands)",
+      "Finished: Resolve runtime config override (post calculate version commands)",
     );
   } else {
     logger.stepSkip(
-      "Skipped: Resolve runtime config override (prepare pre commands)",
+      "Skipped: Resolve runtime config override (post calculate version commands)",
     );
   }
 
+  // Generate changelog and prepare changes
   logger.stepStart("Starting: Generate changelog release content");
   const changelogReleaseResult = await generatePrepareChangelogReleaseContent(
     provider,
@@ -182,6 +241,57 @@ export async function executeReviewPreparePhase(
   );
   logger.stepFinish("Finished: Prepare and collect changes data to commit");
 
+  // preCommit hook
+  // Files are written to disk, git commit has NOT executed yet.
+  logger.debugStepStart("Starting: Export pre commit variables");
+  await exportPreCommitVariables(provider, changesData);
+  logger.debugStepFinish("Finished: Export pre commit variables");
+
+  logger.stepStart("Starting: Execute pre commit commands");
+  const preCommitResult = await runCommands(
+    runSettings.config.commandHooks,
+    "preCommit",
+  );
+  if (preCommitResult) {
+    logger.stepFinish(
+      `Finished: Execute pre commit commands. ${preCommitResult}`,
+    );
+  } else {
+    logger.stepSkip("Skipped: Execute pre commit commands (empty)");
+  }
+
+  logger.stepStart(
+    "Starting: Resolve runtime config override (pre commit commands)",
+  );
+  const _preCommitRuntimeConfigResult = await resolveRuntimeConfigOverride(
+    runSettings.rawConfig,
+    runSettings.config,
+    runSettings.inputs.workspacePath,
+  );
+  if (_preCommitRuntimeConfigResult) {
+    runSettings = {
+      ...runSettings,
+      rawConfig: _preCommitRuntimeConfigResult.rawResolvedRuntime,
+      config: _preCommitRuntimeConfigResult.resolvedRuntime,
+    };
+    await synchronizeRuntimeStateAfterOverride({
+      provider,
+      config: runSettings.config,
+      rawConfig: runSettings.rawConfig,
+      triggerBranchName: runSettings.inputs.triggerBranchName,
+      nextVersion,
+      currentVersion,
+    });
+    logger.stepFinish(
+      "Finished: Resolve runtime config override (pre commit commands)",
+    );
+  } else {
+    logger.stepSkip(
+      "Skipped: Resolve runtime config override (pre commit commands)",
+    );
+  }
+
+  // Commit
   logger.stepStart("Starting: Commit changes");
   const commitResult = await commitChangesToBranch(
     provider,
@@ -196,6 +306,57 @@ export async function executeReviewPreparePhase(
   );
   logger.stepFinish("Finished: Commit changes");
 
+  // postCommit hook
+  // Changes are committed and pushed.
+  logger.debugStepStart("Starting: Export post commit variables");
+  await exportPostCommitVariables(provider, commitResult.hash);
+  logger.debugStepFinish("Finished: Export post commit variables");
+
+  logger.stepStart("Starting: Execute post commit commands");
+  const postCommitResult = await runCommands(
+    runSettings.config.commandHooks,
+    "postCommit",
+  );
+  if (postCommitResult) {
+    logger.stepFinish(
+      `Finished: Execute post commit commands. ${postCommitResult}`,
+    );
+  } else {
+    logger.stepSkip("Skipped: Execute post commit commands (empty)");
+  }
+
+  logger.stepStart(
+    "Starting: Resolve runtime config override (post commit commands)",
+  );
+  const _postCommitRuntimeConfigResult = await resolveRuntimeConfigOverride(
+    runSettings.rawConfig,
+    runSettings.config,
+    runSettings.inputs.workspacePath,
+  );
+  if (_postCommitRuntimeConfigResult) {
+    runSettings = {
+      ...runSettings,
+      rawConfig: _postCommitRuntimeConfigResult.rawResolvedRuntime,
+      config: _postCommitRuntimeConfigResult.resolvedRuntime,
+    };
+    await synchronizeRuntimeStateAfterOverride({
+      provider,
+      config: runSettings.config,
+      rawConfig: runSettings.rawConfig,
+      triggerBranchName: runSettings.inputs.triggerBranchName,
+      nextVersion,
+      currentVersion,
+    });
+    logger.stepFinish(
+      "Finished: Resolve runtime config override (post commit commands)",
+    );
+  } else {
+    logger.stepSkip(
+      "Skipped: Resolve runtime config override (post commit commands)",
+    );
+  }
+
+  // Create/Update Proposal
   logger.stepStart("Starting: Create or update proposal");
   const proposal = await createOrUpdateProposal(
     provider,
@@ -239,43 +400,41 @@ export async function executeReviewPreparePhase(
     logger.stepFinish("Finished: Add reviewers to proposal");
   }
 
-  logger.debugStepStart("Starting: Export post prepare operation variables");
-  await exportPostPrepareOperationVariables(
+  // postProposal hook
+  // Proposal is created/updated.
+  logger.debugStepStart("Starting: Export post proposal variables");
+  await exportPostProposalVariables(
     provider,
-    commitResult.hash,
-    changesData,
-    {
-      proposalId: proposal.id,
-    },
+    proposal.id,
   );
-  logger.debugStepFinish("Finished: Export post prepare operation variables");
+  logger.debugStepFinish("Finished: Export post proposal variables");
 
-  logger.stepStart("Starting: Execute prepare post commands");
-  const postResult = await runCommands(
+  logger.stepStart("Starting: Execute post proposal commands");
+  const postProposalResult = await runCommands(
     runSettings.config.commandHooks,
-    "postPrepare",
+    "postProposal",
   );
-  if (postResult) {
+  if (postProposalResult) {
     logger.stepFinish(
-      `Finished: Execute prepare post commands. ${postResult}`,
+      `Finished: Execute post proposal commands. ${postProposalResult}`,
     );
   } else {
-    logger.stepSkip("Skipped: Execute prepare post commands (empty)");
+    logger.stepSkip("Skipped: Execute post proposal commands (empty)");
   }
 
   logger.stepStart(
-    "Starting: Resolve runtime config override (prepare post commands)",
+    "Starting: Resolve runtime config override (post proposal commands)",
   );
-  const _preparePostRuntimeConfigResult = await resolveRuntimeConfigOverride(
+  const _postProposalRuntimeConfigResult = await resolveRuntimeConfigOverride(
     runSettings.rawConfig,
     runSettings.config,
     runSettings.inputs.workspacePath,
   );
-  if (_preparePostRuntimeConfigResult) {
+  if (_postProposalRuntimeConfigResult) {
     runSettings = {
       ...runSettings,
-      rawConfig: _preparePostRuntimeConfigResult.rawResolvedRuntime,
-      config: _preparePostRuntimeConfigResult.resolvedRuntime,
+      rawConfig: _postProposalRuntimeConfigResult.rawResolvedRuntime,
+      config: _postProposalRuntimeConfigResult.resolvedRuntime,
     };
     await synchronizeRuntimeStateAfterOverride({
       provider,
@@ -286,11 +445,11 @@ export async function executeReviewPreparePhase(
       currentVersion,
     });
     logger.stepFinish(
-      "Finished: Resolve runtime config override (prepare post commands)",
+      "Finished: Resolve runtime config override (post proposal commands)",
     );
   } else {
     logger.stepSkip(
-      "Skipped: Resolve runtime config override (prepare post commands)",
+      "Skipped: Resolve runtime config override (post proposal commands)",
     );
   }
 

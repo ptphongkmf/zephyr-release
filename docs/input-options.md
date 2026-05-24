@@ -16,42 +16,42 @@ All available input options for Zephyr Release. They are all optional - default 
 
 ### token (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: `${{ github.token }}` for github
 
 Authentication token Zephyr Release operations.
 
 ### config-path (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: `"zephyr-release-config.json"`
 
 Path to the Zephyr Release config file, relative to the project root.
 
 ### config-format (Optional)
 
-Type: `"auto" | "json" | "jsonc" | "json5" | "yaml" | "toml"`  
+Type: `"auto" | "json" | "jsonc" | "json5" | "yaml" | "toml"`\
 Default: `"auto"`
 
 The format of the config file.
 
 ### config-override (Optional)
 
-Type: `string`  
+Type: `string`\
 Default: `""`
 
 Config content provided as a literal block scalar (`|`). It is merged with the config file and overrides duplicate keys.
 
 ### config-override-format (Optional)
 
-Type: `"auto" | "json" | "jsonc" | "json5" | "yaml" | "yml" | "toml"`  
+Type: `"auto" | "json" | "jsonc" | "json5" | "yaml" | "yml" | "toml"`\
 Default: `"auto"`
 
 The format of `config-override`.
 
 ### source-mode (Optional)
 
-Type: `"remote" | "local" | object`  
+Type: `"remote" | "local" | object`\
 Default: `"remote"`
 
 Defines the data execution strategy and source of truth for the operation.

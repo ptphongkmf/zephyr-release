@@ -51,35 +51,53 @@ These variables are exposed continuously throughout the operation, and their val
 - [patternContext](#patterncontext)
 - [proposalId](#proposalid)
 
-#### Prepare Phase
+#### Pre Calculate Version
 
-##### Pre Prepare
-
-These variables are available starting from the first [`command-hooks > pre-prepare`](./config-options.md#command-hooks--pre-prepare-optional) command runs.
+These variables are available starting from the first [`command-hooks > pre-calculate-version`](./config-options.md#command-hooks--pre-calculate-version-optional) command runs.
 
 - [resolvedCommitEntries](#resolvedcommitentries)
+
+#### Post Calculate Version
+
+These variables are available starting from the first [`command-hooks > post-calculate-version`](./config-options.md#command-hooks--post-calculate-version-optional) command runs.
+
 - [currentVersion](#currentversion)
 - [nextVersion](#nextversion)
 
-##### Post Prepare
+#### Pre Commit
 
-These variables are available starting from the first [`command-hooks > post-prepare`](./config-options.md#command-hooks--post-prepare-optional) command runs.
+These variables are available starting from the first [`command-hooks > pre-commit`](./config-options.md#command-hooks--pre-commit-optional) command runs.
+
+- [committedFilePaths](#committedfilepaths)
+
+#### Post Commit
+
+These variables are available starting from the first [`command-hooks > post-commit`](./config-options.md#command-hooks--post-commit-optional) command runs.
 
 - [commitHash](#commithash)
-- [committedFilePaths](#committedfilepaths)
+
+#### Post Proposal
+
+These variables are available starting from the first [`command-hooks > post-proposal`](./config-options.md#command-hooks--post-proposal-optional) command runs.
+
 - [jobs](#jobs)
 
-#### Publish Phase
+#### Pre Tag
 
-##### Pre Publish
+These variables are available starting from the first [`command-hooks > pre-tag`](./config-options.md#command-hooks--pre-tag-optional) command runs.
 
 - [nextVersion](#nextversion)
 
-##### Post Publish
+#### Pre Release
 
-These variables are available starting from the first [`command-hooks > post-publish`](./config-options.md#command-hooks--post-publish-optional) command runs.
+These variables are available starting from the first [`command-hooks > pre-release`](./config-options.md#command-hooks--pre-release-optional) command runs.
 
 - [tagHash](#taghash)
+
+#### Post Release
+
+These variables are available starting from the first [`command-hooks > post-release`](./config-options.md#command-hooks--post-release-optional) command runs.
+
 - [releaseId](#releaseid)
 - [releaseUploadUrl](#releaseuploadurl)
 
@@ -233,14 +251,14 @@ The operation start time in ISO format
 
 #### patternContext
 
-**Current** string pattern context object (JSON stringified). Contains all available string pattern variables that can be used in string templates. Dynamic values (functions or async functions) are resolved at stringify time, ensuring the exported context reflects the **current** state of all pattern variables. See: [pattern-context.ts](../src/tasks/string-templates-and-patterns/pattern-context.ts). For example, the patternContext exposed at `command-hooks > pre-run` might be differ compared to the patternContext exposed at `command-hooks > pre-prepare`
+**Current** string pattern context object (JSON stringified). Contains all available string pattern variables that can be used in string templates. Dynamic values (functions or async functions) are resolved at stringify time, ensuring the exported context reflects the **current** state of all pattern variables. See: [pattern-context.ts](../src/tasks/string-templates-and-patterns/pattern-context.ts). For example, the patternContext exposed at `command-hooks > pre-run` might be differ compared to the patternContext exposed at `command-hooks > pre-calculate-version`
 
 - Output: `zr-pattern-context`
 - Env: `ZR_PATTERN_CONTEXT`
 
 #### proposalId
 
-Proposal ID (pull request number, ...). For "propose" operation (create/update proposal), it is the proposal ID we are working with. For "release" operation, it is the proposal ID we just merged into. Will be undefined if proposal not found. For example, when there is no proposal open for "propose" operation yet, the initial value will be undefined. Then the "create-proposal" job will create the proposal, and re-update the number. The value can now be accessed in the next cmds like ([`command-hooks > post-prepare`](./config-options.md#command-hooks--post-prepare-optional))
+Proposal ID (pull request number, ...). For "propose" operation (create/update proposal), it is the proposal ID we are working with. For "release" operation, it is the proposal ID we just merged into. Will be undefined if proposal not found. For example, when there is no proposal open for "propose" operation yet, the initial value will be undefined. Then the "create-proposal" job will create the proposal, and re-update the number. The value can now be accessed in the next cmds like ([`command-hooks > post-proposal`](./config-options.md#command-hooks--post-proposal-optional))
 
 - Output: `zr-proposal-id`
 - Env: `ZR_PROPOSAL_ID`

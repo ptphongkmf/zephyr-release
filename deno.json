@@ -72,5 +72,10 @@
 
   "lint": {
     "include": ["src", "scripts"]
+  },
+
+  "fmt": {
+    "include": ["src", "scripts"],
+    "newLineKind": "crlf"
   }
 }
