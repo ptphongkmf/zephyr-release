@@ -3,6 +3,16 @@
 <br>
 
 <!-- CHANGELOG-BODY-START -->
+## [0.11.0](https://github.com/ptphongkmf/zephyr-release/compare/v0.10.0...v0.11.0) (2026-05-25) <!-- timezone: Asia/Ho_Chi_Minh -->
+
+### ⚠ BREAKING CHANGES
+
+- rework command hooks (#36)
+
+### Features
+
+- rework command hooks ([#36](https://github.com/ptphongkmf/zephyr-release/issues/36)) ([31c0694](https://github.com/ptphongkmf/zephyr-release/commit/31c0694982be24cac77f4594854410c0163b2f25))
+
 ## [0.10.0](https://github.com/ptphongkmf/zephyr-release/compare/v0.9.0...v0.10.0) (2026-05-23) <!-- timezone: Asia/Ho_Chi_Minh -->
 
 ### Features
