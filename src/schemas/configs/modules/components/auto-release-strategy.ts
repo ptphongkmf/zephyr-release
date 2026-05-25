@@ -87,7 +87,7 @@ export const AutoStrategySchema = v.variant("type", [
     type: AutoStrategyTypeSchema(
       "flag",
       "Triggers a release based on a strict boolean flag. Ideal for dynamic configuration overrides and custom script evaluations.\n" +
-        "The strategy will be evaluated after the cmd hooks `base.pre` and `prepare.pre` run.",
+        "The strategy will be evaluated after the cmd hooks `preRun` and `prePrepare` run.",
     ),
     value: v.pipe(
       v.optional(v.boolean(), false),

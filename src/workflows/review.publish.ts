@@ -1,8 +1,9 @@
 import { generatePublishChangelogReleaseContent } from "../tasks/changelog.ts";
 import { runCommands } from "../tasks/command.ts";
 import {
-  exportPostPublishOperationVariables,
-  exportPrePublishOperationVariables,
+  exportPostReleaseVariables,
+  exportPreReleaseVariables,
+  exportPreTagVariables,
 } from "../tasks/export-variables.ts";
 import { updateProposalLabelsOnMerge } from "../tasks/label.ts";
 import { logger } from "../tasks/logger.ts";
@@ -91,40 +92,42 @@ export async function executeReviewPublishPhase(
     "Finished: Create dynamic changelog string pattern contextt",
   );
 
-  logger.debugStepStart("Starting: Export pre publish operation variables");
-  await exportPrePublishOperationVariables(
+  // preTag hook
+  // About to create the Git tag.
+  logger.debugStepStart("Starting: Export pre tag variables");
+  await exportPreTagVariables(
     provider,
     nextVersion,
     associatedProposalForCommit.id,
   );
-  logger.debugStepFinish("Finished: Export pre publish operation variables");
+  logger.debugStepFinish("Finished: Export pre tag variables");
 
-  logger.stepStart("Starting: Execute publish pre commands");
-  const preResult = await runCommands(
-    runSettings.config.commandHooks.publish,
-    "pre",
+  logger.stepStart("Starting: Execute pre tag commands");
+  const preTagResult = await runCommands(
+    runSettings.config.commandHooks,
+    "preTag",
   );
-  if (preResult) {
+  if (preTagResult) {
     logger.stepFinish(
-      `Finished: Execute publish pre commands. ${preResult}`,
+      `Finished: Execute pre tag commands. ${preTagResult}`,
     );
   } else {
-    logger.stepSkip("Skipped: Execute publish pre commands (empty)");
+    logger.stepSkip("Skipped: Execute pre tag commands (empty)");
   }
 
   logger.stepStart(
-    "Starting: Resolve runtime config override (publish pre commands)",
+    "Starting: Resolve runtime config override (pre tag commands)",
   );
-  const _releasePreRuntimeConfigResult = await resolveRuntimeConfigOverride(
+  const _preTagRuntimeConfigResult = await resolveRuntimeConfigOverride(
     runSettings.rawConfig,
     runSettings.config,
     runSettings.inputs.workspacePath,
   );
-  if (_releasePreRuntimeConfigResult) {
+  if (_preTagRuntimeConfigResult) {
     runSettings = {
       ...runSettings,
-      rawConfig: _releasePreRuntimeConfigResult.rawResolvedRuntime,
-      config: _releasePreRuntimeConfigResult.resolvedRuntime,
+      rawConfig: _preTagRuntimeConfigResult.rawResolvedRuntime,
+      config: _preTagRuntimeConfigResult.resolvedRuntime,
     };
     await synchronizeRuntimeStateAfterOverride({
       provider,
@@ -134,14 +137,15 @@ export async function executeReviewPublishPhase(
       nextVersion,
     });
     logger.stepFinish(
-      "Finished: Resolve runtime config override (publish pre commands)",
+      "Finished: Resolve runtime config override (pre tag commands)",
     );
   } else {
     logger.stepSkip(
-      "Skipped: Resolve runtime config override (publish pre commands)",
+      "Skipped: Resolve runtime config override (pre tag commands)",
     );
   }
 
+  // Create tag
   logger.stepStart("Starting: Create tag");
   const createdTag = await createTag(
     provider,
@@ -151,6 +155,56 @@ export async function executeReviewPublishPhase(
   );
   logger.stepFinish("Finished: Create tag");
 
+  // preRelease hook
+  // Tag exists, platform release has NOT been created yet.
+  logger.debugStepStart("Starting: Export pre release variables");
+  await exportPreReleaseVariables(provider, createdTag.hash);
+  logger.debugStepFinish("Finished: Export pre release variables");
+
+  logger.stepStart("Starting: Execute pre release commands");
+  const preReleaseResult = await runCommands(
+    runSettings.config.commandHooks,
+    "preRelease",
+  );
+  if (preReleaseResult) {
+    logger.stepFinish(
+      `Finished: Execute pre release commands. ${preReleaseResult}`,
+    );
+  } else {
+    logger.stepSkip("Skipped: Execute pre release commands (empty)");
+  }
+
+  logger.stepStart(
+    "Starting: Resolve runtime config override (pre release commands)",
+  );
+  const _preReleaseRuntimeConfigResult = await resolveRuntimeConfigOverride(
+    runSettings.rawConfig,
+    runSettings.config,
+    runSettings.inputs.workspacePath,
+  );
+  if (_preReleaseRuntimeConfigResult) {
+    runSettings = {
+      ...runSettings,
+      rawConfig: _preReleaseRuntimeConfigResult.rawResolvedRuntime,
+      config: _preReleaseRuntimeConfigResult.resolvedRuntime,
+    };
+    await synchronizeRuntimeStateAfterOverride({
+      provider,
+      config: runSettings.config,
+      rawConfig: runSettings.rawConfig,
+      triggerBranchName: runSettings.inputs.triggerBranchName,
+      nextVersion,
+    });
+    logger.stepFinish(
+      "Finished: Resolve runtime config override (pre release commands)",
+    );
+  } else {
+    logger.stepSkip(
+      "Skipped: Resolve runtime config override (pre release commands)",
+    );
+  }
+
+  // Create release and attach assets
   logger.stepStart("Starting: Create release");
   let createdReleaseNote: ProviderRelease | undefined;
   if (runSettings.config.release.createRelease) {
@@ -189,41 +243,42 @@ export async function executeReviewPublishPhase(
   );
   logger.stepFinish("Finished: Update merged proposal labels");
 
-  logger.debugStepStart("Starting: Export post publish operation variables");
-  await exportPostPublishOperationVariables(
+  // postRelease hook
+  // Platform release is live and assets are attached.
+  logger.debugStepStart("Starting: Export post release variables");
+  await exportPostReleaseVariables(
     provider,
-    createdTag.hash,
     createdReleaseNote?.id,
     createdReleaseNote?.uploadUrl,
   );
-  logger.debugStepFinish("Finished: Export post publish operation variables");
+  logger.debugStepFinish("Finished: Export post release variables");
 
-  logger.stepStart("Starting: Execute publish post commands");
-  const postResult = await runCommands(
-    runSettings.config.commandHooks.publish,
-    "post",
+  logger.stepStart("Starting: Execute post release commands");
+  const postReleaseResult = await runCommands(
+    runSettings.config.commandHooks,
+    "postRelease",
   );
-  if (postResult) {
+  if (postReleaseResult) {
     logger.stepFinish(
-      `Finished: Execute publish post commands. ${postResult}`,
+      `Finished: Execute post release commands. ${postReleaseResult}`,
     );
   } else {
-    logger.stepSkip("Skipped: Execute publish post commands (empty)");
+    logger.stepSkip("Skipped: Execute post release commands (empty)");
   }
 
   logger.stepStart(
-    "Starting: Resolve runtime config override (publish post commands)",
+    "Starting: Resolve runtime config override (post release commands)",
   );
-  const _releasePostRuntimeConfigResult = await resolveRuntimeConfigOverride(
+  const _postReleaseRuntimeConfigResult = await resolveRuntimeConfigOverride(
     runSettings.rawConfig,
     runSettings.config,
     runSettings.inputs.workspacePath,
   );
-  if (_releasePostRuntimeConfigResult) {
+  if (_postReleaseRuntimeConfigResult) {
     runSettings = {
       ...runSettings,
-      rawConfig: _releasePostRuntimeConfigResult.rawResolvedRuntime,
-      config: _releasePostRuntimeConfigResult.resolvedRuntime,
+      rawConfig: _postReleaseRuntimeConfigResult.rawResolvedRuntime,
+      config: _postReleaseRuntimeConfigResult.resolvedRuntime,
     };
     await synchronizeRuntimeStateAfterOverride({
       provider,
@@ -233,11 +288,11 @@ export async function executeReviewPublishPhase(
       nextVersion,
     });
     logger.stepFinish(
-      "Finished: Resolve runtime config override (publish post commands)",
+      "Finished: Resolve runtime config override (post release commands)",
     );
   } else {
     logger.stepSkip(
-      "Skipped: Resolve runtime config override (publish post commands)",
+      "Skipped: Resolve runtime config override (post release commands)",
     );
   }
 

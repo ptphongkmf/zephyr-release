@@ -3,17 +3,18 @@ import type {
   BaseOperationVariables,
   DynamicOperationVariables,
   FinalOperationVariables,
-  PostPrepareOperationVariables,
-  PostPublishOperationVariables,
-  PrePrepareOperationVariables,
-  PrePublishOperationVariables,
+  PostCalculateVersionVariables,
+  PostCommitVariables,
+  PostProposalVariables,
+  PostReleaseVariables,
+  PreCalculateVersionVariables,
+  PreCommitVariables,
+  PreReleaseVariables,
+  PreTagVariables,
 } from "../types/operation-variables.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import type { ProviderProposal } from "../types/providers/proposal.ts";
-import {
-  toOutputKey,
-  toEnvKey,
-} from "../utils/transformers/case.ts";
+import { toEnvKey, toOutputKey } from "../utils/transformers/case.ts";
 import { jsonValueNormalizer } from "../utils/transformers/json.ts";
 import { format, type SemVer } from "@std/semver";
 import type { WorkingBranchResult } from "./branch.ts";
@@ -94,7 +95,7 @@ export async function exportBaseOperationVariables(
 
     case "autorelease":
       // Empty
-      // For mode "auto", jobs are available at post prepare phase
+      // For mode "auto", jobs are available at post commit phase
 
       break;
   }
@@ -147,47 +148,120 @@ export async function exportBaseOperationVariables(
   });
 }
 
-export async function exportPrePrepareOperationVariables(
+export async function exportPreCalculateVersionVariables(
   provider: PlatformProvider,
   resolvedCommitEntries: ResolvedCommit[],
-  currentVersion: SemVer | undefined,
-  nextVersion: SemVer,
 ) {
-  const prepareExportObject = {
+  const exportObject = {
     resolvedCommitEntries: JSON.stringify(resolvedCommitEntries),
-
-    currentVersion: currentVersion ? format(currentVersion) : "",
-    nextVersion: format(nextVersion),
 
     patternContext: await stringifyCurrentPatternContext(),
   } satisfies
-    & PrePrepareOperationVariables
+    & PreCalculateVersionVariables
     & Pick<DynamicOperationVariables, "patternContext">;
 
   taskLogger.debugWrap((dLogger) => {
     dLogger.startGroup(
-      "Pre prepare operation variables to export (internal key name):",
+      "Pre calculate version variables to export (internal key name):",
     );
-    dLogger.info(JSON.stringify(prepareExportObject, null, 2));
+    dLogger.info(JSON.stringify(exportObject, null, 2));
     dLogger.endGroup();
   });
 
-  Object.entries(prepareExportObject).forEach(([k, v]) => {
+  Object.entries(exportObject).forEach(([k, v]) => {
     provider.setOutput(toOutputKey(k), v);
     provider.setEnv(toEnvKey(k), v);
   });
 }
 
-export async function exportPostPrepareOperationVariables(
+export async function exportPostCalculateVersionVariables(
+  provider: PlatformProvider,
+  currentVersion: SemVer | undefined,
+  nextVersion: SemVer,
+) {
+  const exportObject = {
+    currentVersion: currentVersion ? format(currentVersion) : "",
+    nextVersion: format(nextVersion),
+
+    patternContext: await stringifyCurrentPatternContext(),
+  } satisfies
+    & PostCalculateVersionVariables
+    & Pick<DynamicOperationVariables, "patternContext">;
+
+  taskLogger.debugWrap((dLogger) => {
+    dLogger.startGroup(
+      "Post calculate version variables to export (internal key name):",
+    );
+    dLogger.info(JSON.stringify(exportObject, null, 2));
+    dLogger.endGroup();
+  });
+
+  Object.entries(exportObject).forEach(([k, v]) => {
+    provider.setOutput(toOutputKey(k), v);
+    provider.setEnv(toEnvKey(k), v);
+  });
+}
+
+export async function exportPreCommitVariables(
+  provider: PlatformProvider,
+  changesData: Map<string, string | null>,
+) {
+  const exportObject = {
+    committedFilePaths: JSON.stringify([...changesData.keys()]),
+
+    patternContext: await stringifyCurrentPatternContext(),
+  } satisfies
+    & PreCommitVariables
+    & Pick<DynamicOperationVariables, "patternContext">;
+
+  taskLogger.debugWrap((dLogger) => {
+    dLogger.startGroup(
+      "Pre commit variables to export (internal key name):",
+    );
+    dLogger.info(JSON.stringify(exportObject, null, 2));
+    dLogger.endGroup();
+  });
+
+  Object.entries(exportObject).forEach(([k, v]) => {
+    provider.setOutput(toOutputKey(k), v);
+    provider.setEnv(toEnvKey(k), v);
+  });
+}
+
+export async function exportPostCommitVariables(
   provider: PlatformProvider,
   commitHash: string,
-  changesData: Map<string, string | null>,
+) {
+  const exportObject = {
+    commitHash,
+
+    patternContext: await stringifyCurrentPatternContext(),
+  } satisfies
+    & PostCommitVariables
+    & Pick<DynamicOperationVariables, "patternContext">;
+
+  taskLogger.debugWrap((dLogger) => {
+    dLogger.startGroup(
+      "Post commit variables to export (internal key name):",
+    );
+    dLogger.info(JSON.stringify(exportObject, null, 2));
+    dLogger.endGroup();
+  });
+
+  Object.entries(exportObject).forEach(([k, v]) => {
+    provider.setOutput(toOutputKey(k), v);
+    provider.setEnv(toEnvKey(k), v);
+  });
+}
+
+export async function exportPostProposalVariables(
+  provider: PlatformProvider,
+  proposalId: string | undefined,
   modeRelatedData?: {
-    proposalId?: string;
     config?: ConfigOutput;
   },
 ) {
-  const { proposalId, config } = modeRelatedData ?? {};
+  const { config } = modeRelatedData ?? {};
 
   const operationJobs: OperationJob[] = [];
   if (config) {
@@ -202,84 +276,106 @@ export async function exportPostPrepareOperationVariables(
     }
   }
 
-  const prepareExportObject = {
-    commitHash,
-    committedFilePaths: JSON.stringify([...changesData.keys()]),
+  const exportObject = {
+    proposalId: proposalId,
     jobs: JSON.stringify(operationJobs),
 
-    proposalId: proposalId,
     patternContext: await stringifyCurrentPatternContext(),
   } satisfies
-    & PostPrepareOperationVariables
+    & PostProposalVariables
     & Pick<DynamicOperationVariables, "proposalId" | "patternContext">;
 
   taskLogger.debugWrap((dLogger) => {
     dLogger.startGroup(
-      "Post prepare operation variables to export (internal key name):",
+      "Post proposal variables to export (internal key name):",
     );
-    dLogger.info(JSON.stringify(prepareExportObject, null, 2));
+    dLogger.info(JSON.stringify(exportObject, null, 2));
     dLogger.endGroup();
   });
 
-  Object.entries(prepareExportObject).forEach(([k, v]) => {
+  Object.entries(exportObject).forEach(([k, v]) => {
     provider.setOutput(toOutputKey(k), v);
     provider.setEnv(toEnvKey(k), v);
   });
 }
 
-export async function exportPrePublishOperationVariables(
+export async function exportPreTagVariables(
   provider: PlatformProvider,
   nextVersion: SemVer,
   proposalId?: string,
 ) {
-  const prepareExportObject = {
+  const exportObject = {
     nextVersion: format(nextVersion),
 
     proposalId: proposalId,
     patternContext: await stringifyCurrentPatternContext(),
   } satisfies
-    & PrePublishOperationVariables
+    & PreTagVariables
     & Pick<DynamicOperationVariables, "patternContext" | "proposalId">;
 
   taskLogger.debugWrap((dLogger) => {
     dLogger.startGroup(
-      "Pre publish operation variables to export (internal key name):",
+      "Pre tag variables to export (internal key name):",
     );
-    dLogger.info(JSON.stringify(prepareExportObject, null, 2));
+    dLogger.info(JSON.stringify(exportObject, null, 2));
     dLogger.endGroup();
   });
 
-  Object.entries(prepareExportObject).forEach(([k, v]) => {
+  Object.entries(exportObject).forEach(([k, v]) => {
     provider.setOutput(toOutputKey(k), v);
     provider.setEnv(toEnvKey(k), v);
   });
 }
 
-export async function exportPostPublishOperationVariables(
+export async function exportPreReleaseVariables(
   provider: PlatformProvider,
   tagHash: string,
+) {
+  const exportObject = {
+    tagHash,
+
+    patternContext: await stringifyCurrentPatternContext(),
+  } satisfies
+    & PreReleaseVariables
+    & Pick<DynamicOperationVariables, "patternContext">;
+
+  taskLogger.debugWrap((dLogger) => {
+    dLogger.startGroup(
+      "Pre release variables to export (internal key name):",
+    );
+    dLogger.info(JSON.stringify(exportObject, null, 2));
+    dLogger.endGroup();
+  });
+
+  Object.entries(exportObject).forEach(([k, v]) => {
+    provider.setOutput(toOutputKey(k), v);
+    provider.setEnv(toEnvKey(k), v);
+  });
+}
+
+export async function exportPostReleaseVariables(
+  provider: PlatformProvider,
   releaseId?: string | number,
   releaseUploadUrl?: string,
 ) {
-  const prepareExportObject = {
-    tagHash,
+  const exportObject = {
     releaseId,
     releaseUploadUrl,
 
     patternContext: await stringifyCurrentPatternContext(),
   } satisfies
-    & PostPublishOperationVariables
+    & PostReleaseVariables
     & Pick<DynamicOperationVariables, "patternContext">;
 
   taskLogger.debugWrap((dLogger) => {
     dLogger.startGroup(
-      "Post publish operation variables to export (internal key name):",
+      "Post release variables to export (internal key name):",
     );
-    dLogger.info(JSON.stringify(prepareExportObject, null, 2));
+    dLogger.info(JSON.stringify(exportObject, null, 2));
     dLogger.endGroup();
   });
 
-  Object.entries(prepareExportObject).forEach(([k, v]) => {
+  Object.entries(exportObject).forEach(([k, v]) => {
     provider.setOutput(toOutputKey(k), v);
     provider.setEnv(toEnvKey(k), v);
   });

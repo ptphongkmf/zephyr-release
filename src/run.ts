@@ -65,8 +65,8 @@ export async function run(provider: PlatformProvider) {
 
     logger.stepStart("Starting: Execute base pre commands");
     const preResult = await runCommands(
-      runSettings.config.commandHooks.base,
-      "pre",
+      runSettings.config.commandHooks,
+      "preRun",
     );
     if (preResult) {
       logger.stepFinish(`Finished: Execute base pre commands. ${preResult}`);
@@ -133,8 +133,8 @@ export async function run(provider: PlatformProvider) {
   } finally {
     logger.stepStart("Starting: Execute base post commands");
     const postResult = await runCommands(
-      runSettings.config.commandHooks.base,
-      "post",
+      runSettings.config.commandHooks,
+      "postRun",
     );
     if (postResult) {
       logger.stepFinish(`Finished: Execute base post commands. ${postResult}`);

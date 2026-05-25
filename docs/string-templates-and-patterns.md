@@ -68,7 +68,7 @@ Available after extracting the next version natively from the primary version fi
 
 Custom string patterns defined in your configuration file using the [`custom-string-patterns`](./config-options.md#custom-string-patterns-optional) option. If a custom pattern key matches a built-in pattern, the built-in takes priority and your custom one is ignored. Usage: `{{ yourCustomKey }}`.
 
-### Fixed String Patterns  
+### Fixed String Patterns
 
 These string patterns are resolved at runtime and remain fixed for the lifetime of the process.
 
@@ -186,7 +186,7 @@ Custom transformers.
 
 - `wrap_compare_latest_tag: currentTag, skip`: Wraps the current text in a markdown link comparing the current given tag to the latest tag. If the repository has no prior tags (first release), the text is returned as-is. Otherwise, if `skip` exceeds the number of available tags, an error is thrown
   - currentTag: `string`
-  - skip (optional): `number` (positive integer), `DEFAULT: 0`  
+  - skip (optional): `number` (positive integer), `DEFAULT: 0`\
     how many tags back from the latest tag to compare against (`0` = latest tag, `1` = tag before the latest, etc.)
   - Usage: `{{ text | wrap_compare_latest_tag: currentTag, skip }}` or `{{ text | wrap_compare_latest_tag: currentTag }}`
 
@@ -200,31 +200,31 @@ As mentioned above, Zephyr Release uses LiquidJS under the hood. Therefore there
 
 Below are some commonly used built-in transformers:
 
-- `slice(start, length)`: extract a substring  
+- `slice(start, length)`: extract a substring\
   Usage: `{{ someString | slice: 0, 5 }}` → first 5 characters
 
-- `upcase` / `downcase`: convert text to upper / lower case  
+- `upcase` / `downcase`: convert text to upper / lower case\
   Usage: `{{ name | upcase }}`
 
-- `truncate(length, ellipsis)`: shorten long text and append an ellipsis (optional)  
+- `truncate(length, ellipsis)`: shorten long text and append an ellipsis (optional)\
   Usage: `{{ description | truncate: 30, "…" }}`
 
-- `default(value)`: fallback value if the input is empty or nil  
+- `default(value)`: fallback value if the input is empty or nil\
   Usage: `{{ nickname | default: "n/a" }}`
 
-- `date(format)`: format a date/time value  
+- `date(format)`: format a date/time value\
   Usage: `{{ publishedAt | date: "%Y-%m-%d" }}`
 
-- `replace(search, replace)` / `replace_first(search, replace)`: replace occurrences of a substring  
+- `replace(search, replace)` / `replace_first(search, replace)`: replace occurrences of a substring\
   Usage: `{{ text | replace: "foo", "bar" }}`
 
-- `strip` / `strip_html`: remove surrounding whitespace or strip HTML tags  
+- `strip` / `strip_html`: remove surrounding whitespace or strip HTML tags\
   Usage: `{{ htmlContent | strip_html | strip }}`
 
-- `json`: serialize a value as JSON (useful for debugging or embedding structured data)  
+- `json`: serialize a value as JSON (useful for debugging or embedding structured data)\
   Usage: `{{ obj | json }}`
 
-- `join(separator)`: join array items into a string  
+- `join(separator)`: join array items into a string\
   Usage: `{{ items | join: ", " }}`
 
 These built-in transformers cover many common needs. For the full list and syntax details, see: <https://liquidjs.com/filters/overview.html>.

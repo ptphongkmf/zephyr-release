@@ -74,24 +74,44 @@ export type DynamicOperationVariables = Pick<
   | "proposalId"
 >;
 
-export type PrePrepareOperationVariables = Pick<
+export type PreCalculateVersionVariables = Pick<
   OperationVariables,
-  "resolvedCommitEntries" | "currentVersion" | "nextVersion"
+  "resolvedCommitEntries"
 >;
 
-export type PostPrepareOperationVariables = Pick<
+export type PostCalculateVersionVariables = Pick<
   OperationVariables,
-  "jobs" | "commitHash" | "committedFilePaths"
+  "currentVersion" | "nextVersion"
 >;
 
-export type PrePublishOperationVariables = Pick<
+export type PreCommitVariables = Pick<
+  OperationVariables,
+  "committedFilePaths"
+>;
+
+export type PostCommitVariables = Pick<
+  OperationVariables,
+  "commitHash"
+>;
+
+export type PostProposalVariables = Pick<
+  OperationVariables,
+  "proposalId" | "jobs"
+>;
+
+export type PreTagVariables = Pick<
   OperationVariables,
   "nextVersion"
 >;
 
-export type PostPublishOperationVariables = Pick<
+export type PreReleaseVariables = Pick<
   OperationVariables,
-  "tagHash" | "releaseId" | "releaseUploadUrl"
+  "tagHash"
+>;
+
+export type PostReleaseVariables = Pick<
+  OperationVariables,
+  "releaseId" | "releaseUploadUrl"
 >;
 
 export type FinalOperationVariables = Pick<OperationVariables, "outcome">;
