@@ -3,7 +3,9 @@
 
   "time-zone": "Asia/Ho_Chi_Minh",
 
-  "review": { "title-template": "release: v{{ nextVersion }}" },
+  "review": {
+    "title-template-path": ".zephyr-release/templates/release-message.liquid"
+  },
 
   "version-files": {
     "path": "deno.json",
@@ -12,8 +14,12 @@
 
   "commit": {
     "local-changes-to-commit": ["dist/*", "schemas/**/*"],
-    "header-template": "release: v{{ nextVersion }}"
+    "header-template-path": ".zephyr-release/templates/release-message.liquid"
   },
 
-  "command-hooks": { "prepare": { "pre": "deno task build" } }
+  "release": {
+    "body-template-path": ".zephyr-release/templates/release-header.liquid"
+  },
+
+  "command-hooks": { "pre-commit": "deno task build" }
 }
