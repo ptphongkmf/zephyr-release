@@ -21,7 +21,7 @@ Some example [config files](./examples/).
   - [name (Optional)](#name-optional)
   - [time-zone (Optional)](#time-zone-optional)
   - [custom-string-patterns (Optional)](#custom-string-patterns-optional)
-  - [mode (Optional)](#mode-optional)
+  - [release-flow (Optional)](#release-flow-optional)
   - [review (Optional)](#review-optional)
     - [review \> draft (Optional)](#review--draft-optional)
     - [review \> working-branch-name-template (Optional)](#review--working-branch-name-template-optional)
@@ -41,9 +41,9 @@ Some example [config files](./examples/).
         - [\> on-create \> create-if-missing (Optional)](#-on-create--create-if-missing-optional)
       - [\> labels \> on-merge (Optional)](#-labels--on-merge-optional)
         - [\> on-merge \> add (Optional)](#-on-merge--add-optional)
-        - [\> add \> same properties as review \> labels \> on-createe\`](#-add--same-properties-as-review--labels--on-createe)
+        - [\> add \> same properties as review \> labels \> on-create](#-add--same-properties-as-review--labels--on-create)
         - [\> on-merge \> remove (Optional)](#-on-merge--remove-optional)
-        - [\> remove \> same properties as review \> labels \> on-createe\`](#-remove--same-properties-as-review--labels--on-createe)
+        - [\> remove \> same properties as review \> labels \> on-create](#-remove--same-properties-as-review--labels--on-create)
     - [review \> assignees (Optional)](#review--assignees-optional)
     - [review \> reviewers (Optional)](#review--reviewers-optional)
   - [auto (Optional)](#auto-optional)
@@ -59,7 +59,7 @@ Some example [config files](./examples/).
   - [commit-types (Optional)](#commit-types-optional)
     - [commit-types \> type (Required)](#commit-types--type-required)
     - [commit-types \> section (Optional)](#commit-types--section-optional)
-    - [commit-types \> sectionAlt (Optional)](#commit-types--sectionalt-optional)
+    - [commit-types \> section-alt (Optional)](#commit-types--section-alt-optional)
     - [commit-types \> hidden (Optional)](#commit-types--hidden-optional)
   - [max-commits-to-resolve (Optional)](#max-commits-to-resolve-optional)
   - [resolve-until-commit-hash (Optional)](#resolve-until-commit-hash-optional)
@@ -72,9 +72,9 @@ Some example [config files](./examples/).
       - [\> major \> count-breaking-as (Optional)](#-major--count-breaking-as-optional)
       - [\> major \> commits-per-bump (Optional)](#-major--commits-per-bump-optional)
     - [bump-strategy \> minor (Optional)](#bump-strategy--minor-optional)
-      - [\> minor \> same properties as bump-strategy \> major\`](#-minor--same-properties-as-bump-strategy--major)
+      - [\> minor \> same properties as bump-strategy \> major](#-minor--same-properties-as-bump-strategy--major)
     - [bump-strategy \> patch (Optional)](#bump-strategy--patch-optional)
-      - [\> patch \> same properties as bump-strategy \> major\`](#-patch--same-properties-as-bump-strategy--major)
+      - [\> patch \> same properties as bump-strategy \> major](#-patch--same-properties-as-bump-strategy--major)
     - [bump-strategy \> prerelease (Optional)](#bump-strategy--prerelease-optional)
       - [\> prerelease \> enabled (Optional)](#-prerelease--enabled-optional)
       - [\> prerelease \> override (Optional)](#-prerelease--override-optional)
@@ -82,7 +82,7 @@ Some example [config files](./examples/).
       - [\> prerelease \> extensions (Optional)](#-prerelease--extensions-optional)
         - [\> extensions \> type (Required)](#-extensions--type-required)
     - [bump-strategy \> build (Optional)](#bump-strategy--build-optional)
-      - [\> build \> same properties as bump-strategy \> prereleasee\`](#-build--same-properties-as-bump-strategy--prereleasee)
+      - [\> build \> same properties as bump-strategy \> prerelease](#-build--same-properties-as-bump-strategy--prerelease)
   - [changelog (Optional)](#changelog-optional)
     - [changelog \> write-to-file (Optional)](#changelog--write-to-file-optional)
     - [changelog \> path (Optional)](#changelog--path-optional)
@@ -160,23 +160,23 @@ Some example [config files](./examples/).
       - [\> pre-run \> timeout (Optional)](#-pre-run--timeout-optional)
       - [\> pre-run \> continue-on-error (Optional)](#-pre-run--continue-on-error-optional)
     - [command-hooks \> pre-calculate-version (Optional)](#command-hooks--pre-calculate-version-optional)
-      - [\> pre-calculate-version \> same properties as command-hooks \> pre-runn\`](#-pre-calculate-version--same-properties-as-command-hooks--pre-runn)
+      - [\> pre-calculate-version \> same properties as command-hooks \> pre-run](#-pre-calculate-version--same-properties-as-command-hooks--pre-run)
     - [command-hooks \> post-calculate-version (Optional)](#command-hooks--post-calculate-version-optional)
-      - [\> post-calculate-version \> same properties as command-hooks \> pre-runn\`](#-post-calculate-version--same-properties-as-command-hooks--pre-runn)
+      - [\> post-calculate-version \> same properties as command-hooks \> pre-run](#-post-calculate-version--same-properties-as-command-hooks--pre-run)
     - [command-hooks \> pre-commit (Optional)](#command-hooks--pre-commit-optional)
-      - [\> pre-commit \> same properties as command-hooks \> pre-runn\`](#-pre-commit--same-properties-as-command-hooks--pre-runn)
+      - [\> pre-commit \> same properties as command-hooks \> pre-run](#-pre-commit--same-properties-as-command-hooks--pre-run)
     - [command-hooks \> post-commit (Optional)](#command-hooks--post-commit-optional)
-      - [\> post-commit \> same properties as command-hooks \> pre-runn\`](#-post-commit--same-properties-as-command-hooks--pre-runn)
+      - [\> post-commit \> same properties as command-hooks \> pre-run](#-post-commit--same-properties-as-command-hooks--pre-run)
     - [command-hooks \> post-proposal (Optional)](#command-hooks--post-proposal-optional)
-      - [\> post-proposal \> same properties as command-hooks \> pre-runn\`](#-post-proposal--same-properties-as-command-hooks--pre-runn)
+      - [\> post-proposal \> same properties as command-hooks \> pre-run](#-post-proposal--same-properties-as-command-hooks--pre-run)
     - [command-hooks \> pre-tag (Optional)](#command-hooks--pre-tag-optional)
-      - [\> pre-tag \> same properties as command-hooks \> pre-runn\`](#-pre-tag--same-properties-as-command-hooks--pre-runn)
+      - [\> pre-tag \> same properties as command-hooks \> pre-run](#-pre-tag--same-properties-as-command-hooks--pre-run)
     - [command-hooks \> pre-release (Optional)](#command-hooks--pre-release-optional)
-      - [\> pre-release \> same properties as command-hooks \> pre-runn\`](#-pre-release--same-properties-as-command-hooks--pre-runn)
+      - [\> pre-release \> same properties as command-hooks \> pre-run](#-pre-release--same-properties-as-command-hooks--pre-run)
     - [command-hooks \> post-release (Optional)](#command-hooks--post-release-optional)
-      - [\> post-release \> same properties as command-hooks \> pre-runn\`](#-post-release--same-properties-as-command-hooks--pre-runn)
+      - [\> post-release \> same properties as command-hooks \> pre-run](#-post-release--same-properties-as-command-hooks--pre-run)
     - [command-hooks \> post-run (Optional)](#command-hooks--post-run-optional)
-      - [\> post-run \> same properties as command-hooks \> pre-runn\`](#-post-run--same-properties-as-command-hooks--pre-runn)
+      - [\> post-run \> same properties as command-hooks \> pre-run](#-post-run--same-properties-as-command-hooks--pre-run)
   - [runtime-config-override (Optional)](#runtime-config-override-optional)
     - [runtime-config-override \> path (Required)](#runtime-config-override--path-required)
     - [runtime-config-override \> format (Optional)](#runtime-config-override--format-optional)
@@ -215,12 +215,12 @@ Custom string patterns to use in templates. The key is the pattern name, availab
 
 [⬆ Back to top](#table-of-content)
 
-### mode (Optional)
+### release-flow (Optional)
 
 Type: `"review" | "auto"`\
 Default: `"review"`
 
-Defines the execution strategy.
+Defines the release flow.
 
 - **`"review"`**: Routes updates through a release proposal (PR, MR, ...). This is the default behavior where Zephyr Release creates or updates a proposal with version bumps and changelog changes.
 - **`"auto"`**: Bypasses the proposal and commits directly to the branch. When set to `"auto"`, the release operation will commit changes directly to the branch without creating a proposal (PR, MR, ...).
@@ -234,7 +234,7 @@ If choosing `"auto"`, see [`auto > trigger-strategy`](#auto--trigger-strategy-op
 Type: `object`\
 **Properties:** [`draft`](#review--draft-optional), [`working-branch-name-template`](#review--working-branch-name-template-optional), [`title-template`](#review--title-template-optional), [`title-template-path`](#review--title-template-path-optional), [`header-template`](#review--header-template-optional), [`header-template-path`](#review--header-template-path-optional), [`body-template`](#review--body-template-optional), [`body-template-path`](#review--body-template-path-optional), [`footer-template`](#review--footer-template-optional), [`footer-template-path`](#review--footer-template-path-optional), [`labels`](#review--labels-optional), [`assignees`](#review--assignees-optional), [`reviewers`](#review--reviewers-optional)
 
-Configuration specific to the `"review"` execution `mode`. Defines how release proposals (such as PRs, MRs, ...) are generated, formatted, and tracked.
+Configuration specific to the `"review"` release flow. Defines how release proposals (such as PRs, MRs, ...) are generated, formatted, and tracked.
 
 [⬆ Back to top](#table-of-content)
 
@@ -402,7 +402,7 @@ Labels to add when proposal is merged.
 
 [⬆ Back to top](#table-of-content)
 
-###### > add > same properties as review > labels > on-createe`
+###### > add > same properties as review > labels > on-create
 
 Same as [`review > labels > on-create`](#-labels--on-create-optional).
 
@@ -421,7 +421,7 @@ Labels to remove when proposal is merged. Use `"<ALL_ON_CREATE>"` to remove all 
 
 [⬆ Back to top](#table-of-content)
 
-###### > remove > same properties as review > labels > on-createe`
+###### > remove > same properties as review > labels > on-create
 
 Same as [`review > labels > on-create`](#-labels--on-create-optional).
 
@@ -454,7 +454,7 @@ Use the platform's expected format (e.g., usernames or team slugs).
 
 Type: `object`
 
-Configuration specific to the `"auto"` execution `mode`. Defines the conditions and strategies for bypassing proposals and committing releases directly.
+Configuration specific to the `"auto"` release flow. Defines the conditions and strategies for bypassing proposals and committing releases directly.
 
 [⬆ Back to top](#table-of-content)
 
@@ -463,7 +463,7 @@ Configuration specific to the `"auto"` execution `mode`. Defines the conditions 
 Type: [`AutoStrategy`](#autostrategy)\
 Default: `{ type: "commit-types" }`
 
-Strategy that determines whether an automated release should be triggered when base [`mode`](#mode-optional) is set to `"auto"`.\
+Strategy that determines whether an automated release should be triggered when base [`release-flow`](#release-flow-optional) is set to `"auto"`.\
 Defines the conditions under which a release will be automatically triggered and committed directly to the branch.
 
 [⬆ Back to top](#table-of-content)
@@ -549,7 +549,7 @@ Marks this file as the primary source of truth for the current version.
 Type: `array of objects`\
 Default: [`DEFAULT_COMMIT_TYPES`](../src/constants/defaults/commit.ts)
 
-**Properties:** [`type`](#commit-types--type-required), [`section`](#commit-types--section-optional), [`sectionAlt`](#commit-types--sectionalt-optional), [`hidden`](#commit-types--hidden-optional)
+**Properties:** [`type`](#commit-types--type-required), [`section`](#commit-types--section-optional), [`section-alt`](#commit-types--section-alt-optional), [`hidden`](#commit-types--hidden-optional)
 
 List of commit types that the application will track and record. Only commits with these types will be considered when calculating version bumps and generating release notes.
 
@@ -571,7 +571,7 @@ Changelog section heading for this commit type. When empty, the `type` value is 
 
 [⬆ Back to top](#table-of-content)
 
-#### commit-types > sectionAlt (Optional)
+#### commit-types > section-alt (Optional)
 
 Type: `string`
 
@@ -694,7 +694,7 @@ Usually this should only be set for a single semver level (major, minor, or patc
 Type: `number | string`\
 Default: `Infinity`
 
-Number of commits required for each additional bump after the first. Use `Infinity`, `"Infinity"`, or `"infinity"` to always bump once, unless `countBreakingAs` is set to `"bump"`.
+Number of commits required for each additional bump after the first. Use `Infinity`, `"Infinity"`, or `"infinity"` to always bump once, unless `count-breaking-as` is set to `"bump"`.
 
 Note: In JSON/JSONC files you can use `"Infinity"` or `"infinity"`; in JSON5 you can use `Infinity` directly.
 
@@ -709,7 +709,7 @@ Strategy for minor version bumps (0.x.0).
 
 [⬆ Back to top](#table-of-content)
 
-##### > minor > same properties as bump-strategy > major`
+##### > minor > same properties as bump-strategy > major
 
 Same as [`bump-strategy > major`](#bump-strategy--major-optional).
 
@@ -728,7 +728,7 @@ Strategy for patch version bumps (0.0.x).
 
 [⬆ Back to top](#table-of-content)
 
-##### > patch > same properties as bump-strategy > major`
+##### > patch > same properties as bump-strategy > major
 
 Same as [`bump-strategy > major`](#bump-strategy--major-optional).
 
@@ -798,7 +798,7 @@ Strategy for bumping build metadata (1.2.3+x.x).
 
 [⬆ Back to top](#table-of-content)
 
-##### > build > same properties as bump-strategy > prereleasee`
+##### > build > same properties as bump-strategy > prerelease
 
 Same as [`bump-strategy > prerelease`](#bump-strategy--prerelease-optional).
 
@@ -1571,13 +1571,13 @@ Continue or stop the process on commands error.
 Type: `string | object | (string | object)[]`
 
 Commands to run after commits are parsed but before version calculation. Each command runs from the repository root.\
-Useful for injecting `runtimeConfigOverride` to manipulate bump logic based on commit data.\
+Useful for injecting `runtime-config-override` to manipulate bump logic based on commit data.\
 Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
 
-##### > pre-calculate-version > same properties as command-hooks > pre-runn`
+##### > pre-calculate-version > same properties as command-hooks > pre-run
 
 Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
@@ -1598,7 +1598,7 @@ Available variables that cmds can use: see [Export operation variables](./export
 
 [⬆ Back to top](#table-of-content)
 
-##### > post-calculate-version > same properties as command-hooks > pre-runn`
+##### > post-calculate-version > same properties as command-hooks > pre-run
 
 Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
@@ -1619,7 +1619,7 @@ Available variables that cmds can use: see [Export operation variables](./export
 
 [⬆ Back to top](#table-of-content)
 
-##### > pre-commit > same properties as command-hooks > pre-runn`
+##### > pre-commit > same properties as command-hooks > pre-run
 
 Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
@@ -1639,7 +1639,7 @@ Available variables that cmds can use: see [Export operation variables](./export
 
 [⬆ Back to top](#table-of-content)
 
-##### > post-commit > same properties as command-hooks > pre-runn`
+##### > post-commit > same properties as command-hooks > pre-run
 
 Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
@@ -1660,7 +1660,7 @@ Available variables that cmds can use: see [Export operation variables](./export
 
 [⬆ Back to top](#table-of-content)
 
-##### > post-proposal > same properties as command-hooks > pre-runn`
+##### > post-proposal > same properties as command-hooks > pre-run
 
 Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
@@ -1681,7 +1681,7 @@ Available variables that cmds can use: see [Export operation variables](./export
 
 [⬆ Back to top](#table-of-content)
 
-##### > pre-tag > same properties as command-hooks > pre-runn`
+##### > pre-tag > same properties as command-hooks > pre-run
 
 Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
@@ -1702,7 +1702,7 @@ Available variables that cmds can use: see [Export operation variables](./export
 
 [⬆ Back to top](#table-of-content)
 
-##### > pre-release > same properties as command-hooks > pre-runn`
+##### > pre-release > same properties as command-hooks > pre-run
 
 Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
@@ -1723,7 +1723,7 @@ Available variables that cmds can use: see [Export operation variables](./export
 
 [⬆ Back to top](#table-of-content)
 
-##### > post-release > same properties as command-hooks > pre-runn`
+##### > post-release > same properties as command-hooks > pre-run
 
 Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
@@ -1744,7 +1744,7 @@ Available variables that cmds can use: see [Export operation variables](./export
 
 [⬆ Back to top](#table-of-content)
 
-##### > post-run > same properties as command-hooks > pre-runn`
+##### > post-run > same properties as command-hooks > pre-run
 
 Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 
@@ -1792,7 +1792,7 @@ Config file format. Allowed values: `auto`, `json`, `jsonc`, `json5`, `yaml`, `t
 
 ### AutoStrategy
 
-A discriminated union based on the `type` field. Defines the strategy for automatically triggering releases when [`mode`](#mode-optional) is set to `"auto"`.
+A discriminated union based on the `type` field. Defines the strategy for automatically triggering releases when [`release-flow`](#release-flow-optional) is set to `"auto"`.
 
 **Type: `"commit-types"`** - Triggers a release automatically when the pushed commits contain specific allowed types.
 

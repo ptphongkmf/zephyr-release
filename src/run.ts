@@ -8,9 +8,9 @@ import {
   exportFinalOperationVariables,
 } from "./tasks/export-variables.ts";
 import { initOperationRuntime } from "./tasks/operation.ts";
-import { executeReviewStrategy } from "./workflows/review.ts";
+import { executeReviewReleaseFlow } from "./workflows/review.ts";
 import type { OperationRunSettings } from "./types/operation-context.ts";
-import { executeAutoStrategy } from "./workflows/auto.ts";
+import { executeAutoReleaseFlow } from "./workflows/auto.ts";
 import { SafeExit } from "./errors/safe-exit.ts";
 import { bootstrapOperation } from "./workflows/bootstrap.ts";
 import {
@@ -104,16 +104,16 @@ export async function run(provider: PlatformProvider) {
     }
 
     // Main operation workflow //
-    switch (runSettings.config.mode) {
+    switch (runSettings.config.releaseFlow) {
       case "review":
-        runSettings = await executeReviewStrategy(
+        runSettings = await executeReviewReleaseFlow(
           provider,
           runSettings,
           bootstrapData,
         );
         break;
       case "auto":
-        runSettings = await executeAutoStrategy(
+        runSettings = await executeAutoReleaseFlow(
           provider,
           runSettings,
           bootstrapData,

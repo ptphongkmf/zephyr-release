@@ -1,4 +1,4 @@
-import type { ExecutionMode } from "../constants/execution-modes.ts";
+import type { ReleaseFlow } from "../constants/release-flows.ts";
 import type {
   OperationKind,
   OperationOutcome,
@@ -20,7 +20,7 @@ export type OperationVariables =
     workingBranchRef: string;
     workingBranchHash: string;
 
-    mode: ExecutionMode;
+    releaseFlow: ReleaseFlow;
     operation: OperationKind;
     /** Stringified OperationJobs[] */
     jobs: string;
@@ -60,7 +60,7 @@ export type BaseOperationVariables = Pick<
   | "workingBranchName"
   | "workingBranchRef"
   | "workingBranchHash"
-  | "mode"
+  | "releaseFlow"
   | "operation"
   | "jobs"
   | "startTime"

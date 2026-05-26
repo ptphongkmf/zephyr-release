@@ -8,7 +8,7 @@ export const AutoConfigSchema = v.pipe(
       v.optional(AutoStrategySchema, DEFAULT_AUTO_RELEASE_STRATEGY),
       v.metadata({
         description:
-          "Defines the strategy that determines whether an automated release should be triggered. Used when `mode` is " +
+          "Defines the strategy that determines whether an automated release should be triggered. Used when `releaseFlow` is " +
           'set to "auto".\n' +
           `Default: ${JSON.stringify(DEFAULT_AUTO_RELEASE_STRATEGY)}`,
       }),
@@ -16,7 +16,7 @@ export const AutoConfigSchema = v.pipe(
   }),
   v.metadata({
     description:
-      'Configuration specific to the "auto" execution `mode`. Defines the conditions and strategies for bypassing proposals ' +
+      'Configuration specific to the "auto" release flow. Defines the conditions and strategies for bypassing proposals ' +
       "and committing releases directly.",
   }),
 );

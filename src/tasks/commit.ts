@@ -460,7 +460,7 @@ type CommitChangesInputsParams = Pick<
 >;
 
 interface CommitChangesConfigParams {
-  mode: ConfigOutput["mode"];
+  releaseFlow: ConfigOutput["releaseFlow"];
   commit: Pick<
     CommitConfigOutput,
     | "headerTemplate"
@@ -485,7 +485,7 @@ export async function commitChangesToBranch(
   },
 ) {
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
-  const { mode } = config;
+  const { releaseFlow } = config;
   const {
     headerTemplate,
     headerTemplatePath,
@@ -557,7 +557,7 @@ export async function commitChangesToBranch(
     targetBranchName,
     force,
   ).catch((error) => {
-    if (mode === "auto" && error instanceof BranchOutOfDateError) {
+    if (releaseFlow === "auto" && error instanceof BranchOutOfDateError) {
       throw new SafeExit(
         "Trigger branch has moved forward. Letting the newer commit take over",
       );

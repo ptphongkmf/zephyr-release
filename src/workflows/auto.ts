@@ -34,7 +34,7 @@ import type {
 } from "../types/operation-context.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import type { ProviderProposal } from "../types/providers/proposal.ts";
-import { evaluateAutoModeTriggerStrategy } from "../tasks/auto-trigger-strategy.ts";
+import { evaluateAutoReleaseFlowTriggerStrategy } from "../tasks/auto-trigger-strategy.ts";
 import { createTag } from "../tasks/tag.ts";
 import { attachReleaseAssets, createRelease } from "../tasks/release.ts";
 import type { ProviderRelease } from "../types/providers/release.ts";
@@ -50,7 +50,7 @@ interface AutoWorkflowOptions {
   triggerContext: OperationTriggerContext;
 }
 
-export async function executeAutoStrategy(
+export async function executeAutoReleaseFlow(
   provider: PlatformProvider,
   currentRunSettings: OperationRunSettings,
   opts: AutoWorkflowOptions,
@@ -63,11 +63,11 @@ export async function executeAutoStrategy(
   } = opts;
 
   /**
-   * Auto mode run settings.
+   * Auto release flow run settings.
    */
   let runSettings: OperationRunSettings = currentRunSettings;
 
-  logger.header("Auto mode execution (prepare): Creating commit...");
+  logger.header("Auto release flow (prepare): Creating commit...");
 
   logger.stepStart("Starting: Get current version");
   const currentVersion = await getCurrentVersion(
@@ -224,12 +224,12 @@ export async function executeAutoStrategy(
     );
   }
 
-  logger.stepStart("Starting: Evaluate auto mode trigger strategy");
-  evaluateAutoModeTriggerStrategy(
+  logger.stepStart("Starting: Evaluate auto release flow trigger strategy");
+  evaluateAutoReleaseFlowTriggerStrategy(
     resolvedCommitsResult.entries,
     runSettings.config,
   );
-  logger.stepFinish("Finished: Evaluate auto mode trigger strategy");
+  logger.stepFinish("Finished: Evaluate auto release flow trigger strategy");
 
   // Generate changelog and prepare changes
   logger.stepStart("Starting: Generate changelog release content");
@@ -329,14 +329,14 @@ export async function executeAutoStrategy(
   logger.stepFinish("Finished: Commit changes");
 
   // postCommit hook
-  // Changes are committed and pushed. (No proposal in auto mode.)
+  // Changes are committed and pushed. (No proposal in auto release flow.)
   logger.debugStepStart("Starting: Export post commit variables");
   await exportPostCommitVariables(provider, commitResult.hash);
   logger.debugStepFinish("Finished: Export post commit variables");
 
-  // In auto mode, postProposal is merged with postCommit since there is no proposal.
-  // In auto mode, there is no proposal step. Export jobs data here alongside post commit.
-  logger.debugStepStart("Starting: Export post proposal variables (auto mode)");
+  // In auto release flow, postProposal is merged with postCommit since there is no proposal.
+  // In auto release flow, there is no proposal step. Export jobs data here alongside post commit.
+  logger.debugStepStart("Starting: Export post proposal variables (auto release flow)");
   await exportPostProposalVariables(
     provider,
     undefined,
@@ -345,7 +345,7 @@ export async function executeAutoStrategy(
     },
   );
   logger.debugStepFinish(
-    "Finished: Export post proposal variables (auto mode)",
+    "Finished: Export post proposal variables (auto release flow)",
   );
 
   logger.stepStart("Starting: Execute post commit commands");
@@ -396,7 +396,7 @@ export async function executeAutoStrategy(
 
   if (runSettings.config.tag.createTag) {
     logger.header(
-      "Auto mode execution (publish): Creating tag and release...",
+      "Auto release flow (publish): Creating tag and release...",
     );
 
     // preTag hook
@@ -593,7 +593,7 @@ export async function executeAutoStrategy(
     }
   } else {
     logger.header(
-      "Auto mode execution (publish): Skip create tag and release (disabled in config)",
+      "Auto release flow (publish): Skip create tag and release (disabled in config)",
     );
   }
 

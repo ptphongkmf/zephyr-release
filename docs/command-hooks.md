@@ -8,9 +8,9 @@ You can configure these hooks in your configuration file using the [`command-hoo
 
 The execution flow illustrates exactly when your scripts will run and how they fit into the broader Zephyr Release process. This helps you understand the operational context when each hook is triggered.
 
-### Review Mode
+### Review Release Flow
 
-In review mode, the operation is split into two distinct phases depending on the state of the release proposal. Below is the flow for each phase:
+In review release flow, the operation is split into two distinct phases depending on the state of the release proposal. Below is the flow for each phase:
 
 #### Prepare Phase
 
@@ -86,9 +86,9 @@ This phase runs when merging a release proposal, triggering the actual release. 
 
 14. **Run [`command-hooks.post-run`](./config-options.md#command-hooks--post-run-optional) commands.**
 
-### Auto Mode
+### Auto Release Flow
 
-In auto mode, the operation executes both the prepare and publish steps sequentially in a single run.
+In auto release flow, the operation executes both the prepare and publish steps sequentially in a single run.
 
 1. Bootstrap operation and export base operation variables.
 

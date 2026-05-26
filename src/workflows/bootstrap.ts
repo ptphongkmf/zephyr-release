@@ -37,7 +37,7 @@ export async function bootstrapOperation(
   const triggerContext = validateCurrentOperationTriggerCtx(
     provider,
     config.commitTypes,
-    config.mode,
+    config.releaseFlow,
   );
   logger.stepFinish("Finished: Parse and validate current trigger context");
 
@@ -72,7 +72,7 @@ export async function bootstrapOperation(
 
   let associatedProposalForCommit: ProviderProposal | undefined;
   let associatedProposalFromBranch: ProviderProposal | undefined;
-  if (config.mode === "review") {
+  if (config.releaseFlow === "review") {
     logger.stepStart("Starting: Get associated proposals");
     associatedProposalForCommit = await findMergedProposalByCommit(
       provider,

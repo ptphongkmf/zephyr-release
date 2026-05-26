@@ -19,7 +19,7 @@ All available input options for Zephyr Release. They are all optional - default 
 Type: `string`\
 Default: `${{ github.token }}` for github
 
-Authentication token Zephyr Release operations.
+Authentication token for Zephyr Release operations.
 
 ### config-path (Optional)
 

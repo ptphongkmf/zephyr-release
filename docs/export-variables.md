@@ -23,6 +23,7 @@ Zephyr Release additional operation-scoped variables. These variables are not al
 
 These variables are available starting from the first [`command-hooks > pre-run`](./config-options.md#command-hooks--pre-run-optional) command runs.
 
+<!-- no toc -->
 - [triggerCommitHash](#triggercommithash)
 - [triggerBranchName](#triggerbranchname)
 - [workspacePath](#workspacepath)
@@ -37,7 +38,7 @@ These variables are available starting from the first [`command-hooks > pre-run`
 - [workingBranchName](#workingbranchname)
 - [workingBranchRef](#workingbranchref)
 - [workingBranchHash](#workingbranchhash)
-- [mode](#mode)
+- [releaseFlow](#releaseflow)
 - [operation](#operation)
 - [jobs](#jobs)
 - [startTime](#starttime)
@@ -207,23 +208,23 @@ Working branch HEAD commit hash
 - Output: `zr-working-branch-hash`
 - Env: `ZR_WORKING_BRANCH_HASH`
 
-#### mode
+#### releaseFlow
 
-The execution mode. It is the same as the config [`mode`](./config-options.md#mode-optional) option and is included here for convenience
+The release flow. It is the same as the config [`release-flow`](./config-options.md#release-flow-optional) option and is included here for convenience
 
-- Output: `zr-mode`
-- Env: `ZR_MODE`
+- Output: `zr-release-flow`
+- Env: `ZR_RELEASE_FLOW`
 
 #### operation
 
-For [`mode`](./config-options.md#mode-optional) "review", value is "propose" in "prepare" phase (when creating or updating proposal), "release" in "publish" phase (when creating tag or publishing release). For [`mode`](./config-options.md#mode-optional) "auto", value is "autorelease"
+For [`release-flow`](./config-options.md#release-flow-optional) "review", value is "propose" in "prepare" phase (when creating or updating proposal), "release" in "publish" phase (when creating tag or publishing release). For [`release-flow`](./config-options.md#release-flow-optional) "auto", value is "autorelease"
 
 - Output: `zr-operation`
 - Env: `ZR_OPERATION`
 
 #### jobs
 
-Stringified array of jobs being executed. For [`mode`](./config-options.md#mode-optional) "review", available from the base phase with values "create-proposal" or "update-proposal" during "propose" operation, and "create-tag"/"create-release" during "release" operation. For [`mode`](./config-options.md#mode-optional) "auto", available after the prepare phase with values "create-commit", "create-tag", and/or "create-release".
+Stringified array of jobs being executed. For [`release-flow`](./config-options.md#release-flow-optional) "review", available from the base phase with values "create-proposal" or "update-proposal" during "propose" operation, and "create-tag"/"create-release" during "release" operation. For [`release-flow`](./config-options.md#release-flow-optional) "auto", available after the prepare phase with values "create-commit", "create-tag", and/or "create-release".
 
 - Output: `zr-jobs`
 - Env: `ZR_JOBS`
@@ -286,7 +287,7 @@ The calculated next version string to be used for the release.
 
 #### commitHash
 
-The committed commit hash. For [`mode`](./config-options.md#mode-optional) "review", it is the commit on the working branch. For [`mode`](./config-options.md#mode-optional) "auto", it is the commit on the trigger branch
+The committed commit hash. For [`release-flow`](./config-options.md#release-flow-optional) "review", it is the commit on the working branch. For [`release-flow`](./config-options.md#release-flow-optional) "auto", it is the commit on the trigger branch
 
 - Output: `zr-commit-hash`
 - Env: `ZR_COMMIT_HASH`
@@ -307,7 +308,7 @@ Git tag hash created for the release
 
 #### releaseId
 
-Platform-specific release identifier (for example, GitHub release ID). May be empty if no release was created (for example, when `createReleaseNote` is disabled or the platform does not support releases)
+Platform-specific release identifier (for example, GitHub release ID). May be empty if no release was created (for example, when [`release > create-release`](./config-options.md#release--create-release-optional) is disabled or the platform does not support releases)
 
 - Output: `zr-release-id`
 - Env: `ZR_RELEASE_ID`

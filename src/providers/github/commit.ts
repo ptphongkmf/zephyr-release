@@ -239,8 +239,8 @@ async function githubCreateCommitOnBranch(
     parents: [triggerCommitHash],
   });
 
-  // If true (in review mode), we are effectively "overwriting" the branch history with this new timeline
-  // If false (in auto mode), throws error if there are newer commits
+  // If true (in review release flow), we are effectively "overwriting" the branch history with this new timeline
+  // If false (in auto release flow), throws error if there are newer commits
   try {
     await octokit.rest.git.updateRef({
       owner,

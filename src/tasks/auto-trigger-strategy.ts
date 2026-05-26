@@ -8,7 +8,7 @@ type evaluateTriggerStrategyConfigParams = Pick<ConfigOutput, "commitTypes"> & {
 };
 
 /** @throws {SafeExit} */
-export function evaluateAutoModeTriggerStrategy(
+export function evaluateAutoReleaseFlowTriggerStrategy(
   resolvedCommits: ResolvedCommit[],
   config: evaluateTriggerStrategyConfigParams,
 ) {

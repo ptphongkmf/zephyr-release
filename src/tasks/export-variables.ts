@@ -57,7 +57,7 @@ export async function exportBaseOperationVariables(
   } = options;
 
   let operationKind: OperationKind | undefined;
-  switch (config.mode) {
+  switch (config.releaseFlow) {
     case "review":
       operationKind = proposalForCommit
         ? OperationKinds.release
@@ -95,7 +95,7 @@ export async function exportBaseOperationVariables(
 
     case "autorelease":
       // Empty
-      // For mode "auto", jobs are available at post commit phase
+      // For releaseFlow "auto", jobs are available at post commit phase
 
       break;
   }
@@ -119,7 +119,7 @@ export async function exportBaseOperationVariables(
     workingBranchRef: workingBranchResult.ref,
     workingBranchHash: workingBranchResult.object.sha,
 
-    mode: config.mode,
+    releaseFlow: config.releaseFlow,
     operation: operationKind,
     jobs: JSON.stringify(operationJobs),
 
@@ -257,11 +257,11 @@ export async function exportPostCommitVariables(
 export async function exportPostProposalVariables(
   provider: PlatformProvider,
   proposalId: string | undefined,
-  modeRelatedData?: {
+  releaseFlowRelatedData?: {
     config?: ConfigOutput;
   },
 ) {
-  const { config } = modeRelatedData ?? {};
+  const { config } = releaseFlowRelatedData ?? {};
 
   const operationJobs: OperationJob[] = [];
   if (config) {

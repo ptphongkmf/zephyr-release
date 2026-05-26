@@ -9,7 +9,7 @@ import { DEFAULT_COMMIT_TYPES } from "../../../constants/defaults/commit.ts";
 import { transformObjKeyToKebabCase } from "../../../utils/transformers/object.ts";
 import { trimNonEmptyStringSchema } from "../../string.ts";
 import { RuntimeConfigOverrideSchema } from "./components/runtime-config-override.ts";
-import { ExecutionModes } from "../../../constants/execution-modes.ts";
+import { ReleaseFlows } from "../../../constants/release-flows.ts";
 import { ReviewConfigSchema } from "./review-config.ts";
 import { AutoConfigSchema } from "./auto-config.ts";
 
@@ -41,10 +41,10 @@ export const BaseCoreConfigSchema = v.object({
     }),
   ),
 
-  mode: v.pipe(
-    v.optional(v.enum(ExecutionModes), "review"),
+  releaseFlow: v.pipe(
+    v.optional(v.enum(ReleaseFlows), "review"),
     v.metadata({
-      description: "Defines the execution strategy:\n" +
+      description: "Defines the release flow:\n" +
         '- "review": routes updates through a proposal (PR, MR, ...).\n' +
         '- "auto": bypasses the proposal and commits directly to the branch.\n' +
         'If choosing "auto", see `auto.triggerStrategy`.\n' +

@@ -152,7 +152,7 @@ export const ReviewConfigSchema = v.pipe(
   }),
   v.metadata({
     description:
-      'Configuration specific to the "review" execution `mode`. Defines how release proposals (such as PRs, MRs, ...) ' +
+      'Configuration specific to the "review" release flow. Defines how release proposals (such as PRs, MRs, ...) ' +
       "are generated, formatted, and tracked.",
   }),
 );

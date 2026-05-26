@@ -101,7 +101,7 @@ These string patterns are resolved at runtime and remain fixed for the lifetime 
 
 #### Current Version
 
-Only available in "auto" mode or "review" mode propose operation. Can be undefined if the project has no version yet (the calculated version is initial version)
+Only available in "auto" and "review" release flow propose operation. Can be undefined if the project has no version yet (the calculated version is initial version)
 
 - `{{ currentVersion }}`: The current full semantic version (SemVer)
 - `{{ currentVersionCore }}`: The current core part of the semantic version (major.minor.patch)

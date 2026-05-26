@@ -23,7 +23,7 @@ export function initOperationRuntime(
 export function validateCurrentOperationTriggerCtx(
   provider: PlatformProvider,
   allowedCommitTypes: ConfigOutput["commitTypes"],
-  mode: ConfigOutput["mode"],
+  releaseFlow: ConfigOutput["releaseFlow"],
 ): OperationTriggerContext {
   const operationContext = provider.getOperationTriggerContext();
 
@@ -40,7 +40,7 @@ export function validateCurrentOperationTriggerCtx(
     operationContext.latestTriggerCommit.message,
   );
 
-  if (mode === "auto") {
+  if (releaseFlow === "auto") {
     const isZephyrReleaseSignCommit = parsedLatestTriggerCommit.notes
       .some((n) =>
         n.title.toLowerCase() === ZEPHYR_RELEASE_COMMIT_SIGN.toLowerCase()
@@ -62,12 +62,11 @@ export function validateCurrentOperationTriggerCtx(
     parsedTriggerCommits.some((c) => c.type && allowedTypes.has(c.type));
 
   if (!commitHasAllowedType) {
-    if (mode === "auto") {
+    if (releaseFlow === "auto") {
       taskLogger.info(
-        'No commits with an allowed type found. But operation continues because execution mode is "auto"',
+        'No commits with an allowed type found. But operation continues because release flow is "auto"',
       );
     } else {
-      // throw new SafeExit("No commits with an allowed type found");
       taskLogger.info(
         "No commits with an allowed type found. But operation continues so a later step can verify if this is a merged release proposal",
       );

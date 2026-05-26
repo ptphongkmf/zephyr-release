@@ -5,19 +5,19 @@ import { executeReviewPreparePhase } from "./review.prepare.ts";
 import { executeReviewPublishPhase } from "./review.publish.ts";
 import type { BootstrapResult } from "./bootstrap.ts";
 
-export async function executeReviewStrategy(
+export async function executeReviewReleaseFlow(
   provider: PlatformProvider,
   currentRunSettings: OperationRunSettings,
   bootstrapData: BootstrapResult,
 ): Promise<OperationRunSettings> {
   /**
-   * Review mode run settings.
+   * Review release flow run settings.
    */
   let runSettings: OperationRunSettings = currentRunSettings;
 
   if (!bootstrapData.associatedProposalForCommit) {
     logger.header(
-      "Review mode execution (prepare): Creating/Updating release proposal",
+      "Review release flow (prepare): Creating/Updating release proposal",
     );
     runSettings = await executeReviewPreparePhase(
       provider,
@@ -26,7 +26,7 @@ export async function executeReviewStrategy(
     );
   } else if (runSettings.config.tag.createTag) {
     logger.header(
-      "Review mode execution (publish): Creating tag and release",
+      "Review release flow (publish): Creating tag and release",
     );
     runSettings = await executeReviewPublishPhase(
       provider,
@@ -35,7 +35,7 @@ export async function executeReviewStrategy(
     );
   } else {
     logger.subHeader(
-      "Review mode execution (publish): Skip create tag and release (disabled in config)",
+      "Review release flow (publish): Skip create tag and release (disabled in config)",
     );
   }
 
