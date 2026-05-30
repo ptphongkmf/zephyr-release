@@ -23,3 +23,5 @@ await logger.executeStep("Execute base pre commands", async (step) => {
   return step.finish(result);
 });
 ```
+
+in auto mode, add a logic that force to trigger release with a footer (different from footer type)
