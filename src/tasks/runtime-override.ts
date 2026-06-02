@@ -19,10 +19,7 @@ import {
   createFixedTagStringPatternContext,
   stringifyCurrentPatternContext,
 } from "./string-templates-and-patterns/pattern-context.ts";
-import {
-  toOutputKey,
-  toEnvKey,
-} from "../utils/transformers/case.ts";
+import { toEnvKey, toOutputKey } from "../utils/transformers/case.ts";
 
 interface ResolvedRuntimeConfigResult {
   rawResolvedRuntime: object;

@@ -1,5 +1,8 @@
 import * as v from "@valibot/valibot";
-import { BaseCoreConfigSchema, BaseLifecycleConfigSchema } from "./modules/base-config.ts";
+import {
+  BaseCoreConfigSchema,
+  BaseLifecycleConfigSchema,
+} from "./modules/base-config.ts";
 import { BumpStrategyConfigSchema } from "./modules/bump-strategy-config.ts";
 import { ReleaseConfigSchema } from "./modules/release-config.ts";
 import { ChangelogConfigSchema } from "./modules/changelog-config.ts";

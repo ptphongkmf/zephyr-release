@@ -24,7 +24,7 @@ export const SemverExtensionSchema = v.variant("type", [
   v.object({
     type: SemverExtensionTypeSchema(
       "static",
-      "A stable label that should not change often. Examples: \"alpha\", \"beta\", \"rc\".",
+      'A stable label that should not change often. Examples: "alpha", "beta", "rc".',
     ),
     value: v.pipe(
       trimNonEmptyStringSchema,

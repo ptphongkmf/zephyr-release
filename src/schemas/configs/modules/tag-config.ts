@@ -23,9 +23,30 @@ export const TagConfigSchema = v.pipe(
       v.metadata({
         description:
           "String template for tag name, using with string patterns like {{ nextVersion }}. Available in string templates as " +
-          "{{ tagName }}.\n" +
+          "{{ tagName }}. Also used to auto-derive a match pattern for finding existing release tags.\n" +
           "Allowed patterns to use are: all fixed and dynamic string patterns (except {{ tagName }} itself).\n" +
           `Default: ${JSON.stringify(DEFAULT_TAG_NAME_TEMPLATE)}`,
+      }),
+    ),
+    matchPatterns: v.pipe(
+      v.optional(
+        v.union([
+          trimNonEmptyStringSchema,
+          v.pipe(v.array(trimNonEmptyStringSchema), v.nonEmpty()),
+        ]),
+      ),
+      v.transform((input) => {
+        if (input !== undefined) {
+          return Array.isArray(input) ? input : [input];
+        }
+        return input;
+      }),
+      v.metadata({
+        description:
+          "Additional glob pattern(s) to match existing tags when searching for the last release. " +
+          "A pattern is always auto-derived from `nameTemplate`, so this is only needed " +
+          "when migrating from a different tag naming convention.",
+        examples: [["v*"], ["release-*", "v*"]],
       }),
     ),
     type: v.pipe(

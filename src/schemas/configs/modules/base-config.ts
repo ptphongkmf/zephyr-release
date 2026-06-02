@@ -13,8 +13,6 @@ import { ReleaseFlows } from "../../../constants/release-flows.ts";
 import { ReviewConfigSchema } from "./review-config.ts";
 import { AutoConfigSchema } from "./auto-config.ts";
 
-
-
 export const BaseCoreConfigSchema = v.object({
   name: v.pipe(
     v.optional(v.pipe(v.string(), v.trim())),

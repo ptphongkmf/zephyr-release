@@ -64,7 +64,10 @@ export function parseVersionFile(
     // If the detected format is plain text, return immediately without structured parsing.
     if (detectedFormat && !isStructuredFileFormat(detectedFormat)) {
       const resolvedFormat = `auto -> ${detectedFormat}`;
-      return { parsedContent: fileContent, resolvedFormatResult: resolvedFormat };
+      return {
+        parsedContent: fileContent,
+        resolvedFormatResult: resolvedFormat,
+      };
     }
 
     const trialOrder = getVersionFileFormatTrialOrder(detectedFormat);

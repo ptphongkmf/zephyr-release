@@ -7,15 +7,12 @@ import type {
 } from "./release.ts";
 import type { ProviderInputLabel, ProviderLabel } from "./label.ts";
 import type { CoreLogger } from "../logger.ts";
-import type {
-  ProviderCommit,
-  ProviderCompareCommits,
-} from "./commit.ts";
+import type { ProviderCommit, ProviderCompareCommits } from "./commit.ts";
 import type { ProviderInputs } from "./inputs.ts";
 import type { ProviderAddedAssignees, ProviderProposal } from "./proposal.ts";
 import type { ProviderOperationTriggerContext } from "./provider-operation-context.ts";
 import type { InputsOutput } from "../../schemas/inputs/inputs.ts";
-import type { ProviderTag } from "./tag.ts";
+import type { ProviderMatchedTag, ProviderTag } from "./tag.ts";
 import type { TaggerRequest } from "../tag.ts";
 import type { TagTypeOption } from "../../constants/release-tag-options.ts";
 
@@ -65,10 +62,11 @@ export interface PlatformProvider {
   ) => Promise<ProviderProposal | undefined>;
 
   /** @throws {Error | NoCommitFoundError} */
-  listCommitsFromGivenToLastRelease: (
-    commitHash: string,
-    maxCommitsToResolve: number,
-    resolveUntilCommitHash?: string,
+  listCommitsInRange: (
+    fromHash: string,
+    stopHash?: string,
+    path?: string,
+    maxCommits?: number,
   ) => Promise<ProviderCommit[]>;
   /** @throws */
   compareCommits: (
@@ -125,7 +123,11 @@ export interface PlatformProvider {
   ) => Promise<void>;
 
   /** @throws */
-  getLatestReleaseTag: () => Promise<string | undefined>;
+  findLastReleaseTag: (
+    matchPatterns: RegExp[],
+    maxTagsToScan?: number,
+  ) => Promise<ProviderMatchedTag | undefined>;
+
   /** @throws */
   createTag: (
     tagName: string,

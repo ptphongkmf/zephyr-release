@@ -15,3 +15,8 @@ export interface ProviderTag {
    */
   targetHash: string;
 }
+
+export interface ProviderMatchedTag {
+  tagName: string;
+  hash: string;
+}

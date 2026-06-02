@@ -107,7 +107,11 @@ export async function createRelease(
     releaseNoteFooter = await resolveStringTemplate(footerTemplate);
   }
 
-  const fullReleaseBody = [releaseNoteHeader, releaseNoteBody, releaseNoteFooter]
+  const fullReleaseBody = [
+    releaseNoteHeader,
+    releaseNoteBody,
+    releaseNoteFooter,
+  ]
     .filter(Boolean)
     .join("\n\n");
 

@@ -23,14 +23,14 @@ import {
   makeGithubCompareCommits,
   makeGithubCreateCommitOnBranch,
   makeGithubGetCommit,
-  makeGithubListCommitsFromGivenToLastRelease,
+  makeGithubListCommitsInRange,
 } from "./commit.ts";
 import { githubGetConventionalCommitParserOptions } from "./conventional-commit.ts";
 import {
   githubGetCompareTagUrl,
   makeGithubCreateTag,
+  makeGithubFindLastReleaseTag,
   makeGithubGetCompareTagUrlFromCurrentToLatest,
-  makeGithubGetLatestReleaseTag,
 } from "./tag.ts";
 import { getOctokitClient, type OctokitClient } from "./octokit.ts";
 import { githubGetOperationTriggerContext } from "./operation.ts";
@@ -92,8 +92,7 @@ export function createGitHubProvider(): PlatformProvider {
       getOctokit,
     ),
 
-    listCommitsFromGivenToLastRelease:
-      makeGithubListCommitsFromGivenToLastRelease(getOctokit),
+    listCommitsInRange: makeGithubListCommitsInRange(getOctokit),
     compareCommits: makeGithubCompareCommits(getOctokit),
     getCommit: makeGithubGetCommit(getOctokit),
     createCommitOnBranch: makeGithubCreateCommitOnBranch(
@@ -117,9 +116,7 @@ export function createGitHubProvider(): PlatformProvider {
       getOctokit,
     ),
 
-    getLatestReleaseTag: makeGithubGetLatestReleaseTag(
-      getOctokit,
-    ),
+    findLastReleaseTag: makeGithubFindLastReleaseTag(getOctokit),
     createTag: makeGithubCreateTag(getOctokit),
 
     createRelease: makeGithubCreateRelease(getOctokit),

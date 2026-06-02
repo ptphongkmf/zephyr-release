@@ -29,16 +29,21 @@ import { VERSION } from "../version.ts";
 import { breakingChangeKeywords } from "../constants/conventional-commit-parser-options.ts";
 import { NoCommitFoundError } from "../errors/providers/commit.ts";
 import { format, type SemVer } from "@std/semver";
+import { buildMatchPatterns } from "./string-templates-and-patterns/match-patterns.ts";
 
 type ResolveCommitsInputsParams = Pick<
   InputsOutput,
   "triggerCommitHash"
 >;
 
-type ResolveCommitsConfigParams = Pick<
-  ConfigOutput,
-  "commitTypes" | "maxCommitsToResolve" | "resolveUntilCommitHash"
->;
+type ResolveCommitsConfigParams =
+  & Pick<
+    ConfigOutput,
+    "commitTypes" | "maxCommitsToResolve" | "resolveUntilCommitHash"
+  >
+  & {
+    tag: Pick<ConfigOutput["tag"], "nameTemplate" | "matchPatterns">;
+  };
 
 /**
  * Parsed and resolved commit object with additional fields.
@@ -153,10 +158,21 @@ export async function resolveCommitsFromTriggerToLastRelease(
   const { triggerCommitHash } = inputs;
   const { commitTypes, maxCommitsToResolve, resolveUntilCommitHash } = config;
 
-  const rawCommits = await provider.listCommitsFromGivenToLastRelease(
+  let stopHash = resolveUntilCommitHash;
+  if (!stopHash) {
+    const matchPatterns = buildMatchPatterns(
+      config.tag.nameTemplate,
+      config.tag.matchPatterns,
+    );
+    const lastRelease = await provider.findLastReleaseTag(matchPatterns);
+    stopHash = lastRelease?.hash;
+  }
+
+  const rawCommits = await provider.listCommitsInRange(
     triggerCommitHash,
+    stopHash,
+    undefined,
     maxCommitsToResolve,
-    resolveUntilCommitHash,
   ).catch((error) => {
     if (error instanceof NoCommitFoundError) {
       throw new SafeExit(error.message);

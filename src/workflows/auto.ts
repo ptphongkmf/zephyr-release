@@ -336,7 +336,9 @@ export async function executeAutoReleaseFlow(
 
   // In auto release flow, postProposal is merged with postCommit since there is no proposal.
   // In auto release flow, there is no proposal step. Export jobs data here alongside post commit.
-  logger.debugStepStart("Starting: Export post proposal variables (auto release flow)");
+  logger.debugStepStart(
+    "Starting: Export post proposal variables (auto release flow)",
+  );
   await exportPostProposalVariables(
     provider,
     undefined,

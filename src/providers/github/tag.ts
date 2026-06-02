@@ -1,28 +1,21 @@
-import { canParse, compare, parse } from "@std/semver";
 import {
   githubGetHost,
   githubGetNamespace,
   githubGetRepositoryName,
 } from "./repository.ts";
 import type { GetOctokitFn, OctokitClient } from "./octokit.ts";
-import { RequestError } from "@octokit/request-error";
 import { joinUrlSegments } from "../../utils/transformers/url.ts";
 import type { TaggerRequest } from "../../types/tag.ts";
-import type { ProviderTag } from "../../types/providers/tag.ts";
+import type {
+  ProviderMatchedTag,
+  ProviderTag,
+} from "../../types/providers/tag.ts";
 import type { TagTypeOption } from "../../constants/release-tag-options.ts";
 import { execFileAsync } from "../../utils/child-process.ts";
 import process from "node:process";
 
 export function githubGetCompareTagUrl(tag1: string, tag2: string): string {
-  let compareSegment = tag1 + "..." + tag2;
-
-  if (canParse(tag1) && canParse(tag2)) {
-    const cmp = compare(parse(tag1), parse(tag2));
-
-    if (cmp === 1) {
-      compareSegment = tag2 + "..." + tag1;
-    }
-  }
+  const compareSegment = tag1 + "..." + tag2;
 
   return new URL(
     joinUrlSegments(
@@ -88,24 +81,32 @@ async function githubGetCompareTagUrlFromCurrentToLatest(
 }
 
 /** @throws */
-async function githubGetLatestReleaseTag(
+async function githubFindLastReleaseTag(
   octokit: OctokitClient,
-): Promise<string | undefined> {
-  try {
-    const res = await octokit.rest.repos.getLatestRelease({
+  matchPatterns: RegExp[],
+  maxTagsToScan: number = 100,
+): Promise<ProviderMatchedTag | undefined> {
+  let scanned = 0;
+  const tagsIterator = octokit.paginate.iterator(
+    octokit.rest.repos.listTags,
+    {
       owner: githubGetNamespace(),
       repo: githubGetRepositoryName(),
-    });
+      per_page: 100,
+    },
+  );
 
-    return res.data.tag_name;
-  } catch (error) {
-    if (error instanceof RequestError && error.status === 404) {
-      // No releases found
-      return undefined;
+  for await (const response of tagsIterator) {
+    for (const tag of response.data) {
+      if (matchPatterns.some((p) => p.test(tag.name))) {
+        return { hash: tag.commit.sha, tagName: tag.name };
+      }
+      scanned++;
+      if (scanned >= maxTagsToScan) return undefined;
     }
-
-    throw error;
   }
+
+  return undefined;
 }
 
 /** @throws */
@@ -185,8 +186,9 @@ export function makeGithubGetCompareTagUrlFromCurrentToLatest(
     );
 }
 
-export function makeGithubGetLatestReleaseTag(getOctokit: GetOctokitFn) {
-  return () => githubGetLatestReleaseTag(getOctokit());
+export function makeGithubFindLastReleaseTag(getOctokit: GetOctokitFn) {
+  return (matchPatterns: RegExp[], maxTagsToScan?: number) =>
+    githubFindLastReleaseTag(getOctokit(), matchPatterns, maxTagsToScan);
 }
 
 export function makeGithubCreateTag(getOctokit: GetOctokitFn) {

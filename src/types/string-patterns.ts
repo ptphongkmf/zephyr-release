@@ -44,7 +44,7 @@ export type FixedNextVersionStringPattern =
   | "nextVersionBld";
 
 export type FixedTagStringPattern = // Tag
-"tagName";
+  "tagName";
 
 export type DynamicChangelogStringPattern =
   | "changelogRelease"
