@@ -131,6 +131,7 @@ Some example [config files](./examples/).
   - [tag (Optional)](#tag-optional)
     - [tag \> create-tag (Optional)](#tag--create-tag-optional)
     - [tag \> name-template (Optional)](#tag--name-template-optional)
+    - [tag \> match-patterns (Optional)](#tag--match-patterns-optional)
     - [tag \> type (Optional)](#tag--type-optional)
     - [tag \> message-template (Optional)](#tag--message-template-optional)
     - [tag \> message-template-path (Optional)](#tag--message-template-path-optional)
@@ -603,10 +604,9 @@ Type: `string`
 
 Forces the tool to keep resolving commits until it reaches this specific hash, completely bypassing the standard resolve behavior.
 
-By default, Zephyr Release automatically finds your last release by querying the platform's Release API, or falls back to semantic version numbers from your Git tags. However, sometimes automatic detection is impossible:
+By default, Zephyr Release automatically finds your last release by matching Git tags against your `tag.nameTemplate` (and any additional `tag.matchPatterns`). However, sometimes automatic detection is impossible:
 
-- **No Platform Releases:** You are running locally, on a host without a formal Release API, or you just dont use the Release feature ([`create-release`](#release--create-release-optional) is false).
-- **Noisy/Custom Tags:** You tag non-release commits (e.g., `test-deploy`) and do not use Semantic Versioning in tag name, causing the tag fallback to fail.
+- **Noisy/Custom Tags:** You use completely unpredictable tag names that don't match your template or any fallback patterns you provided.
 - **Custom Boundaries:** You need to forcefully generate a changelog from a highly specific point in time.
 
 In those cases, `resolve-until-commit-hash` acts as your explicit manual override, telling the tool exactly which commit hash to anchor to.
@@ -1269,7 +1269,7 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 ### tag (Optional)
 
 Type: `object`\
-**Properties:** [`create-tag`](#tag--create-tag-optional), [`name-template`](#tag--name-template-optional), [`type`](#tag--type-optional), [`message-template`](#tag--message-template-optional), [`message-template-path`](#tag--message-template-path-optional), [`tagger`](#tag--tagger-optional)
+**Properties:** [`create-tag`](#tag--create-tag-optional), [`name-template`](#tag--name-template-optional), [`match-patterns`](#tag--match-patterns-optional), [`type`](#tag--type-optional), [`message-template`](#tag--message-template-optional), [`message-template-path`](#tag--message-template-path-optional), [`tagger`](#tag--tagger-optional)
 
 Configuration specific to tags.
 
@@ -1293,6 +1293,18 @@ String template for tag name, using with string patterns like `{{ nextVersion }}
 Allowed patterns to use in template are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns) (except `{{ tagName }}` itself).
 
 [⬆ Back to top](#table-of-content)
+
+#### tag > match-patterns (Optional)
+
+Type: `string | string[]`
+
+Additional glob pattern(s) to match existing tags when searching for the last release. 
+Zephyr Release automatically derives a match pattern from your `name-template` (e.g. `{{ name }}-v{{ nextVersion }}` becomes `*-v*`), so you usually don't need to configure this.
+
+Use `match-patterns` only if you are migrating from a different tag naming convention and need Zephyr Release to also recognize your old tags as release boundaries.
+
+Example: `["v*", "release-*"]`
+
 
 #### tag > type (Optional)
 
