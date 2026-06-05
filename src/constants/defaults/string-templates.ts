@@ -28,7 +28,7 @@ export const DEFAULT_RELEASE_SECTION_HEADING_TEMPLATE_ALT =
 
 // Commit
 export const DEFAULT_COMMIT_HEADER_TEMPLATE =
-  liquid`chore: release v{{ nextVersion }}`;
+  liquid`chore: release {{ releases | format_releases }}`;
 
 // Proposal (PR, MR, ...)
 export const DEFAULT_PROPOSAL_TITLE_TEMPLATE =

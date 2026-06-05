@@ -68,3 +68,5 @@ export type ChangelogReleaseEntryPattern =
   | "committerName"
   | "committerEmail"
   | "committerDate";
+
+export type FixedReleasesStringPattern = "releases";

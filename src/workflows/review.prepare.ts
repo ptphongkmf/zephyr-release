@@ -15,11 +15,13 @@ import {
   compareNextVersionToCurrentVersion,
 } from "../tasks/calculate-next-version/calculate-version.ts";
 import { getCurrentVersion } from "../tasks/calculate-next-version/previous-version.ts";
+import { format } from "@std/semver";
 import {
-  createDynamicChangelogStringPatternContext,
-  createFixedCurrentVersionStringPatternContext,
-  createFixedNextVersionStringPatternContext,
-  createFixedTagStringPatternContext,
+  addChangelogPatternContext,
+  addCurrentVersionPatternContext,
+  addNextVersionPatternContext,
+  addReleasesPatternContext,
+  addTagPatternContext,
 } from "../tasks/string-templates-and-patterns/pattern-context.ts";
 import { generatePrepareChangelogReleaseContent } from "../tasks/changelog.ts";
 import { runCommands } from "../tasks/command.ts";
@@ -47,7 +49,10 @@ export async function executeReviewPreparePhase(
     workingBranchResult,
     associatedProposalFromBranch,
     triggerContext,
+    patternContext: initialPatternContext,
   } = bootstrapData;
+
+  let patternContext = initialPatternContext;
 
   /**
    * Prepare phase run settings.
@@ -76,6 +81,7 @@ export async function executeReviewPreparePhase(
   await exportPreCalculateVersionVariables(
     provider,
     resolvedCommitsResult.entries,
+    patternContext,
   );
   logger.debugStepFinish("Finished: Export pre calculate version variables");
 
@@ -107,11 +113,12 @@ export async function executeReviewPreparePhase(
       rawConfig: _preCalculateVersionRuntimeConfigResult.rawResolvedRuntime,
       config: _preCalculateVersionRuntimeConfigResult.resolvedRuntime,
     };
-    await synchronizeRuntimeStateAfterOverride({
+    patternContext = await synchronizeRuntimeStateAfterOverride({
       provider,
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
+      currentPatternContext: patternContext,
     });
     logger.stepFinish(
       "Finished: Resolve runtime config override (pre calculate version commands)",
@@ -145,11 +152,24 @@ export async function executeReviewPreparePhase(
   logger.debugStepStart(
     "Starting: Create fixed current version, next version and tag string pattern context",
   );
-  createFixedCurrentVersionStringPatternContext(currentVersion);
-  createFixedNextVersionStringPatternContext(nextVersion);
-  await createFixedTagStringPatternContext(
+  if (currentVersion) {
+    patternContext = addCurrentVersionPatternContext(
+      patternContext,
+      currentVersion,
+    );
+  }
+  patternContext = addNextVersionPatternContext(patternContext, nextVersion);
+  patternContext = await addTagPatternContext(
+    patternContext,
     runSettings.config.tag.nameTemplate,
   );
+
+  patternContext = addReleasesPatternContext(patternContext, [{
+    name: runSettings.config.name ?? "root",
+    nextVersion: format(nextVersion),
+    tagName: patternContext.tagName as string,
+    isWorkspace: false,
+  }]);
   logger.debugStepFinish(
     "Finished: Create fixed current version, next version and tag string pattern context",
   );
@@ -161,6 +181,7 @@ export async function executeReviewPreparePhase(
     provider,
     currentVersion,
     nextVersion,
+    patternContext,
   );
   logger.debugStepFinish("Finished: Export post calculate version variables");
 
@@ -192,11 +213,12 @@ export async function executeReviewPreparePhase(
       rawConfig: _postCalculateVersionRuntimeConfigResult.rawResolvedRuntime,
       config: _postCalculateVersionRuntimeConfigResult.resolvedRuntime,
     };
-    await synchronizeRuntimeStateAfterOverride({
+    patternContext = await synchronizeRuntimeStateAfterOverride({
       provider,
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
+      currentPatternContext: patternContext,
       nextVersion,
       currentVersion,
     });
@@ -216,13 +238,15 @@ export async function executeReviewPreparePhase(
     resolvedCommitsResult.entries,
     runSettings.inputs,
     runSettings.config,
+    patternContext,
   );
   logger.stepFinish("Finished: Generate changelog release content");
 
   logger.debugStepStart(
     "Starting: Create dynamic changelog string pattern context",
   );
-  createDynamicChangelogStringPatternContext(
+  patternContext = addChangelogPatternContext(
+    patternContext,
     changelogReleaseResult.release,
     changelogReleaseResult.releaseBody,
     changelogReleaseResult.releaseAlt,
@@ -238,13 +262,14 @@ export async function executeReviewPreparePhase(
     runSettings.inputs,
     runSettings.config,
     nextVersion,
+    patternContext,
   );
   logger.stepFinish("Finished: Prepare and collect changes data to commit");
 
   // preCommit hook
   // Files are written to disk, git commit has NOT executed yet.
   logger.debugStepStart("Starting: Export pre commit variables");
-  await exportPreCommitVariables(provider, changesData);
+  await exportPreCommitVariables(provider, changesData, patternContext);
   logger.debugStepFinish("Finished: Export pre commit variables");
 
   logger.stepStart("Starting: Execute pre commit commands");
@@ -274,11 +299,12 @@ export async function executeReviewPreparePhase(
       rawConfig: _preCommitRuntimeConfigResult.rawResolvedRuntime,
       config: _preCommitRuntimeConfigResult.resolvedRuntime,
     };
-    await synchronizeRuntimeStateAfterOverride({
+    patternContext = await synchronizeRuntimeStateAfterOverride({
       provider,
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
+      currentPatternContext: patternContext,
       nextVersion,
       currentVersion,
     });
@@ -303,13 +329,14 @@ export async function executeReviewPreparePhase(
       targetBranchName: workingBranchResult.name,
       force: true,
     },
+    patternContext,
   );
   logger.stepFinish("Finished: Commit changes");
 
   // postCommit hook
   // Changes are committed and pushed.
   logger.debugStepStart("Starting: Export post commit variables");
-  await exportPostCommitVariables(provider, commitResult.hash);
+  await exportPostCommitVariables(provider, commitResult.hash, patternContext);
   logger.debugStepFinish("Finished: Export post commit variables");
 
   logger.stepStart("Starting: Execute post commit commands");
@@ -339,11 +366,12 @@ export async function executeReviewPreparePhase(
       rawConfig: _postCommitRuntimeConfigResult.rawResolvedRuntime,
       config: _postCommitRuntimeConfigResult.resolvedRuntime,
     };
-    await synchronizeRuntimeStateAfterOverride({
+    patternContext = await synchronizeRuntimeStateAfterOverride({
       provider,
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
+      currentPatternContext: patternContext,
       nextVersion,
       currentVersion,
     });
@@ -367,6 +395,7 @@ export async function executeReviewPreparePhase(
     },
     runSettings.inputs,
     runSettings.config,
+    patternContext,
   );
   logger.stepFinish("Finished: Create or update proposal");
 
@@ -406,6 +435,8 @@ export async function executeReviewPreparePhase(
   await exportPostProposalVariables(
     provider,
     proposal.id,
+    undefined,
+    patternContext,
   );
   logger.debugStepFinish("Finished: Export post proposal variables");
 
@@ -436,11 +467,12 @@ export async function executeReviewPreparePhase(
       rawConfig: _postProposalRuntimeConfigResult.rawResolvedRuntime,
       config: _postProposalRuntimeConfigResult.resolvedRuntime,
     };
-    await synchronizeRuntimeStateAfterOverride({
+    patternContext = await synchronizeRuntimeStateAfterOverride({
       provider,
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
+      currentPatternContext: patternContext,
       nextVersion,
       currentVersion,
     });

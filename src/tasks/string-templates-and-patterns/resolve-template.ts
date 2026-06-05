@@ -1,5 +1,5 @@
 import { Liquid, type Template } from "liquidjs";
-import { STRING_PATTERN_CONTEXT } from "./pattern-context.ts";
+import type { StringPatternContext } from "./pattern-context.ts";
 
 export const liquidEngine = new Liquid({ jsTruthy: true });
 
@@ -8,6 +8,7 @@ const PARSED_TEMPLATE_CACHE = new Map<string, Template[]>();
 /** @throws */
 export async function resolveStringTemplate(
   template: string,
+  context: StringPatternContext,
   additionalContext?: Record<string, unknown>,
 ): Promise<string> {
   try {
@@ -21,8 +22,8 @@ export async function resolveStringTemplate(
     const renderedTemplate = await liquidEngine.render(
       parsedTemplate,
       additionalContext
-        ? { ...STRING_PATTERN_CONTEXT, ...additionalContext }
-        : STRING_PATTERN_CONTEXT,
+        ? { ...context, ...additionalContext }
+        : context,
     );
 
     if (typeof renderedTemplate !== "string") {

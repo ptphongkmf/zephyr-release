@@ -22,6 +22,7 @@ import { prepareChangelogFileToCommit } from "./changelog.ts";
 import { execSync } from "node:child_process";
 import { getTextFile } from "./file.ts";
 import { resolveStringTemplate } from "./string-templates-and-patterns/resolve-template.ts";
+import type { StringPatternContext } from "./string-templates-and-patterns/pattern-context.ts";
 import type { CommitConfigOutput } from "../schemas/configs/modules/commit-config.ts";
 import { BranchOutOfDateError } from "../errors/providers/branch.ts";
 import { SafeExit } from "../errors/safe-exit.ts";
@@ -344,6 +345,7 @@ export async function prepareChangesToCommit(
   inputs: PrepareChangesInputsParams,
   config: PrepareChangesConfigParams,
   nextVersion: SemVer,
+  patternContext: StringPatternContext,
 ): Promise<Map<string, string | null>> {
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
   const { versionFiles, changelog, commit } = config;
@@ -360,6 +362,7 @@ export async function prepareChangesToCommit(
       sourceMode,
       workspacePath,
       triggerCommitHash,
+      patternContext,
     );
     changesData.set(normalize(path), clContent);
   } else {
@@ -499,6 +502,7 @@ export async function commitChangesToBranch(
     targetBranchName: string;
     force?: boolean;
   },
+  patternContext: StringPatternContext,
 ) {
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
   const { releaseFlow } = config;
@@ -524,9 +528,9 @@ export async function commitChangesToBranch(
       headerTemplatePath,
       { provider, workspacePath, ref: triggerCommitHash },
     );
-    commitHeader = await resolveStringTemplate(headerTemplateFromFile);
+    commitHeader = await resolveStringTemplate(headerTemplateFromFile, patternContext);
   } else {
-    commitHeader = await resolveStringTemplate(headerTemplate);
+    commitHeader = await resolveStringTemplate(headerTemplate, patternContext);
   }
 
   let commitBody: string | undefined;
@@ -536,9 +540,9 @@ export async function commitChangesToBranch(
       bodyTemplatePath,
       { provider, workspacePath, ref: triggerCommitHash },
     );
-    commitBody = await resolveStringTemplate(bodyTemplateFromFile);
+    commitBody = await resolveStringTemplate(bodyTemplateFromFile, patternContext);
   } else if (bodyTemplate) {
-    commitBody = await resolveStringTemplate(bodyTemplate);
+    commitBody = await resolveStringTemplate(bodyTemplate, patternContext);
   }
 
   let commitFooter: string | undefined;
@@ -548,9 +552,9 @@ export async function commitChangesToBranch(
       footerTemplatePath,
       { provider, workspacePath, ref: triggerCommitHash },
     );
-    commitFooter = await resolveStringTemplate(footerTemplateFromFile);
+    commitFooter = await resolveStringTemplate(footerTemplateFromFile, patternContext);
   } else if (footerTemplate) {
-    commitFooter = await resolveStringTemplate(footerTemplate);
+    commitFooter = await resolveStringTemplate(footerTemplate, patternContext);
   }
 
   const zephyrReleaseSign = `${ZEPHYR_RELEASE_COMMIT_SIGN}: ${VERSION}`;

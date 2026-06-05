@@ -68,11 +68,11 @@ Available after extracting the next version natively from the primary version fi
 
 Custom string patterns defined in your configuration file using the [`custom-string-patterns`](./config-options.md#custom-string-patterns-optional) option. If a custom pattern key matches a built-in pattern, the built-in takes priority and your custom one is ignored. Usage: `{{ yourCustomKey }}`.
 
-### Fixed String Patterns
+#### Fixed String Patterns
 
 These string patterns are resolved at runtime and remain fixed for the lifetime of the process.
 
-#### Base
+##### Base
 
 - **Custom Patterns**: Custom string patterns defined in your configuration file using the [`custom-string-patterns`](./config-options.md#custom-string-patterns-optional) option. `{{ yourCustomKey }}`.
 
@@ -94,12 +94,12 @@ These string patterns are resolved at runtime and remain fixed for the lifetime 
 
 - `{{ timeZone }}`: IANA time zone (set via [`time-zone`](./config-options.md#time-zone-optional))
 
-#### Datetime
+##### Datetime
 
 - `{{ timestamp }}`: Timestamp at script start time, always UTC
 - `{{ YYYY }}`, `{{ MM }}`, `{{ DD }}`, `{{ HH }}`, `{{ mm }}`, `{{ ss }}`: Date/time components at script start time
 
-#### Current Version
+##### Current Version
 
 Only available in "auto" and "review" release flow propose operation. Can be undefined if the project has no version yet (the calculated version is initial version)
 
@@ -108,7 +108,7 @@ Only available in "auto" and "review" release flow propose operation. Can be und
 - `{{ currentVersionPre }}`: The current prerelease identifier of the semantic version
 - `{{ currentVersionBld }}`: The current build metadata of the semantic version
 
-#### Next Version (and tag)
+##### Next Version (and tag)
 
 - `{{ nextVersion }}`: The calculated next full semantic version (SemVer)
 - `{{ nextVersionCore }}`: The calculated next core part of the semantic version (major.minor.patch)
@@ -119,11 +119,11 @@ Only available in "auto" and "review" release flow propose operation. Can be und
 
 - `{{ tagName }}`: Tag name (set via [`tag-name-template`](./config-options.md#tag--name-template-optional))
 
-### Dynamic String Patterns
+#### Dynamic String Patterns
 
 These string patterns are resolved dynamically at runtime and may change each time they are used.
 
-#### Changelog
+##### Changelog
 
 - `{{ changelogRelease }}`: In `propose` operation (managing proposals), the generated changelog content section is [release header](./config-options.md#changelog--release-header-template-optional) + body (generated from resolved commits) + [release footer](./config-options.md#changelog--release-footer-template-optional). In `release` operation (create tag and publish release), the value is the **proposal body** (this means any edits made to the proposal body will also be included). If, however, [release-body-override](./config-options.md#changelog--release-body-override-optional) (or [release-body-override-path](./config-options.md#changelog--release-body-override-path-optional)) is provided, the value will be re-evaluated to [release header](./config-options.md#changelog--release-header-template-optional) + body override + [release footer](./config-options.md#changelog--release-footer-template-optional)
 
@@ -133,23 +133,23 @@ These string patterns are resolved dynamically at runtime and may change each ti
 
 - `{{ changelogReleaseBodyAlt }}`: An alternative value for `{{ changelogReleaseBody }}`. It is computed using alternative section-level templates like [`release-section-heading-template-alt`](./config-options.md#changelog--release-section-heading-template-alt-optional) or [`release-section-entry-template-alt`](./config-options.md#changelog--release-section-entry-template-alt-optional). It can also be overridden via [`release-body-override-alt`](./config-options.md#changelog--release-body-override-alt-optional) or [`release-body-override-alt-path`](./config-options.md#changelog--release-body-override-alt-path-optional). If no alternative configuration is provided, it falls back to the original `{{ changelogReleaseBody }}` content.
 
-#### Datetime (now)
+##### Datetime (now)
 
 - `{{ nowTimestamp }}`: Timestamp at NOW, always UTC
 - `{{ nowYYYY }}`, `{{ nowMM }}`, `{{ nowDD }}`, `{{ nowHH }}`, `{{ nowmm }}`, `{{ nowss }}`: Date/time components at NOW
 
-### Special String Patterns
+#### Special String Patterns
 
 These are special patterns that are only available to certain templates. Make sure to check the template description to see which templates explicitly support these patterns.
 
-#### Changelog Section Heading
+##### Changelog Section Heading
 
 Usage: [`release-section-heading-template`](./config-options.md#changelog--release-section-heading-template-optional)
 
 - `{{ section }}`: string; the section names defined in [`commit-types`](./config-options.md#commit-types-optional) (e.g., "Features", "Bug Fixes")
 - `{{ sectionAlt }}`: string; the alternative section names (fall back to section) defined in [`commit-types`](./config-options.md#commit-types-optional)
 
-#### Changelog Entries
+##### Changelog Entries
 
 Usage: [`release-section-entry-template`](./config-options.md#changelog--release-section-entry-template-optional) and [`release-breaking-section-entry-template`](./config-options.md#changelog--release-breaking-section-entry-template-optional)
 

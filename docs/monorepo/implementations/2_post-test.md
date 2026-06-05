@@ -1,12 +1,12 @@
 # Phase 2 — Post-Test: Real GitHub API
 
-> **Purpose:** Test the updated default commit header template (`{{ releases | format_releases }}`) and the pure context fallback in a real end-to-end run.
+> **Purpose:** Test the enforced pure context model and the updated default commit header template (`{{ releases | format_releases }}`) in a real end-to-end run.
 
 ---
 
 ## Prerequisites
 
-- Phase 1 implementation complete and passing.
+- Phase 2 implementation complete and passing `deno task check`.
 - A GitHub repository with at least 1 tag and 1+ new commits since.
 - GitHub Personal Access Token configured.
 
@@ -18,7 +18,7 @@
 
 **Expected behavior:**
 - The commit message should be `chore: release v<nextVersion>` (e.g., `chore: release v1.2.0`).
-- This is the same format as before the refactor (backward compatible).
+- This validates that the `releases` array is populated with a single entry whose `tagName` is the tag name.
 
 **Verify (in `review` mode — check proposal title / commit on working branch):**
 - [ ] Commit header is `chore: release v1.2.0` (not `chore: release [object Object]` or empty).
@@ -70,10 +70,36 @@
 
 ---
 
-## Test 4: Explicit Context Override (Developer Verification)
-
-This is tested locally via `experiments/pure-context-and-format-releases.ts`, but for extra confidence:
+## Test 4: No Global State Leaks
 
 **Verify:**
-- [ ] `resolveStringTemplate("{{ name }}", undefined, { name: "test" })` returns `"test"`, not whatever is in the global `STRING_PATTERN_CONTEXT`.
-- [ ] `resolveStringTemplate("{{ name }}")` (without explicit context) still reads from the global singleton.
+- [ ] Grep for `STRING_PATTERN_CONTEXT` in `src/` — should return 0 results (the global is deleted).
+- [ ] Grep for `BUILT_IN_CONTEXT` in `src/` — should return 0 results.
+- [ ] Grep for `CUSTOM_CONTEXT` in `src/` — should return 0 results.
+- [ ] All `resolveStringTemplate` calls pass an explicit `context` argument — no call omits the second parameter.
+
+---
+
+## Test 5: Runtime Config Override Preserves Context
+
+**Config with runtime override:**
+```json
+{
+  "runtime-config-override": {
+    "path": ".zephyr-override.json"
+  },
+  "command-hooks": {
+    "pre-calculate-version": [
+      "echo '{\"name\": \"overridden-name\"}' > .zephyr-override.json"
+    ]
+  }
+}
+```
+
+**Expected behavior:**
+- After the `pre-calculate-version` hook, `synchronizeRuntimeStateAfterOverride` rebuilds the context with the new config and returns it.
+- Subsequent template resolutions (tag name, commit header, etc.) reflect the overridden `name`.
+
+**Verify:**
+- [ ] The commit message or tag name reflects the overridden `name` value.
+- [ ] No stale values from the pre-override context leak through.

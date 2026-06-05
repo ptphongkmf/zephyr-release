@@ -12,7 +12,7 @@ import { executeReviewReleaseFlow } from "./workflows/review.ts";
 import type { OperationRunSettings } from "./types/operation-context.ts";
 import { executeAutoReleaseFlow } from "./workflows/auto.ts";
 import { SafeExit } from "./errors/safe-exit.ts";
-import { bootstrapOperation } from "./workflows/bootstrap.ts";
+import { bootstrapOperation, type BootstrapResult } from "./workflows/bootstrap.ts";
 import {
   resolveRuntimeConfigOverride,
   synchronizeRuntimeStateAfterOverride,
@@ -42,9 +42,11 @@ export async function run(provider: PlatformProvider) {
     config: configResult.config,
   };
 
+  let bootstrapData: BootstrapResult | undefined;
+
   try {
     logger.header("Start Bootstrap Operation");
-    const bootstrapData = await bootstrapOperation(
+    bootstrapData = await bootstrapOperation(
       provider,
       runSettings.config,
       runSettings.inputs,
@@ -60,6 +62,7 @@ export async function run(provider: PlatformProvider) {
       inputs: runSettings.inputs,
       rawConfig: runSettings.rawConfig,
       config: runSettings.config,
+      patternContext: bootstrapData.patternContext,
     });
     logger.debugStepFinish("Finished: Export base operation variables");
 
@@ -88,11 +91,12 @@ export async function run(provider: PlatformProvider) {
         rawConfig: _basePreRuntimeConfigResult.rawResolvedRuntime,
         config: _basePreRuntimeConfigResult.resolvedRuntime,
       };
-      await synchronizeRuntimeStateAfterOverride({
+      bootstrapData.patternContext = await synchronizeRuntimeStateAfterOverride({
         provider,
         config: runSettings.config,
         rawConfig: runSettings.rawConfig,
         triggerBranchName: runSettings.inputs.triggerBranchName,
+        currentPatternContext: bootstrapData.patternContext,
       });
       logger.stepFinish(
         "Finished: Resolve runtime config override (base pre commands)",
@@ -121,12 +125,12 @@ export async function run(provider: PlatformProvider) {
         break;
     }
 
-    await exportFinalOperationVariables(provider, "success");
+    await exportFinalOperationVariables(provider, "success", bootstrapData!.patternContext);
   } catch (error) {
     if (error instanceof SafeExit) {
-      await exportFinalOperationVariables(provider, "skipped");
+      await exportFinalOperationVariables(provider, "skipped", bootstrapData?.patternContext ?? {});
     } else {
-      await exportFinalOperationVariables(provider, "failure");
+      await exportFinalOperationVariables(provider, "failure", bootstrapData?.patternContext ?? {});
     }
 
     throw error;

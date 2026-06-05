@@ -11,14 +11,17 @@ import { ConfigSchema } from "../schemas/configs/config.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import type { SemVer } from "@std/semver";
 import {
-  createCustomStringPatternContext,
-  createFixedAndDynamicDatetimeStringPatternContext,
-  createFixedBaseStringPatternContext,
-  createFixedCurrentVersionStringPatternContext,
-  createFixedNextVersionStringPatternContext,
-  createFixedTagStringPatternContext,
-  stringifyCurrentPatternContext,
+  createEmptyPatternContext,
+  addCustomPatternContext,
+  addBasePatternContext,
+  addDatetimePatternContext,
+  addCurrentVersionPatternContext,
+  addNextVersionPatternContext,
+  addTagPatternContext,
+  stringifyPatternContext,
+  type StringPatternContext,
 } from "./string-templates-and-patterns/pattern-context.ts";
+import { resolveStringTemplate } from "./string-templates-and-patterns/resolve-template.ts";
 import { toEnvKey, toOutputKey } from "../utils/transformers/case.ts";
 
 interface ResolvedRuntimeConfigResult {
@@ -100,13 +103,14 @@ interface SynchronizeRuntimeStateParams {
   config: ConfigOutput;
   rawConfig: object;
   triggerBranchName: string;
+  currentPatternContext: StringPatternContext;
   nextVersion?: SemVer;
   currentVersion?: SemVer;
 }
 
 /**
- * Resets and recalculates the global STRING_PATTERN_CONTEXT and re-exports
- * stale environment variables after a runtime config override.
+ * Rebuilds the pattern context from scratch and re-exports stale
+ * environment variables after a runtime config override.
  *
  * This must be called every time `resolveRuntimeConfigOverride` produces a
  * new config, so that template-derived values (e.g. `tagName`,
@@ -117,54 +121,55 @@ interface SynchronizeRuntimeStateParams {
  */
 export async function synchronizeRuntimeStateAfterOverride(
   params: SynchronizeRuntimeStateParams,
-): Promise<void> {
+): Promise<StringPatternContext> {
   const {
     provider,
     config,
     rawConfig,
     triggerBranchName,
+    currentPatternContext,
     nextVersion,
     currentVersion,
   } = params;
 
   taskLogger.debug("Synchronizing runtime state after config override...");
 
-  // 1. Refresh custom string patterns (user-defined context keys).
-  createCustomStringPatternContext(config.customStringPatterns);
+  let patternContext = createEmptyPatternContext();
+  patternContext = addCustomPatternContext(patternContext, config.customStringPatterns);
 
-  // 2. Refresh fixed base context (name, timeZone, workingBranchName, etc.).
-  //
-  // NOTE ON IMMUTABLE FIELDS:
-  // The `config` object passed here has already rejected overrides for immutable fields
-  // during the resolution phase. Re-evaluating this context is perfectly safe; it
-  // ensures dynamic patterns update while strictly preserving the original structural
-  // templates for:
-  // - `review.workingBranchNameTemplate`
-  await createFixedBaseStringPatternContext(
+  const workingBranchName = await resolveStringTemplate(
+    config.review.workingBranchNameTemplate,
+    patternContext,
+  );
+
+  patternContext = addBasePatternContext(
+    patternContext,
     provider,
     triggerBranchName,
     config,
+    workingBranchName,
   );
 
-  // 3. Refresh datetime context (timezone may have changed).
-  createFixedAndDynamicDatetimeStringPatternContext(config.timeZone);
+  patternContext = addDatetimePatternContext(patternContext, config.timeZone);
 
-  // 4. Refresh version context if version is available at this lifecycle stage.
-  // Also affect tag name
   if (currentVersion) {
-    createFixedCurrentVersionStringPatternContext(currentVersion);
+    patternContext = addCurrentVersionPatternContext(patternContext, currentVersion);
   }
 
   if (nextVersion) {
-    createFixedNextVersionStringPatternContext(nextVersion);
-    await createFixedTagStringPatternContext(config.tag.nameTemplate);
+    patternContext = addNextVersionPatternContext(patternContext, nextVersion);
+    patternContext = await addTagPatternContext(patternContext, config.tag.nameTemplate);
   }
 
-  // 5. Re-export the three dynamic variables that become stale after override.
+  // Preserve releases from the current context if they exist
+  if (currentPatternContext.releases) {
+    patternContext = { ...patternContext, releases: currentPatternContext.releases };
+  }
+
   const staleExports = {
     config: JSON.stringify(rawConfig, jsonValueNormalizer),
     internalConfig: JSON.stringify(config, jsonValueNormalizer),
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   };
 
   Object.entries(staleExports).forEach(([k, v]) => {
@@ -173,4 +178,6 @@ export async function synchronizeRuntimeStateAfterOverride(
   });
 
   taskLogger.debug("Runtime state synchronized.");
+
+  return patternContext;
 }

@@ -4,6 +4,7 @@ import {
   compareNextVersionToCurrentVersion,
 } from "../tasks/calculate-next-version/calculate-version.ts";
 import { getCurrentVersion } from "../tasks/calculate-next-version/previous-version.ts";
+import { format } from "@std/semver";
 import { generatePrepareChangelogReleaseContent } from "../tasks/changelog.ts";
 import { runCommands } from "../tasks/command.ts";
 import {
@@ -23,10 +24,12 @@ import {
 } from "../tasks/export-variables.ts";
 import { logger } from "../tasks/logger.ts";
 import {
-  createDynamicChangelogStringPatternContext,
-  createFixedCurrentVersionStringPatternContext,
-  createFixedNextVersionStringPatternContext,
-  createFixedTagStringPatternContext,
+  addChangelogPatternContext,
+  addCurrentVersionPatternContext,
+  addNextVersionPatternContext,
+  addReleasesPatternContext,
+  addTagPatternContext,
+  type StringPatternContext,
 } from "../tasks/string-templates-and-patterns/pattern-context.ts";
 import type {
   OperationRunSettings,
@@ -48,6 +51,7 @@ interface AutoWorkflowOptions {
   associatedProposalForCommit: ProviderProposal | undefined;
   associatedProposalFromBranch: ProviderProposal | undefined;
   triggerContext: OperationTriggerContext;
+  patternContext: StringPatternContext;
 }
 
 export async function executeAutoReleaseFlow(
@@ -60,7 +64,10 @@ export async function executeAutoReleaseFlow(
     // associatedProposalForCommit,
     // associatedProposalFromBranch,
     triggerContext,
+    patternContext: initialPatternContext,
   } = opts;
+
+  let patternContext = initialPatternContext;
 
   /**
    * Auto release flow run settings.
@@ -91,6 +98,7 @@ export async function executeAutoReleaseFlow(
   await exportPreCalculateVersionVariables(
     provider,
     resolvedCommitsResult.entries,
+    patternContext,
   );
   logger.debugStepFinish("Finished: Export pre calculate version variables");
 
@@ -122,11 +130,12 @@ export async function executeAutoReleaseFlow(
       rawConfig: _preCalculateVersionRuntimeConfigResult.rawResolvedRuntime,
       config: _preCalculateVersionRuntimeConfigResult.resolvedRuntime,
     };
-    await synchronizeRuntimeStateAfterOverride({
+    patternContext = await synchronizeRuntimeStateAfterOverride({
       provider,
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
+      currentPatternContext: patternContext,
     });
     logger.stepFinish(
       "Finished: Resolve runtime config override (pre calculate version commands)",
@@ -160,11 +169,18 @@ export async function executeAutoReleaseFlow(
   logger.debugStepStart(
     "Starting: Create fixed current version, next version and tag string pattern context",
   );
-  createFixedCurrentVersionStringPatternContext(currentVersion);
-  createFixedNextVersionStringPatternContext(nextVersion);
-  await createFixedTagStringPatternContext(
-    runSettings.config.tag.nameTemplate,
-  );
+  if (currentVersion) {
+    patternContext = addCurrentVersionPatternContext(patternContext, currentVersion);
+  }
+  patternContext = addNextVersionPatternContext(patternContext, nextVersion);
+  patternContext = await addTagPatternContext(patternContext, runSettings.config.tag.nameTemplate);
+
+  patternContext = addReleasesPatternContext(patternContext, [{
+    name: runSettings.config.name ?? "root",
+    nextVersion: format(nextVersion),
+    tagName: patternContext.tagName as string,
+    isWorkspace: false,
+  }]);
   logger.debugStepFinish(
     "Finished: Create fixed current version, next version and tag string pattern context",
   );
@@ -176,6 +192,7 @@ export async function executeAutoReleaseFlow(
     provider,
     currentVersion,
     nextVersion,
+    patternContext,
   );
   logger.debugStepFinish("Finished: Export post calculate version variables");
 
@@ -207,11 +224,12 @@ export async function executeAutoReleaseFlow(
       rawConfig: _postCalculateVersionRuntimeConfigResult.rawResolvedRuntime,
       config: _postCalculateVersionRuntimeConfigResult.resolvedRuntime,
     };
-    await synchronizeRuntimeStateAfterOverride({
+    patternContext = await synchronizeRuntimeStateAfterOverride({
       provider,
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
+      currentPatternContext: patternContext,
       nextVersion,
       currentVersion,
     });
@@ -238,13 +256,15 @@ export async function executeAutoReleaseFlow(
     resolvedCommitsResult.entries,
     runSettings.inputs,
     runSettings.config,
+    patternContext,
   );
   logger.stepFinish("Finished: Generate changelog release content");
 
   logger.debugStepStart(
     "Starting: Create dynamic changelog string pattern context",
   );
-  createDynamicChangelogStringPatternContext(
+  patternContext = addChangelogPatternContext(
+    patternContext,
     changelogReleaseResult.release,
     changelogReleaseResult.releaseBody,
     changelogReleaseResult.releaseAlt,
@@ -260,13 +280,14 @@ export async function executeAutoReleaseFlow(
     runSettings.inputs,
     runSettings.config,
     nextVersion,
+    patternContext,
   );
   logger.stepFinish("Finished: Prepare and collect changes data to commit");
 
   // preCommit hook
   // Files are written to disk, git commit has NOT executed yet.
   logger.debugStepStart("Starting: Export pre commit variables");
-  await exportPreCommitVariables(provider, changesData);
+  await exportPreCommitVariables(provider, changesData, patternContext);
   logger.debugStepFinish("Finished: Export pre commit variables");
 
   logger.stepStart("Starting: Execute pre commit commands");
@@ -296,11 +317,12 @@ export async function executeAutoReleaseFlow(
       rawConfig: _preCommitRuntimeConfigResult.rawResolvedRuntime,
       config: _preCommitRuntimeConfigResult.resolvedRuntime,
     };
-    await synchronizeRuntimeStateAfterOverride({
+    patternContext = await synchronizeRuntimeStateAfterOverride({
       provider,
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
+      currentPatternContext: patternContext,
       nextVersion,
       currentVersion,
     });
@@ -325,13 +347,14 @@ export async function executeAutoReleaseFlow(
       targetBranchName: runSettings.inputs.triggerBranchName,
       force: false,
     },
+    patternContext,
   );
   logger.stepFinish("Finished: Commit changes");
 
   // postCommit hook
   // Changes are committed and pushed. (No proposal in auto release flow.)
   logger.debugStepStart("Starting: Export post commit variables");
-  await exportPostCommitVariables(provider, commitResult.hash);
+  await exportPostCommitVariables(provider, commitResult.hash, patternContext);
   logger.debugStepFinish("Finished: Export post commit variables");
 
   // In auto release flow, postProposal is merged with postCommit since there is no proposal.
@@ -345,6 +368,7 @@ export async function executeAutoReleaseFlow(
     {
       config: runSettings.config,
     },
+    patternContext,
   );
   logger.debugStepFinish(
     "Finished: Export post proposal variables (auto release flow)",
@@ -377,11 +401,12 @@ export async function executeAutoReleaseFlow(
       rawConfig: _postCommitRuntimeConfigResult.rawResolvedRuntime,
       config: _postCommitRuntimeConfigResult.resolvedRuntime,
     };
-    await synchronizeRuntimeStateAfterOverride({
+    patternContext = await synchronizeRuntimeStateAfterOverride({
       provider,
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
+      currentPatternContext: patternContext,
       nextVersion,
       currentVersion,
     });
@@ -403,7 +428,7 @@ export async function executeAutoReleaseFlow(
 
     // preTag hook
     logger.debugStepStart("Starting: Export pre tag variables");
-    await exportPreTagVariables(provider, nextVersion);
+    await exportPreTagVariables(provider, nextVersion, patternContext);
     logger.debugStepFinish("Finished: Export pre tag variables");
 
     logger.stepStart("Starting: Execute pre tag commands");
@@ -433,11 +458,12 @@ export async function executeAutoReleaseFlow(
         rawConfig: _preTagRuntimeConfigResult.rawResolvedRuntime,
         config: _preTagRuntimeConfigResult.resolvedRuntime,
       };
-      await synchronizeRuntimeStateAfterOverride({
+      patternContext = await synchronizeRuntimeStateAfterOverride({
         provider,
         config: runSettings.config,
         rawConfig: runSettings.rawConfig,
         triggerBranchName: runSettings.inputs.triggerBranchName,
+        currentPatternContext: patternContext,
         nextVersion,
         currentVersion,
       });
@@ -457,13 +483,14 @@ export async function executeAutoReleaseFlow(
       commitResult.hash,
       runSettings.inputs,
       runSettings.config,
+      patternContext,
     );
     logger.stepFinish("Finished: Create tag");
 
     // preRelease hook
     // Tag exists, platform release has NOT been created yet.
     logger.debugStepStart("Starting: Export pre release variables");
-    await exportPreReleaseVariables(provider, createdTag.hash);
+    await exportPreReleaseVariables(provider, createdTag.hash, patternContext);
     logger.debugStepFinish("Finished: Export pre release variables");
 
     logger.stepStart("Starting: Execute pre release commands");
@@ -493,11 +520,12 @@ export async function executeAutoReleaseFlow(
         rawConfig: _preReleaseRuntimeConfigResult.rawResolvedRuntime,
         config: _preReleaseRuntimeConfigResult.resolvedRuntime,
       };
-      await synchronizeRuntimeStateAfterOverride({
+      patternContext = await synchronizeRuntimeStateAfterOverride({
         provider,
         config: runSettings.config,
         rawConfig: runSettings.rawConfig,
         triggerBranchName: runSettings.inputs.triggerBranchName,
+        currentPatternContext: patternContext,
         nextVersion,
         currentVersion,
       });
@@ -518,6 +546,7 @@ export async function executeAutoReleaseFlow(
         provider,
         runSettings.inputs,
         runSettings.config,
+        patternContext,
       );
       logger.stepFinish("Finished: Create release");
     } else {
@@ -545,6 +574,7 @@ export async function executeAutoReleaseFlow(
     logger.debugStepStart("Starting: Export post release variables");
     await exportPostReleaseVariables(
       provider,
+      patternContext,
       createdReleaseNote?.id,
       createdReleaseNote?.uploadUrl,
     );
@@ -577,11 +607,12 @@ export async function executeAutoReleaseFlow(
         rawConfig: _postReleaseRuntimeConfigResult.rawResolvedRuntime,
         config: _postReleaseRuntimeConfigResult.resolvedRuntime,
       };
-      await synchronizeRuntimeStateAfterOverride({
+      patternContext = await synchronizeRuntimeStateAfterOverride({
         provider,
         config: runSettings.config,
         rawConfig: runSettings.rawConfig,
         triggerBranchName: runSettings.inputs.triggerBranchName,
+        currentPatternContext: patternContext,
         nextVersion,
         currentVersion,
       });

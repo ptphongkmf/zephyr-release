@@ -14,15 +14,18 @@ import {
   synchronizeRuntimeStateAfterOverride,
 } from "../tasks/runtime-override.ts";
 import {
-  createDynamicChangelogStringPatternContext,
-  createFixedNextVersionStringPatternContext,
-  createFixedTagStringPatternContext,
+  addChangelogPatternContext,
+  addNextVersionPatternContext,
+  addReleasesPatternContext,
+  addTagPatternContext,
+  type StringPatternContext,
 } from "../tasks/string-templates-and-patterns/pattern-context.ts";
 import { createTag } from "../tasks/tag.ts";
 import {
   getPrimaryVersionFile,
   getVersionSemVerFromVersionFile,
 } from "../tasks/version-files/version-file.ts";
+import { format } from "@std/semver";
 import type { OperationRunSettings } from "../types/operation-context.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import type { ProviderProposal } from "../types/providers/proposal.ts";
@@ -32,11 +35,13 @@ export async function executeReviewPublishPhase(
   provider: PlatformProvider,
   currentRunSettings: OperationRunSettings,
   associatedProposalForCommit: ProviderProposal,
+  initialPatternContext: StringPatternContext,
 ): Promise<OperationRunSettings> {
   /**
    * Publish phase run settings.
    */
   let runSettings: OperationRunSettings = currentRunSettings;
+  let patternContext = initialPatternContext;
 
   logger.stepStart("Starting: Generate changelog release content");
   const proposalChangelogRelease = extractChangelogFromProposal(
@@ -47,6 +52,7 @@ export async function executeReviewPublishPhase(
     proposalChangelogRelease ?? "",
     runSettings.inputs,
     runSettings.config,
+    patternContext,
   );
   logger.stepFinish("Finished: Generate changelog release content");
 
@@ -71,25 +77,31 @@ export async function executeReviewPublishPhase(
   logger.debugStepStart(
     "Starting: Create fixed next version and tag string pattern context",
   );
-  createFixedNextVersionStringPatternContext(nextVersion);
-  await createFixedTagStringPatternContext(
-    runSettings.config.tag.nameTemplate,
-  );
+  patternContext = addNextVersionPatternContext(patternContext, nextVersion);
+  patternContext = await addTagPatternContext(patternContext, runSettings.config.tag.nameTemplate);
+
+  patternContext = addReleasesPatternContext(patternContext, [{
+    name: runSettings.config.name ?? "root",
+    nextVersion: format(nextVersion),
+    tagName: patternContext.tagName as string,
+    isWorkspace: false,
+  }]);
   logger.debugStepFinish(
     "Finished: Create fixed next version and tag string pattern context",
   );
 
   logger.debugStepStart(
-    "Starting: Create dynamic changelog string pattern contextt",
+    "Starting: Create dynamic changelog string pattern context",
   );
-  createDynamicChangelogStringPatternContext(
+  patternContext = addChangelogPatternContext(
+    patternContext,
     changelogReleaseResult?.release,
     changelogReleaseResult?.releaseBody,
     changelogReleaseResult?.releaseAlt,
     changelogReleaseResult?.releaseBodyAlt,
   );
   logger.debugStepFinish(
-    "Finished: Create dynamic changelog string pattern contextt",
+    "Finished: Create dynamic changelog string pattern context",
   );
 
   // preTag hook
@@ -98,6 +110,7 @@ export async function executeReviewPublishPhase(
   await exportPreTagVariables(
     provider,
     nextVersion,
+    patternContext,
     associatedProposalForCommit.id,
   );
   logger.debugStepFinish("Finished: Export pre tag variables");
@@ -129,11 +142,12 @@ export async function executeReviewPublishPhase(
       rawConfig: _preTagRuntimeConfigResult.rawResolvedRuntime,
       config: _preTagRuntimeConfigResult.resolvedRuntime,
     };
-    await synchronizeRuntimeStateAfterOverride({
+    patternContext = await synchronizeRuntimeStateAfterOverride({
       provider,
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
+      currentPatternContext: patternContext,
       nextVersion,
     });
     logger.stepFinish(
@@ -152,13 +166,14 @@ export async function executeReviewPublishPhase(
     runSettings.inputs.triggerCommitHash,
     runSettings.inputs,
     runSettings.config,
+    patternContext,
   );
   logger.stepFinish("Finished: Create tag");
 
   // preRelease hook
   // Tag exists, platform release has NOT been created yet.
   logger.debugStepStart("Starting: Export pre release variables");
-  await exportPreReleaseVariables(provider, createdTag.hash);
+  await exportPreReleaseVariables(provider, createdTag.hash, patternContext);
   logger.debugStepFinish("Finished: Export pre release variables");
 
   logger.stepStart("Starting: Execute pre release commands");
@@ -188,11 +203,12 @@ export async function executeReviewPublishPhase(
       rawConfig: _preReleaseRuntimeConfigResult.rawResolvedRuntime,
       config: _preReleaseRuntimeConfigResult.resolvedRuntime,
     };
-    await synchronizeRuntimeStateAfterOverride({
+    patternContext = await synchronizeRuntimeStateAfterOverride({
       provider,
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
+      currentPatternContext: patternContext,
       nextVersion,
     });
     logger.stepFinish(
@@ -212,6 +228,7 @@ export async function executeReviewPublishPhase(
       provider,
       runSettings.inputs,
       runSettings.config,
+      patternContext,
     );
     logger.stepFinish("Finished: Create release");
   } else {
@@ -248,6 +265,7 @@ export async function executeReviewPublishPhase(
   logger.debugStepStart("Starting: Export post release variables");
   await exportPostReleaseVariables(
     provider,
+    patternContext,
     createdReleaseNote?.id,
     createdReleaseNote?.uploadUrl,
   );
@@ -280,11 +298,12 @@ export async function executeReviewPublishPhase(
       rawConfig: _postReleaseRuntimeConfigResult.rawResolvedRuntime,
       config: _postReleaseRuntimeConfigResult.resolvedRuntime,
     };
-    await synchronizeRuntimeStateAfterOverride({
+    patternContext = await synchronizeRuntimeStateAfterOverride({
       provider,
       config: runSettings.config,
       rawConfig: runSettings.rawConfig,
       triggerBranchName: runSettings.inputs.triggerBranchName,
+      currentPatternContext: patternContext,
       nextVersion,
     });
     logger.stepFinish(

@@ -6,6 +6,7 @@ import type { ConfigOutput } from "../schemas/configs/config.ts";
 import type { ChangelogConfigOutput } from "../schemas/configs/modules/changelog-config.ts";
 import type { InputsOutput } from "../schemas/inputs/inputs.ts";
 import { resolveStringTemplate } from "./string-templates-and-patterns/resolve-template.ts";
+import type { StringPatternContext } from "./string-templates-and-patterns/pattern-context.ts";
 import type { ChangelogReleaseEntryPattern } from "../types/string-patterns.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import { CHANGELOG_MARKERS } from "../constants/markers.ts";
@@ -71,11 +72,12 @@ export async function generatePrepareChangelogReleaseContent(
   resolvedCommits: ResolvedCommit[],
   inputs: GenerateChangelogReleaseInputsParams,
   config: GenerateChangelogReleaseConfigParams,
+  patternContext: StringPatternContext,
 ): Promise<GeneratePrepareReleaseContentResult> {
   const [releaseHeader, releaseBody, releaseFooter] = await Promise.all([
-    resolveReleaseHeader(provider, inputs, config),
-    resolveReleaseBody(provider, resolvedCommits, inputs, config),
-    resolveReleaseFooter(provider, inputs, config),
+    resolveReleaseHeader(provider, inputs, config, patternContext),
+    resolveReleaseBody(provider, resolvedCommits, inputs, config, patternContext),
+    resolveReleaseFooter(provider, inputs, config, patternContext),
   ]);
 
   return {
@@ -102,6 +104,7 @@ export async function generatePublishChangelogReleaseContent(
   proposalChangelogRelease: string,
   inputs: GenerateChangelogReleaseInputsParams,
   config: GenerateChangelogReleaseConfigParams,
+  patternContext: StringPatternContext,
 ): Promise<GeneratePublishReleaseContentResult | undefined> {
   try {
     const {
@@ -118,9 +121,9 @@ export async function generatePublishChangelogReleaseContent(
       releaseBodyOverrideAltPath
     ) {
       const [releaseHeader, releaseBody, releaseFooter] = await Promise.all([
-        resolveReleaseHeader(provider, inputs, config),
-        resolveReleaseBody(provider, undefined, inputs, config),
-        resolveReleaseFooter(provider, inputs, config),
+        resolveReleaseHeader(provider, inputs, config, patternContext),
+        resolveReleaseBody(provider, undefined, inputs, config, patternContext),
+        resolveReleaseFooter(provider, inputs, config, patternContext),
       ]);
 
       return {
@@ -159,6 +162,7 @@ async function resolveReleaseHeader(
   provider: PlatformProvider,
   inputs: GenerateChangelogReleaseInputsParams,
   config: GenerateChangelogReleaseConfigParams,
+  patternContext: StringPatternContext,
 ): Promise<ResolvedReleaseText> {
   const {
     releaseHeaderTemplate,
@@ -202,12 +206,12 @@ async function resolveReleaseHeader(
   }
 
   if (baseTemplate === altTemplate) {
-    const resolved = await resolveStringTemplate(baseTemplate);
+    const resolved = await resolveStringTemplate(baseTemplate, patternContext);
     return { base: resolved, alt: resolved };
   } else {
     const [base, alt] = await Promise.all([
-      resolveStringTemplate(baseTemplate),
-      resolveStringTemplate(altTemplate),
+      resolveStringTemplate(baseTemplate, patternContext),
+      resolveStringTemplate(altTemplate, patternContext),
     ]);
     return { base, alt };
   }
@@ -219,6 +223,7 @@ async function resolveReleaseBody(
   resolvedCommits: ResolvedCommit[] | undefined,
   inputs: GenerateChangelogReleaseInputsParams,
   config: GenerateChangelogReleaseConfigParams,
+  patternContext: StringPatternContext,
 ): Promise<ResolvedReleaseText> {
   const {
     releaseBodyOverride,
@@ -275,6 +280,7 @@ async function resolveReleaseBody(
     resolvedCommits,
     inputs,
     config,
+    patternContext,
   );
 
   return {
@@ -287,6 +293,7 @@ async function resolveReleaseFooter(
   provider: PlatformProvider,
   inputs: GenerateChangelogReleaseInputsParams,
   config: GenerateChangelogReleaseConfigParams,
+  patternContext: StringPatternContext,
 ): Promise<Partial<ResolvedReleaseText>> {
   const {
     releaseFooterTemplate,
@@ -331,16 +338,16 @@ async function resolveReleaseFooter(
 
   if (baseTemplate === altTemplate) {
     if (baseTemplate) {
-      const resolved = await resolveStringTemplate(baseTemplate);
+      const resolved = await resolveStringTemplate(baseTemplate, patternContext);
       return { base: resolved, alt: resolved };
     }
   } else {
     const resolves = await Promise.all([
       baseTemplate
-        ? resolveStringTemplate(baseTemplate)
+        ? resolveStringTemplate(baseTemplate, patternContext)
         : Promise.resolve(undefined),
       altTemplate
-        ? resolveStringTemplate(altTemplate)
+        ? resolveStringTemplate(altTemplate, patternContext)
         : Promise.resolve(undefined),
     ]);
     return { base: resolves[0], alt: resolves[1] };
@@ -359,6 +366,7 @@ async function generateReleaseBodyBasedOnCommits(
   resolvedCommits: ResolvedCommit[],
   inputs: GenerateChangelogReleaseInputsParams,
   config: GenerateChangelogReleaseConfigParams,
+  patternContext: StringPatternContext,
 ): Promise<ResolvedReleaseText> {
   const {
     commitTypes,
@@ -392,9 +400,11 @@ async function generateReleaseBodyBasedOnCommits(
 
   const breakingSectionHeadingBase = await resolveStringTemplate(
     releaseBreakingSectionHeading,
+    patternContext,
   );
   const breakingSectionHeadingAlt = await resolveStringTemplate(
     releaseBreakingSectionHeadingAlt ?? releaseBreakingSectionHeading,
+    patternContext,
   );
 
   baseSectionGroups.set(breakingSectionHeadingBase, {
@@ -586,6 +596,7 @@ async function generateReleaseBodyBasedOnCommits(
 
     const commitStrBase = await resolveStringTemplate(
       sectionEntryTemplateBase,
+      patternContext,
       commitPatterns,
     );
 
@@ -593,6 +604,7 @@ async function generateReleaseBodyBasedOnCommits(
       ? commitStrBase
       : await resolveStringTemplate(
         sectionEntryTemplateAlt,
+        patternContext,
         commitPatterns,
       );
 
@@ -601,7 +613,7 @@ async function generateReleaseBodyBasedOnCommits(
 
     if (commit.isBreaking) {
       const commitBreakingStrBase = breakingEntryTemplateBase
-        ? await resolveStringTemplate(breakingEntryTemplateBase, commitPatterns)
+        ? await resolveStringTemplate(breakingEntryTemplateBase, patternContext, commitPatterns)
         : commitStrBase;
 
       let commitBreakingStrAlt: string;
@@ -611,6 +623,7 @@ async function generateReleaseBodyBasedOnCommits(
         } else {
           commitBreakingStrAlt = await resolveStringTemplate(
             breakingEntryTemplateAlt,
+            patternContext,
             commitPatterns,
           );
         }
@@ -642,6 +655,7 @@ async function generateReleaseBodyBasedOnCommits(
       ? key
       : await resolveStringTemplate(
         sectionHeadingTemplateBase,
+        patternContext,
         group.sectionInfo,
       );
 
@@ -657,6 +671,7 @@ async function generateReleaseBodyBasedOnCommits(
       ? key
       : await resolveStringTemplate(
         sectionHeadingTemplateAlt,
+        patternContext,
         group.sectionInfo,
       );
 
@@ -716,6 +731,7 @@ export async function prepareChangelogFileToCommit(
   sourceMode: InputsOutput["sourceMode"],
   workspacePath: string,
   triggerCommitHash: string,
+  patternContext: StringPatternContext,
 ): Promise<string> {
   const {
     path,
@@ -749,8 +765,8 @@ export async function prepareChangelogFileToCommit(
       fileHeaderTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );
-    header = await resolveStringTemplate(headerTemplate);
-  } else header = await resolveStringTemplate(fileHeaderTemplate);
+    header = await resolveStringTemplate(headerTemplate, patternContext);
+  } else header = await resolveStringTemplate(fileHeaderTemplate, patternContext);
 
   let releaseContentBlock: string;
   if (fileReleaseTemplatePath) {
@@ -759,9 +775,9 @@ export async function prepareChangelogFileToCommit(
       fileReleaseTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );
-    releaseContentBlock = await resolveStringTemplate(releaseTemplate);
+    releaseContentBlock = await resolveStringTemplate(releaseTemplate, patternContext);
   } else {
-    releaseContentBlock = await resolveStringTemplate(fileReleaseTemplate);
+    releaseContentBlock = await resolveStringTemplate(fileReleaseTemplate, patternContext);
   }
 
   let footer: string | undefined;
@@ -771,9 +787,9 @@ export async function prepareChangelogFileToCommit(
       fileFooterTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );
-    footer = await resolveStringTemplate(footerTemplate);
+    footer = await resolveStringTemplate(footerTemplate, patternContext);
   } else if (fileFooterTemplate) {
-    footer = await resolveStringTemplate(fileFooterTemplate);
+    footer = await resolveStringTemplate(fileFooterTemplate, patternContext);
   }
 
   if (!currentFileContent.trim()) {

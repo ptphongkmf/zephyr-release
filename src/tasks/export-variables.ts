@@ -30,7 +30,7 @@ import {
 import type { ProviderInputs } from "../types/providers/inputs.ts";
 import type { ConfigOutput } from "../schemas/configs/config.ts";
 import type { InputsOutput } from "../schemas/inputs/inputs.ts";
-import { stringifyCurrentPatternContext } from "./string-templates-and-patterns/pattern-context.ts";
+import { stringifyPatternContext, type StringPatternContext } from "./string-templates-and-patterns/pattern-context.ts";
 
 export async function exportBaseOperationVariables(
   provider: PlatformProvider,
@@ -43,6 +43,7 @@ export async function exportBaseOperationVariables(
     inputs: InputsOutput;
     rawConfig: object;
     config: ConfigOutput;
+    patternContext: StringPatternContext;
   },
 ) {
   const {
@@ -131,7 +132,7 @@ export async function exportBaseOperationVariables(
     proposalId: operationKind === "propose"
       ? proposalFromBranch?.id
       : proposalForCommit?.id,
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(options.patternContext),
   } satisfies BaseOperationVariables & DynamicOperationVariables;
 
   taskLogger.debugWrap((dLogger) => {
@@ -151,11 +152,12 @@ export async function exportBaseOperationVariables(
 export async function exportPreCalculateVersionVariables(
   provider: PlatformProvider,
   resolvedCommitEntries: ResolvedCommit[],
+  patternContext: StringPatternContext,
 ) {
   const exportObject = {
     resolvedCommitEntries: JSON.stringify(resolvedCommitEntries),
 
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   } satisfies
     & PreCalculateVersionVariables
     & Pick<DynamicOperationVariables, "patternContext">;
@@ -178,12 +180,13 @@ export async function exportPostCalculateVersionVariables(
   provider: PlatformProvider,
   currentVersion: SemVer | undefined,
   nextVersion: SemVer,
+  patternContext: StringPatternContext,
 ) {
   const exportObject = {
     currentVersion: currentVersion ? format(currentVersion) : "",
     nextVersion: format(nextVersion),
 
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   } satisfies
     & PostCalculateVersionVariables
     & Pick<DynamicOperationVariables, "patternContext">;
@@ -205,11 +208,12 @@ export async function exportPostCalculateVersionVariables(
 export async function exportPreCommitVariables(
   provider: PlatformProvider,
   changesData: Map<string, string | null>,
+  patternContext: StringPatternContext,
 ) {
   const exportObject = {
     committedFilePaths: JSON.stringify([...changesData.keys()]),
 
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   } satisfies
     & PreCommitVariables
     & Pick<DynamicOperationVariables, "patternContext">;
@@ -231,11 +235,12 @@ export async function exportPreCommitVariables(
 export async function exportPostCommitVariables(
   provider: PlatformProvider,
   commitHash: string,
+  patternContext: StringPatternContext,
 ) {
   const exportObject = {
     commitHash,
 
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   } satisfies
     & PostCommitVariables
     & Pick<DynamicOperationVariables, "patternContext">;
@@ -260,6 +265,7 @@ export async function exportPostProposalVariables(
   releaseFlowRelatedData?: {
     config?: ConfigOutput;
   },
+  patternContext?: StringPatternContext,
 ) {
   const { config } = releaseFlowRelatedData ?? {};
 
@@ -280,7 +286,7 @@ export async function exportPostProposalVariables(
     proposalId: proposalId,
     jobs: JSON.stringify(operationJobs),
 
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: patternContext ? await stringifyPatternContext(patternContext) : "",
   } satisfies
     & PostProposalVariables
     & Pick<DynamicOperationVariables, "proposalId" | "patternContext">;
@@ -302,13 +308,14 @@ export async function exportPostProposalVariables(
 export async function exportPreTagVariables(
   provider: PlatformProvider,
   nextVersion: SemVer,
+  patternContext: StringPatternContext,
   proposalId?: string,
 ) {
   const exportObject = {
     nextVersion: format(nextVersion),
 
     proposalId: proposalId,
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   } satisfies
     & PreTagVariables
     & Pick<DynamicOperationVariables, "patternContext" | "proposalId">;
@@ -330,11 +337,12 @@ export async function exportPreTagVariables(
 export async function exportPreReleaseVariables(
   provider: PlatformProvider,
   tagHash: string,
+  patternContext: StringPatternContext,
 ) {
   const exportObject = {
     tagHash,
 
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   } satisfies
     & PreReleaseVariables
     & Pick<DynamicOperationVariables, "patternContext">;
@@ -355,6 +363,7 @@ export async function exportPreReleaseVariables(
 
 export async function exportPostReleaseVariables(
   provider: PlatformProvider,
+  patternContext: StringPatternContext,
   releaseId?: string | number,
   releaseUploadUrl?: string,
 ) {
@@ -362,7 +371,7 @@ export async function exportPostReleaseVariables(
     releaseId,
     releaseUploadUrl,
 
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   } satisfies
     & PostReleaseVariables
     & Pick<DynamicOperationVariables, "patternContext">;
@@ -384,11 +393,12 @@ export async function exportPostReleaseVariables(
 export async function exportFinalOperationVariables(
   provider: PlatformProvider,
   outcome: OperationOutcome,
+  patternContext: StringPatternContext,
 ) {
   const prepareExportObject = {
     outcome,
 
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   } satisfies
     & FinalOperationVariables
     & Pick<DynamicOperationVariables, "patternContext">;
