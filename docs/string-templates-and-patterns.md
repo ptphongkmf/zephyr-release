@@ -119,6 +119,14 @@ Only available in "auto" and "review" release flow propose operation. Can be und
 
 - `{{ tagName }}`: Tag name (set via [`tag-name-template`](./config-options.md#tag--name-template-optional))
 
+##### Releases
+
+- `{{ releases }}`: Array of release objects. Currently contains a single release object for the repository. Each release object contains:
+  - `name`: `string`; Project name
+  - `nextVersion`: `string`; The next calculated semantic version
+  - `tagName`: `string`; The tag name for this release
+  - `isWorkspace`: `boolean`; Whether this is a workspace release
+
 #### Dynamic String Patterns
 
 These string patterns are resolved dynamically at runtime and may change each time they are used.
@@ -193,6 +201,10 @@ Custom transformers.
 - `format_commit_references: commit`: Formats the current text to find references (like #12) and transforms them into markdown links using the provided commit context. Usually used for [entry template](./config-options.md#changelog--release-section-entry-template-optional)
   - commit: [`ResolvedCommit`](../src/tasks/commit.ts#L34-L41) or [`an object with shape { references: { prefix: string, issue: string }[] }`](../src/tasks/string-templates-and-patterns/transformers.ts)
   - Usage: `{{ text | parse_references: commit }}`
+
+- `format_releases: separator`: Formats an array of release objects into a single string. It extracts the `tagName` from each release and joins them. It strictly requires an array of objects with the shape `{ tagName: string }`. Usually, this is the built-in `{{ releases }}` object, but you can provide a custom pattern if desired.
+  - separator (optional): `string`, `DEFAULT: ", "`
+  - Usage: `{{ releases | format_releases: " and " }}`
 
 ### LiquidJS built-in Transformers
 

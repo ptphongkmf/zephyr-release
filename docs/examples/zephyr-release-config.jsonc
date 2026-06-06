@@ -182,11 +182,11 @@
       }
     },
 
-    "title-pattern": "chore: release v${version}",
-    "header-pattern": "🤖 New release created. Stand by for approval",
-    "body-pattern": "${changelogContent}",
-    // "body-pattern-path": "",
-    "footer-pattern": "Generated with [Zephyr Release](https://github.com/Pandoriux/zephyr-release)"
+    "title-template": "chore: release v{{ nextVersion }}",
+    "header-template": "🤖 New release created. Stand by for approval",
+    "body-template": "{{ changelogRelease }}",
+    // "body-template-path": "",
+    "footer-template": "Generated with [Zephyr Release](https://github.com/ptphongkmf/zephyr-release)"
   },
 
   "release": {
