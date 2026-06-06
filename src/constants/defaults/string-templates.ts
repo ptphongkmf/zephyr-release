@@ -32,7 +32,7 @@ export const DEFAULT_COMMIT_HEADER_TEMPLATE =
 
 // Proposal (PR, MR, ...)
 export const DEFAULT_PROPOSAL_TITLE_TEMPLATE =
-  liquid`chore: release v{{ nextVersion }}`;
+  liquid`chore: release {{ releases | format_releases }}`;
 
 export const DEFAULT_PROPOSAL_HEADER_TEMPLATE = "# 🤖 Release Proposal";
 
