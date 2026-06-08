@@ -62,6 +62,11 @@ async function githubListCommitsInRange(
       });
 
       if (collectedCommits.length >= maxCommits) {
+        if (stopHash) {
+          throw new Error(
+            `Reached the maximum commit limit (${maxCommits}) before encountering the stop hash (${stopHash.substring(0, 7)}).`,
+          );
+        }
         return collectedCommits;
       }
     }

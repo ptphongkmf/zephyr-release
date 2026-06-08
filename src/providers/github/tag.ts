@@ -1,3 +1,4 @@
+import * as v from "@valibot/valibot";
 import {
   githubGetHost,
   githubGetNamespace,
@@ -80,29 +81,66 @@ async function githubGetCompareTagUrlFromCurrentToLatest(
   ).href;
 }
 
+const GraphQlListTagsResponseSchema = v.object({
+  repository: v.object({
+    refs: v.object({
+      nodes: v.array(v.object({
+        name: v.string(),
+        target: v.object({
+          oid: v.string(),
+          target: v.optional(v.object({
+            oid: v.string(),
+          })),
+        }),
+      })),
+    }),
+  }),
+});
+
 /** @throws */
 async function githubFindLastReleaseTag(
   octokit: OctokitClient,
   matchPatterns: RegExp[],
-  maxTagsToScan: number = 100,
 ): Promise<ProviderMatchedTag | undefined> {
-  let scanned = 0;
-  const tagsIterator = octokit.paginate.iterator(
-    octokit.rest.repos.listTags,
-    {
-      owner: githubGetNamespace(),
-      repo: githubGetRepositoryName(),
-      per_page: 100,
-    },
-  );
+  const query = `
+    query($owner: String!, $repo: String!, $cursor: String) {
+      repository(owner: $owner, name: $repo) {
+        refs(refPrefix: "refs/tags/", first: 100, after: $cursor, orderBy: {field: TAG_COMMIT_DATE, direction: DESC}) {
+          nodes {
+            name
+            target {
+              oid
+              ... on Tag {
+                target {
+                  oid
+                }
+              }
+            }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+    }
+  `;
+
+  const tagsIterator = octokit.graphql.paginate.iterator(query, {
+    owner: githubGetNamespace(),
+    repo: githubGetRepositoryName(),
+  });
 
   for await (const response of tagsIterator) {
-    for (const tag of response.data) {
-      if (matchPatterns.some((p) => p.test(tag.name))) {
-        return { hash: tag.commit.sha, tagName: tag.name };
+    const parsedResponse = v.parse(GraphQlListTagsResponseSchema, response);
+
+    const nodes = parsedResponse.repository.refs.nodes;
+    for (const node of nodes) {
+      if (matchPatterns.some((p) => p.test(node.name))) {
+        const commitHash = node.target.target?.oid ?? node.target.oid;
+
+        return { hash: commitHash, tagName: node.name };
       }
-      scanned++;
-      if (scanned >= maxTagsToScan) return undefined;
     }
   }
 
@@ -187,8 +225,8 @@ export function makeGithubGetCompareTagUrlFromCurrentToLatest(
 }
 
 export function makeGithubFindLastReleaseTag(getOctokit: GetOctokitFn) {
-  return (matchPatterns: RegExp[], maxTagsToScan?: number) =>
-    githubFindLastReleaseTag(getOctokit(), matchPatterns, maxTagsToScan);
+  return (matchPatterns: RegExp[]) =>
+    githubFindLastReleaseTag(getOctokit(), matchPatterns);
 }
 
 export function makeGithubCreateTag(getOctokit: GetOctokitFn) {

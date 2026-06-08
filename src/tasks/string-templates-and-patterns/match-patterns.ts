@@ -1,13 +1,18 @@
 import picomatch from "picomatch";
+import { escape } from "@std/regexp";
 
 /**
  * Converts a LiquidJS template like `{{ name }}-v{{ nextVersion }}`
- * into a glob pattern like `*-v*`.
+ * into a precise RegExp like `/^name\-v.*$/`.
  *
- * Replaces all `{{ ... }}` tokens (including filters) with `*`.
+ * It escapes all literal parts of the template so that characters
+ * like `[` or `.` aren't accidentally treated as regex/glob metacharacters,
+ * and replaces all `{{ ... }}` tokens with `.*`.
  */
-export function templateToMatchPattern(template: string): string {
-  return template.replace(/\{\{.*?\}\}/g, "*");
+export function templateToRegexPattern(template: string): RegExp {
+  const parts = template.split(/\{\{[\s\S]*?\}\}/g);
+  const escapedParts = parts.map((part) => escape(part));
+  return new RegExp("^" + escapedParts.join(".*") + "$");
 }
 
 /**
@@ -19,7 +24,11 @@ export function buildMatchPatterns(
   nameTemplate: string,
   userMatchPatterns?: string[],
 ): RegExp[] {
-  const derived = templateToMatchPattern(nameTemplate);
-  const globs = new Set([derived, ...(userMatchPatterns ?? [])]);
-  return Array.from(globs).map((glob) => picomatch.makeRe(glob));
+  const derivedRegex = templateToRegexPattern(nameTemplate);
+  
+  const regexes = (userMatchPatterns ?? []).map((glob) =>
+    picomatch.makeRe(glob)
+  );
+  
+  return [derivedRegex, ...regexes];
 }

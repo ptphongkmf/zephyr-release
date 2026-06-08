@@ -125,7 +125,6 @@ export interface PlatformProvider {
   /** @throws */
   findLastReleaseTag: (
     matchPatterns: RegExp[],
-    maxTagsToScan?: number,
   ) => Promise<ProviderMatchedTag | undefined>;
 
   /** @throws */
