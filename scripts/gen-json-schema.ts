@@ -3,6 +3,7 @@ import { dirname, join } from "@std/path";
 import { toJsonSchema } from "@valibot/to-json-schema";
 import traverse from "@json-schema-tools/traverse";
 import { ConfigSchema } from "../src/schemas/configs/config.ts";
+import { WorkspaceMemberConfigSchema } from "../src/schemas/configs/modules/workspace-member-config.ts";
 import { TimeZoneSchema } from "../src/schemas/configs/modules/components/timezone.ts";
 import { DOCS_EXT_REF_TOKEN } from "../src/schemas/token.ts";
 
@@ -29,10 +30,32 @@ const SCHEMA_CONFIG: GenJsonSchemaConfig[] = [
   },
 ];
 
+const WORKSPACE_SCHEMA_CONFIG: GenJsonSchemaConfig[] = [
+  {
+    outputFile: "workspace-config-v1.kebab.json",
+    casingFn: toKebabCase,
+  },
+  {
+    outputFile: "workspace-config-v1.camel.json",
+    casingFn: toCamelCase,
+  },
+  {
+    outputFile: "workspace-config-v1.snake.json",
+    casingFn: toSnakeCase,
+  },
+];
+
 const DOCS_REF_URL = "https://github.com/ptphongkmf/zephyr-release/blob/main";
 
 // Base config json schema based on valibot schema
 const baseSchema = toJsonSchema(ConfigSchema, {
+  typeMode: "input",
+  definitions: { timeZone: TimeZoneSchema },
+  ignoreActions: ["trim", "safe_integer", "to_lower_case"],
+});
+
+// Workspace member config json schema
+const baseWorkspaceSchema = toJsonSchema(WorkspaceMemberConfigSchema, {
   typeMode: "input",
   definitions: { timeZone: TimeZoneSchema },
   ignoreActions: ["trim", "safe_integer", "to_lower_case"],
@@ -136,24 +159,36 @@ function createTransformers(casingFn: GenJsonSchemaConfig["casingFn"]) {
   return { transformKeys, transformDescriptions };
 }
 
-for (const { outputFile, casingFn } of SCHEMA_CONFIG) {
-  // Work on a fresh copy for each variant so mutations don't interfere
-  const schema = structuredClone(baseSchema);
-  const { transformKeys, transformDescriptions } = createTransformers(casingFn);
+function generateSchemas(
+  sourceSchema: object,
+  configs: GenJsonSchemaConfig[],
+) {
+  for (const { outputFile, casingFn } of configs) {
+    // Work on a fresh copy for each variant so mutations don't interfere
+    const schema = structuredClone(sourceSchema);
+    const { transformKeys, transformDescriptions } =
+      createTransformers(casingFn);
 
-  // Traverse and transform schema
-  traverse.default(schema, transformKeys, { mutable: true });
-  traverse.default(schema, transformDescriptions, { mutable: true });
+    // Traverse and transform schema
+    traverse.default(schema, transformKeys, { mutable: true });
+    traverse.default(schema, transformDescriptions, { mutable: true });
 
-  // Ensure output directory exists, then write schema file
-  const outputPath = join(
-    import.meta.dirname!,
-    `../schemas/${SCHEMA_VERSION}/${outputFile}`,
-  );
+    // Ensure output directory exists, then write schema file
+    const outputPath = join(
+      import.meta.dirname!,
+      `../schemas/${SCHEMA_VERSION}/${outputFile}`,
+    );
 
-  Deno.mkdirSync(dirname(outputPath), { recursive: true });
-  Deno.writeTextFileSync(
-    outputPath,
-    JSON.stringify(schema, null, 2),
-  );
+    Deno.mkdirSync(dirname(outputPath), { recursive: true });
+    Deno.writeTextFileSync(
+      outputPath,
+      JSON.stringify(schema, null, 2),
+    );
+  }
 }
+
+// Generate root config schemas
+generateSchemas(baseSchema, SCHEMA_CONFIG);
+
+// Generate workspace member config schemas
+generateSchemas(baseWorkspaceSchema, WORKSPACE_SCHEMA_CONFIG);

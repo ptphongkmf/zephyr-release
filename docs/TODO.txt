@@ -25,3 +25,7 @@ await logger.executeStep("Execute base pre commands", async (step) => {
 ```
 
 in auto mode, add a logic that force to trigger release with a footer (different from footer type)
+
+### 🛡️ Safety: Command Hook Stdout Capture Limit
+When capturing stdout for config overrides (e.g. `stdio: ["inherit", "pipe", "inherit"]`), add a hard memory limit (e.g., 50MB or 100MB) to the captured string.
+If the command output exceeds this limit, kill the child process (`SIGKILL`) and throw a clear error in Zephyr Release to prevent Node.js Out-Of-Memory (OOM) crashes from runaway hook scripts.

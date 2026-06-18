@@ -20,6 +20,17 @@ export const ReviewConfigSchema = v.pipe(
       }),
     ),
 
+    groupProposals: v.pipe(
+      v.optional(v.boolean(), true),
+      v.metadata({
+        description:
+          "When true (default), all workspace changes are grouped into a single proposal.\n" +
+          "When false, each workspace gets its own proposal with its own working branch.\n" +
+          "Only meaningful in monorepo mode.\n" +
+          "Default: true",
+      }),
+    ),
+
     workingBranchNameTemplate: v.pipe(
       v.optional(
         trimNonEmptyStringSchema,
