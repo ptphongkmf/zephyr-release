@@ -17,6 +17,7 @@ import {
   resolveRuntimeConfigOverride,
   synchronizeRuntimeStateAfterOverride,
 } from "./tasks/runtime-override.ts";
+import { resolveWorkspaces } from "./tasks/workspace-resolver.ts";
 
 export async function run(provider: PlatformProvider) {
   logger.stepStart("Starting: Get operation inputs");
@@ -34,12 +35,18 @@ export async function run(provider: PlatformProvider) {
   );
   logger.stepFinish("Finished: Resolve config from file and override");
 
+  // Resolve workspaces //
+  const workspaces = resolveWorkspaces(configResult.config);
+  const isMonorepoMode = configResult.config.workspace !== undefined;
+
   // Init Run Settings //
   let runSettings: OperationRunSettings = {
     rawInputs: inputsResult.rawInputs,
     inputs: inputsResult.inputs,
     rawConfig: configResult.rawConfig,
     config: configResult.config,
+    isMonorepoMode,
+    workspaces,
   };
 
   let bootstrapData: BootstrapResult | undefined;
