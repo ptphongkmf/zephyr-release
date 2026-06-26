@@ -13,7 +13,7 @@ import type { OperationRunSettings } from "./types/operation-context.ts";
 import { executeAutoReleaseFlow } from "./workflows/auto.ts";
 import { SafeExit } from "./errors/safe-exit.ts";
 import { bootstrapOperation, type BootstrapResult } from "./workflows/bootstrap.ts";
-import { executeHookWithOverride } from "./tasks/hook-runner.ts";
+import { executeHookWithOverride } from "./workflows/hook-runner.ts";
 import { resolveWorkspaces } from "./tasks/workspace-resolver.ts";
 
 export async function run(provider: PlatformProvider) {

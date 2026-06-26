@@ -25,7 +25,7 @@ import type { OperationRunSettings } from "../types/operation-context.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import type { ProviderProposal } from "../types/providers/proposal.ts";
 import type { ProviderRelease } from "../types/providers/release.ts";
-import { executeHookWithOverride } from "../tasks/hook-runner.ts";
+import { executeHookWithOverride } from "./hook-runner.ts";
 
 export async function executeReviewPublishPhase(
   provider: PlatformProvider,

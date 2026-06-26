@@ -11,6 +11,8 @@ This plan is organized into sub-phases. They should be implemented **in order** 
 
 > **Public-facing changes** (schema descriptions, docs, command-hooks behavior, etc.) are tracked separately in [docs-update-list.md](./docs-update-list.md) so they can be applied to all `.md` docs at the end.
 
+> **Logger pattern rule:** Files in `src/tasks/` must only use `taskLogger` (indented, task-level logging). The orchestrator-level `logger` (with `stepStart`, `stepFinish`, `stepSkip`, `header`, `subHeader`) is reserved for `src/workflows/` and `src/run.ts` (orchestration layer). If new code needs `logger`, it belongs in `src/workflows/` (or a sub-folder like `src/workflows/jobs/`), not `src/tasks/`.
+
 ---
 
 ## Sub-Phase 3A: Schema & Config Foundation
@@ -373,8 +375,9 @@ export function extractOverrideFromStdout(stdout: string): string | undefined {
 
 ---
 
-### [NEW] [hook-runner.ts](file:///g:/Projects/Coding/zephyr-release/src/tasks/hook-runner.ts)
-The single utility that replaces all 14 duplicated override blocks:
+### [NEW] [hook-runner.ts](file:///g:/Projects/Coding/zephyr-release/src/workflows/hook-runner.ts)
+The single workflow-level utility that replaces all 15 duplicated override blocks.
+Lives in `src/workflows/` because it uses orchestrator-level `logger` (`stepStart`, `stepFinish`, `stepSkip`):
 
 ```typescript
 import type { CommandHookKind, CommandHooksOutput } from "../schemas/configs/modules/components/command-hook.ts";

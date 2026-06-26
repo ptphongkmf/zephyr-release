@@ -34,7 +34,7 @@ import {
 import type { OperationRunSettings } from "../types/operation-context.ts";
 import { addLabelsToProposalOnCreate } from "../tasks/label.ts";
 import type { BootstrapResult } from "./bootstrap.ts";
-import { executeHookWithOverride } from "../tasks/hook-runner.ts";
+import { executeHookWithOverride } from "./hook-runner.ts";
 
 export async function executeReviewPreparePhase(
   provider: PlatformProvider,

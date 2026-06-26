@@ -3,17 +3,17 @@ import type {
   CommandHooksOutput,
 } from "../schemas/configs/modules/components/command-hook.ts";
 import type { OperationRunSettings } from "../types/operation-context.ts";
-import type { StringPatternContext } from "./string-templates-and-patterns/pattern-context.ts";
+import type { StringPatternContext } from "../tasks/string-templates-and-patterns/pattern-context.ts";
 import type { SemVer } from "@std/semver";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
-import { runCommands } from "./command.ts";
+import { runCommands } from "../tasks/command.ts";
 import {
   extractOverrideFromStdout,
   resolveRuntimeConfigOverride,
   synchronizeRuntimeStateAfterOverride,
-} from "./runtime-override.ts";
-import { parseConfig } from "./configs/config-parser.ts";
-import { logger, taskLogger } from "./logger.ts";
+} from "../tasks/runtime-override.ts";
+import { parseConfig } from "../tasks/configs/config-parser.ts";
+import { logger, taskLogger } from "../tasks/logger.ts";
 import { deepMerge } from "@std/collections";
 import * as v from "@valibot/valibot";
 import { ConfigSchema } from "../schemas/configs/config.ts";

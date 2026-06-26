@@ -63,7 +63,7 @@ Add to each: *"This path is always relative to the repository root, even in mono
 - [x] `toWorkspaceOutputKey(workspaceName, varName)` in `case.ts`
 - [x] `resolveWorkspaces(rootConfig)` in `workspace-resolver.ts` (new file, deepMerge + Valibot)
 - [x] `extractOverrideFromStdout(stdout)` in `runtime-override.ts`
-- [x] `executeHookWithOverride(...)` in `hook-runner.ts` (new file)
+- [x] `executeHookWithOverride(...)` in `hook-runner.ts` (in `src/workflows/`, uses orchestrator-level `logger`)
 
 ### New/Modified Types
 

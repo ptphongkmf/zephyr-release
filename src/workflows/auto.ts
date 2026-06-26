@@ -40,7 +40,7 @@ import { evaluateAutoReleaseFlowTriggerStrategy } from "../tasks/auto-trigger-st
 import { createTag } from "../tasks/tag.ts";
 import { attachReleaseAssets, createRelease } from "../tasks/release.ts";
 import type { ProviderRelease } from "../types/providers/release.ts";
-import { executeHookWithOverride } from "../tasks/hook-runner.ts";
+import { executeHookWithOverride } from "./hook-runner.ts";
 
 interface AutoWorkflowOptions {
   workingBranchResult: WorkingBranchResult;
