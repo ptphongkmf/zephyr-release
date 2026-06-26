@@ -8,21 +8,39 @@ import { jsonValueNormalizer } from "../utils/transformers/json.ts";
 import { transformObjKeyToCamelCase } from "../utils/transformers/object.ts";
 import { formatValibotIssues } from "../utils/formatters/valibot.ts";
 import { ConfigSchema } from "../schemas/configs/config.ts";
+import { CONFIG_OVERRIDE_MARKERS } from "../constants/config-override-markers.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import type { SemVer } from "@std/semver";
 import {
-  createEmptyPatternContext,
-  addCustomPatternContext,
   addBasePatternContext,
-  addDatetimePatternContext,
   addCurrentVersionPatternContext,
+  addCustomPatternContext,
+  addDatetimePatternContext,
   addNextVersionPatternContext,
   addTagPatternContext,
+  createEmptyPatternContext,
   stringifyPatternContext,
   type StringPatternContext,
 } from "./string-templates-and-patterns/pattern-context.ts";
 import { resolveStringTemplate } from "./string-templates-and-patterns/resolve-template.ts";
 import { toEnvKey, toOutputKey } from "../utils/transformers/case.ts";
+
+/**
+ * Extract config override JSON from captured stdout using marker delimiters.
+ * Returns undefined if no markers found.
+ */
+export function extractOverrideFromStdout(
+  stdout: string,
+): string | undefined {
+  const startIdx = stdout.indexOf(CONFIG_OVERRIDE_MARKERS.start);
+  const endIdx = stdout.lastIndexOf(CONFIG_OVERRIDE_MARKERS.end);
+
+  if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) return undefined;
+
+  return stdout
+    .substring(startIdx + CONFIG_OVERRIDE_MARKERS.start.length, endIdx)
+    .trim();
+}
 
 interface ResolvedRuntimeConfigResult {
   rawResolvedRuntime: object;
@@ -135,7 +153,10 @@ export async function synchronizeRuntimeStateAfterOverride(
   taskLogger.debug("Synchronizing runtime state after config override...");
 
   let patternContext = createEmptyPatternContext();
-  patternContext = addCustomPatternContext(patternContext, config.customStringPatterns);
+  patternContext = addCustomPatternContext(
+    patternContext,
+    config.customStringPatterns,
+  );
 
   const workingBranchName = await resolveStringTemplate(
     config.review.workingBranchNameTemplate,
@@ -153,17 +174,26 @@ export async function synchronizeRuntimeStateAfterOverride(
   patternContext = addDatetimePatternContext(patternContext, config.timeZone);
 
   if (currentVersion) {
-    patternContext = addCurrentVersionPatternContext(patternContext, currentVersion);
+    patternContext = addCurrentVersionPatternContext(
+      patternContext,
+      currentVersion,
+    );
   }
 
   if (nextVersion) {
     patternContext = addNextVersionPatternContext(patternContext, nextVersion);
-    patternContext = await addTagPatternContext(patternContext, config.tag.nameTemplate);
+    patternContext = await addTagPatternContext(
+      patternContext,
+      config.tag.nameTemplate,
+    );
   }
 
   // Preserve releases from the current context if they exist
   if (currentPatternContext.releases) {
-    patternContext = { ...patternContext, releases: currentPatternContext.releases };
+    patternContext = {
+      ...patternContext,
+      releases: currentPatternContext.releases,
+    };
   }
 
   const staleExports = {

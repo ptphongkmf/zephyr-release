@@ -13,10 +13,7 @@ import type { OperationRunSettings } from "./types/operation-context.ts";
 import { executeAutoReleaseFlow } from "./workflows/auto.ts";
 import { SafeExit } from "./errors/safe-exit.ts";
 import { bootstrapOperation, type BootstrapResult } from "./workflows/bootstrap.ts";
-import {
-  resolveRuntimeConfigOverride,
-  synchronizeRuntimeStateAfterOverride,
-} from "./tasks/runtime-override.ts";
+import { executeHookWithOverride } from "./tasks/hook-runner.ts";
 import { resolveWorkspaces } from "./tasks/workspace-resolver.ts";
 
 export async function run(provider: PlatformProvider) {
@@ -73,45 +70,16 @@ export async function run(provider: PlatformProvider) {
     });
     logger.debugStepFinish("Finished: Export base operation variables");
 
-    logger.stepStart("Starting: Execute base pre commands");
-    const preResult = await runCommands(
-      runSettings.config.commandHooks,
-      "preRun",
-    );
-    if (preResult) {
-      logger.stepFinish(`Finished: Execute base pre commands. ${preResult}`);
-    } else {
-      logger.stepSkip("Skipped: Execute base pre commands (empty)");
-    }
-
-    logger.stepStart(
-      "Starting: Resolve runtime config override (base pre commands)",
-    );
-    const _basePreRuntimeConfigResult = await resolveRuntimeConfigOverride(
-      runSettings.rawConfig,
-      runSettings.config,
-      runSettings.inputs.workspacePath,
-    );
-    if (_basePreRuntimeConfigResult) {
-      runSettings = {
-        ...runSettings,
-        rawConfig: _basePreRuntimeConfigResult.rawResolvedRuntime,
-        config: _basePreRuntimeConfigResult.resolvedRuntime,
-      };
-      bootstrapData.patternContext = await synchronizeRuntimeStateAfterOverride({
+    {
+      const hookResult = await executeHookWithOverride(
         provider,
-        config: runSettings.config,
-        rawConfig: runSettings.rawConfig,
-        triggerBranchName: runSettings.inputs.triggerBranchName,
-        currentPatternContext: bootstrapData.patternContext,
-      });
-      logger.stepFinish(
-        "Finished: Resolve runtime config override (base pre commands)",
+        "preRun",
+        runSettings.config.commandHooks,
+        runSettings,
+        bootstrapData.patternContext,
       );
-    } else {
-      logger.stepSkip(
-        "Skipped: Resolve runtime config override (base pre commands)",
-      );
+      runSettings = hookResult.runSettings;
+      bootstrapData.patternContext = hookResult.patternContext;
     }
 
     // Main operation workflow //
@@ -147,8 +115,8 @@ export async function run(provider: PlatformProvider) {
       runSettings.config.commandHooks,
       "postRun",
     );
-    if (postResult) {
-      logger.stepFinish(`Finished: Execute base post commands. ${postResult}`);
+    if (postResult.summary) {
+      logger.stepFinish(`Finished: Execute base post commands. ${postResult.summary}`);
     } else {
       logger.stepSkip("Skipped: Execute base post commands (empty)");
     }

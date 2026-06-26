@@ -6,7 +6,6 @@ import {
 import { getCurrentVersion } from "../tasks/calculate-next-version/previous-version.ts";
 import { format } from "@std/semver";
 import { generatePrepareChangelogReleaseContent } from "../tasks/changelog.ts";
-import { runCommands } from "../tasks/command.ts";
 import {
   commitChangesToBranch,
   prepareChangesToCommit,
@@ -41,10 +40,7 @@ import { evaluateAutoReleaseFlowTriggerStrategy } from "../tasks/auto-trigger-st
 import { createTag } from "../tasks/tag.ts";
 import { attachReleaseAssets, createRelease } from "../tasks/release.ts";
 import type { ProviderRelease } from "../types/providers/release.ts";
-import {
-  resolveRuntimeConfigOverride,
-  synchronizeRuntimeStateAfterOverride,
-} from "../tasks/runtime-override.ts";
+import { executeHookWithOverride } from "../tasks/hook-runner.ts";
 
 interface AutoWorkflowOptions {
   workingBranchResult: WorkingBranchResult;
@@ -102,49 +98,13 @@ export async function executeAutoReleaseFlow(
   );
   logger.debugStepFinish("Finished: Export pre calculate version variables");
 
-  logger.stepStart("Starting: Execute pre calculate version commands");
-  const preCalculateVersionResult = await runCommands(
-    runSettings.config.commandHooks,
+  ({ runSettings, patternContext } = await executeHookWithOverride(
+    provider,
     "preCalculateVersion",
-  );
-  if (preCalculateVersionResult) {
-    logger.stepFinish(
-      `Finished: Execute pre calculate version commands. ${preCalculateVersionResult}`,
-    );
-  } else {
-    logger.stepSkip("Skipped: Execute pre calculate version commands (empty)");
-  }
-
-  logger.stepStart(
-    "Starting: Resolve runtime config override (pre calculate version commands)",
-  );
-  const _preCalculateVersionRuntimeConfigResult =
-    await resolveRuntimeConfigOverride(
-      runSettings.rawConfig,
-      runSettings.config,
-      runSettings.inputs.workspacePath,
-    );
-  if (_preCalculateVersionRuntimeConfigResult) {
-    runSettings = {
-      ...runSettings,
-      rawConfig: _preCalculateVersionRuntimeConfigResult.rawResolvedRuntime,
-      config: _preCalculateVersionRuntimeConfigResult.resolvedRuntime,
-    };
-    patternContext = await synchronizeRuntimeStateAfterOverride({
-      provider,
-      config: runSettings.config,
-      rawConfig: runSettings.rawConfig,
-      triggerBranchName: runSettings.inputs.triggerBranchName,
-      currentPatternContext: patternContext,
-    });
-    logger.stepFinish(
-      "Finished: Resolve runtime config override (pre calculate version commands)",
-    );
-  } else {
-    logger.stepSkip(
-      "Skipped: Resolve runtime config override (pre calculate version commands)",
-    );
-  }
+    runSettings.config.commandHooks,
+    runSettings,
+    patternContext,
+  ));
 
   // Calculate version
   logger.stepStart("Starting: Calculate next version");
@@ -196,51 +156,14 @@ export async function executeAutoReleaseFlow(
   );
   logger.debugStepFinish("Finished: Export post calculate version variables");
 
-  logger.stepStart("Starting: Execute post calculate version commands");
-  const postCalculateVersionResult = await runCommands(
-    runSettings.config.commandHooks,
+  ({ runSettings, patternContext } = await executeHookWithOverride(
+    provider,
     "postCalculateVersion",
-  );
-  if (postCalculateVersionResult) {
-    logger.stepFinish(
-      `Finished: Execute post calculate version commands. ${postCalculateVersionResult}`,
-    );
-  } else {
-    logger.stepSkip("Skipped: Execute post calculate version commands (empty)");
-  }
-
-  logger.stepStart(
-    "Starting: Resolve runtime config override (post calculate version commands)",
-  );
-  const _postCalculateVersionRuntimeConfigResult =
-    await resolveRuntimeConfigOverride(
-      runSettings.rawConfig,
-      runSettings.config,
-      runSettings.inputs.workspacePath,
-    );
-  if (_postCalculateVersionRuntimeConfigResult) {
-    runSettings = {
-      ...runSettings,
-      rawConfig: _postCalculateVersionRuntimeConfigResult.rawResolvedRuntime,
-      config: _postCalculateVersionRuntimeConfigResult.resolvedRuntime,
-    };
-    patternContext = await synchronizeRuntimeStateAfterOverride({
-      provider,
-      config: runSettings.config,
-      rawConfig: runSettings.rawConfig,
-      triggerBranchName: runSettings.inputs.triggerBranchName,
-      currentPatternContext: patternContext,
-      nextVersion,
-      currentVersion,
-    });
-    logger.stepFinish(
-      "Finished: Resolve runtime config override (post calculate version commands)",
-    );
-  } else {
-    logger.stepSkip(
-      "Skipped: Resolve runtime config override (post calculate version commands)",
-    );
-  }
+    runSettings.config.commandHooks,
+    runSettings,
+    patternContext,
+    { nextVersion, currentVersion },
+  ));
 
   logger.stepStart("Starting: Evaluate auto release flow trigger strategy");
   evaluateAutoReleaseFlowTriggerStrategy(
@@ -290,50 +213,14 @@ export async function executeAutoReleaseFlow(
   await exportPreCommitVariables(provider, changesData, patternContext);
   logger.debugStepFinish("Finished: Export pre commit variables");
 
-  logger.stepStart("Starting: Execute pre commit commands");
-  const preCommitResult = await runCommands(
-    runSettings.config.commandHooks,
+  ({ runSettings, patternContext } = await executeHookWithOverride(
+    provider,
     "preCommit",
-  );
-  if (preCommitResult) {
-    logger.stepFinish(
-      `Finished: Execute pre commit commands. ${preCommitResult}`,
-    );
-  } else {
-    logger.stepSkip("Skipped: Execute pre commit commands (empty)");
-  }
-
-  logger.stepStart(
-    "Starting: Resolve runtime config override (pre commit commands)",
-  );
-  const _preCommitRuntimeConfigResult = await resolveRuntimeConfigOverride(
-    runSettings.rawConfig,
-    runSettings.config,
-    runSettings.inputs.workspacePath,
-  );
-  if (_preCommitRuntimeConfigResult) {
-    runSettings = {
-      ...runSettings,
-      rawConfig: _preCommitRuntimeConfigResult.rawResolvedRuntime,
-      config: _preCommitRuntimeConfigResult.resolvedRuntime,
-    };
-    patternContext = await synchronizeRuntimeStateAfterOverride({
-      provider,
-      config: runSettings.config,
-      rawConfig: runSettings.rawConfig,
-      triggerBranchName: runSettings.inputs.triggerBranchName,
-      currentPatternContext: patternContext,
-      nextVersion,
-      currentVersion,
-    });
-    logger.stepFinish(
-      "Finished: Resolve runtime config override (pre commit commands)",
-    );
-  } else {
-    logger.stepSkip(
-      "Skipped: Resolve runtime config override (pre commit commands)",
-    );
-  }
+    runSettings.config.commandHooks,
+    runSettings,
+    patternContext,
+    { nextVersion, currentVersion },
+  ));
 
   // Commit
   logger.stepStart("Starting: Commit changes");
@@ -374,50 +261,14 @@ export async function executeAutoReleaseFlow(
     "Finished: Export post proposal variables (auto release flow)",
   );
 
-  logger.stepStart("Starting: Execute post commit commands");
-  const postCommitResult = await runCommands(
-    runSettings.config.commandHooks,
+  ({ runSettings, patternContext } = await executeHookWithOverride(
+    provider,
     "postCommit",
-  );
-  if (postCommitResult) {
-    logger.stepFinish(
-      `Finished: Execute post commit commands. ${postCommitResult}`,
-    );
-  } else {
-    logger.stepSkip("Skipped: Execute post commit commands (empty)");
-  }
-
-  logger.stepStart(
-    "Starting: Resolve runtime config override (post commit commands)",
-  );
-  const _postCommitRuntimeConfigResult = await resolveRuntimeConfigOverride(
-    runSettings.rawConfig,
-    runSettings.config,
-    runSettings.inputs.workspacePath,
-  );
-  if (_postCommitRuntimeConfigResult) {
-    runSettings = {
-      ...runSettings,
-      rawConfig: _postCommitRuntimeConfigResult.rawResolvedRuntime,
-      config: _postCommitRuntimeConfigResult.resolvedRuntime,
-    };
-    patternContext = await synchronizeRuntimeStateAfterOverride({
-      provider,
-      config: runSettings.config,
-      rawConfig: runSettings.rawConfig,
-      triggerBranchName: runSettings.inputs.triggerBranchName,
-      currentPatternContext: patternContext,
-      nextVersion,
-      currentVersion,
-    });
-    logger.stepFinish(
-      "Finished: Resolve runtime config override (post commit commands)",
-    );
-  } else {
-    logger.stepSkip(
-      "Skipped: Resolve runtime config override (post commit commands)",
-    );
-  }
+    runSettings.config.commandHooks,
+    runSettings,
+    patternContext,
+    { nextVersion, currentVersion },
+  ));
 
   /////////////////////
 
@@ -431,50 +282,14 @@ export async function executeAutoReleaseFlow(
     await exportPreTagVariables(provider, nextVersion, patternContext);
     logger.debugStepFinish("Finished: Export pre tag variables");
 
-    logger.stepStart("Starting: Execute pre tag commands");
-    const preTagResult = await runCommands(
-      runSettings.config.commandHooks,
+    ({ runSettings, patternContext } = await executeHookWithOverride(
+      provider,
       "preTag",
-    );
-    if (preTagResult) {
-      logger.stepFinish(
-        `Finished: Execute pre tag commands. ${preTagResult}`,
-      );
-    } else {
-      logger.stepSkip("Skipped: Execute pre tag commands (empty)");
-    }
-
-    logger.stepStart(
-      "Starting: Resolve runtime config override (pre tag commands)",
-    );
-    const _preTagRuntimeConfigResult = await resolveRuntimeConfigOverride(
-      runSettings.rawConfig,
-      runSettings.config,
-      runSettings.inputs.workspacePath,
-    );
-    if (_preTagRuntimeConfigResult) {
-      runSettings = {
-        ...runSettings,
-        rawConfig: _preTagRuntimeConfigResult.rawResolvedRuntime,
-        config: _preTagRuntimeConfigResult.resolvedRuntime,
-      };
-      patternContext = await synchronizeRuntimeStateAfterOverride({
-        provider,
-        config: runSettings.config,
-        rawConfig: runSettings.rawConfig,
-        triggerBranchName: runSettings.inputs.triggerBranchName,
-        currentPatternContext: patternContext,
-        nextVersion,
-        currentVersion,
-      });
-      logger.stepFinish(
-        "Finished: Resolve runtime config override (pre tag commands)",
-      );
-    } else {
-      logger.stepSkip(
-        "Skipped: Resolve runtime config override (pre tag commands)",
-      );
-    }
+      runSettings.config.commandHooks,
+      runSettings,
+      patternContext,
+      { nextVersion, currentVersion },
+    ));
 
     // Create tag
     logger.stepStart("Starting: Create tag");
@@ -493,50 +308,14 @@ export async function executeAutoReleaseFlow(
     await exportPreReleaseVariables(provider, createdTag.hash, patternContext);
     logger.debugStepFinish("Finished: Export pre release variables");
 
-    logger.stepStart("Starting: Execute pre release commands");
-    const preReleaseResult = await runCommands(
-      runSettings.config.commandHooks,
+    ({ runSettings, patternContext } = await executeHookWithOverride(
+      provider,
       "preRelease",
-    );
-    if (preReleaseResult) {
-      logger.stepFinish(
-        `Finished: Execute pre release commands. ${preReleaseResult}`,
-      );
-    } else {
-      logger.stepSkip("Skipped: Execute pre release commands (empty)");
-    }
-
-    logger.stepStart(
-      "Starting: Resolve runtime config override (pre release commands)",
-    );
-    const _preReleaseRuntimeConfigResult = await resolveRuntimeConfigOverride(
-      runSettings.rawConfig,
-      runSettings.config,
-      runSettings.inputs.workspacePath,
-    );
-    if (_preReleaseRuntimeConfigResult) {
-      runSettings = {
-        ...runSettings,
-        rawConfig: _preReleaseRuntimeConfigResult.rawResolvedRuntime,
-        config: _preReleaseRuntimeConfigResult.resolvedRuntime,
-      };
-      patternContext = await synchronizeRuntimeStateAfterOverride({
-        provider,
-        config: runSettings.config,
-        rawConfig: runSettings.rawConfig,
-        triggerBranchName: runSettings.inputs.triggerBranchName,
-        currentPatternContext: patternContext,
-        nextVersion,
-        currentVersion,
-      });
-      logger.stepFinish(
-        "Finished: Resolve runtime config override (pre release commands)",
-      );
-    } else {
-      logger.stepSkip(
-        "Skipped: Resolve runtime config override (pre release commands)",
-      );
-    }
+      runSettings.config.commandHooks,
+      runSettings,
+      patternContext,
+      { nextVersion, currentVersion },
+    ));
 
     // Create release and attach assets
     logger.stepStart("Starting: Create release");
@@ -580,50 +359,14 @@ export async function executeAutoReleaseFlow(
     );
     logger.debugStepFinish("Finished: Export post release variables");
 
-    logger.stepStart("Starting: Execute post release commands");
-    const postReleaseResult = await runCommands(
-      runSettings.config.commandHooks,
+    ({ runSettings, patternContext } = await executeHookWithOverride(
+      provider,
       "postRelease",
-    );
-    if (postReleaseResult) {
-      logger.stepFinish(
-        `Finished: Execute post release commands. ${postReleaseResult}`,
-      );
-    } else {
-      logger.stepSkip("Skipped: Execute post release commands (empty)");
-    }
-
-    logger.stepStart(
-      "Starting: Resolve runtime config override (post release commands)",
-    );
-    const _postReleaseRuntimeConfigResult = await resolveRuntimeConfigOverride(
-      runSettings.rawConfig,
-      runSettings.config,
-      runSettings.inputs.workspacePath,
-    );
-    if (_postReleaseRuntimeConfigResult) {
-      runSettings = {
-        ...runSettings,
-        rawConfig: _postReleaseRuntimeConfigResult.rawResolvedRuntime,
-        config: _postReleaseRuntimeConfigResult.resolvedRuntime,
-      };
-      patternContext = await synchronizeRuntimeStateAfterOverride({
-        provider,
-        config: runSettings.config,
-        rawConfig: runSettings.rawConfig,
-        triggerBranchName: runSettings.inputs.triggerBranchName,
-        currentPatternContext: patternContext,
-        nextVersion,
-        currentVersion,
-      });
-      logger.stepFinish(
-        "Finished: Resolve runtime config override (post release commands)",
-      );
-    } else {
-      logger.stepSkip(
-        "Skipped: Resolve runtime config override (post release commands)",
-      );
-    }
+      runSettings.config.commandHooks,
+      runSettings,
+      patternContext,
+      { nextVersion, currentVersion },
+    ));
   } else {
     logger.header(
       "Auto release flow (publish): Skip create tag and release (disabled in config)",

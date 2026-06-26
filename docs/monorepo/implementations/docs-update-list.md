@@ -41,28 +41,34 @@ Add to each: *"This path is always relative to the repository root, even in mono
 
 ## New Schema Fields
 
-- [ ] `workspace` on root `ConfigSchema` — record of workspace members
-- [ ] `review > groupProposals` — boolean, default true
-- [ ] `commandHooks` on `WorkspaceMemberConfigSchema` — per-workspace hook overrides
+- [x] `workspace` on root `ConfigSchema` — record of workspace members (ordered last, after lifecycle)
+- [x] `review > groupProposals` — boolean, default true
+- [x] `commandHooks` on `WorkspaceMemberConfigSchema` — per-workspace hook overrides
 
 ---
 
 ## New/Modified Constants
 
-- [ ] `DEFAULT_WORKSPACE_TAG_NAME_TEMPLATE` in `string-templates.ts`
-- [ ] `DEFAULT_WORKSPACE_WORKING_BRANCH_NAME_TEMPLATE` in `string-templates.ts`
-- [ ] `OVERRIDE_MARKERS` in `override-markers.ts` (new file)
+- [x] `DEFAULT_WORKSPACE_TAG_NAME_TEMPLATE` in `string-templates.ts`
+- [x] `DEFAULT_WORKSPACE_WORKING_BRANCH_NAME_TEMPLATE` in `string-templates.ts`
+- [x] `CONFIG_OVERRIDE_MARKERS` in `config-override-markers.ts` (new file, keys: `.start` / `.end`)
 
 ---
 
 ## New Utility Functions
 
-- [ ] `sanitizeNameForEnv(name)` in `case.ts`
-- [ ] `sanitizeNameForOutput(name)` in `case.ts`
-- [ ] `toWorkspaceEnvKey(workspaceName, varName)` in `case.ts`
-- [ ] `toWorkspaceOutputKey(workspaceName, varName)` in `case.ts`
-- [ ] `extractOverrideFromStdout(stdout)` in `runtime-override.ts`
-- [ ] `executeHookWithOverride(...)` in `hook-runner.ts` (new file)
+- [x] `sanitizeNameForEnv(name)` in `case.ts`
+- [x] `sanitizeNameForOutput(name)` in `case.ts`
+- [x] `toWorkspaceEnvKey(workspaceName, varName)` in `case.ts`
+- [x] `toWorkspaceOutputKey(workspaceName, varName)` in `case.ts`
+- [x] `resolveWorkspaces(rootConfig)` in `workspace-resolver.ts` (new file, deepMerge + Valibot)
+- [x] `extractOverrideFromStdout(stdout)` in `runtime-override.ts`
+- [x] `executeHookWithOverride(...)` in `hook-runner.ts` (new file)
+
+### New/Modified Types
+
+- [x] `ResolvedWorkspace` in `workspace-context.ts` — no redundant `name` field, uses `config.name`
+- [x] `OperationRunSettings` in `operation-context.ts` — added `isMonorepoMode`, `workspaces`
 
 ---
 
@@ -103,7 +109,7 @@ Add to each: *"This path is always relative to the repository root, even in mono
 
 ## Behavioral Changes (Breaking)
 
-- [ ] Runtime config override: extracted from 14 inline blocks to `executeHookWithOverride` utility. Behavior unchanged in single-repo. In monorepo, file-based override only at global level, stdout at all levels.
-- [ ] `runCommands` now captures stdout (changed from `stdio: "inherit"` to piped stdout). Stdout is still logged but also buffered for marker extraction.
+- [x] Runtime config override: extracted from 15 inline blocks to `executeHookWithOverride` utility. Behavior unchanged in single-repo. In monorepo, file-based override only at global level, stdout at all levels.
+- [x] `runCommands` now returns `RunCommandsResult` with `capturedStdout`. Stdout piped + streamed to parent process in real-time. Buffered for marker extraction.
 - [ ] Workspace tag defaults: if `workspace` key is present and member doesn't set `tag.nameTemplate`, defaults to `{{ name }}-v{{ nextVersion }}` instead of `v{{ nextVersion }}`.
 - [ ] Env var names for workspaces use minimal sanitization (casing preserved, only invalid chars replaced).

@@ -7,15 +7,24 @@ import type {
 } from "../schemas/configs/modules/components/command-hook.ts";
 import { failedNonCriticalTasks } from "../main.ts";
 
+export interface RunCommandsResult {
+  /** Summary string (undefined if no commands ran) */
+  summary: string | undefined;
+  /** Combined stdout from all hook commands in this invocation */
+  capturedStdout: string;
+}
+
 /** @throws if `continueOnError` is false and command fails */
 export async function runCommands(
   commandHooks: CommandHooksOutput | undefined,
   kind: CommandHookKind,
-): Promise<string | undefined> {
+): Promise<RunCommandsResult> {
   const commands = commandHooks?.[kind];
-  if (!commands || commands.length === 0) return undefined;
+  if (!commands || commands.length === 0) {
+    return { summary: undefined, capturedStdout: "" };
+  }
   if (!commands.some((cmd) => Boolean(cmd.cmd))) {
-    return undefined;
+    return { summary: undefined, capturedStdout: "" };
   }
 
   const baseTimeout = commandHooks.timeout;
@@ -24,6 +33,7 @@ export async function runCommands(
   let succeedCount = 0;
   let skippedCount = 0;
   const failedCommands: string[] = [];
+  let capturedStdout = "";
 
   taskLogger.startGroup("Commands log:");
   for (const cmd of commands) {
@@ -38,7 +48,8 @@ export async function runCommands(
     const continueOnError = cmd.continueOnError ?? baseContinueOnError;
 
     try {
-      await runChildProcess(cmdStr, timeout);
+      const stdout = await runChildProcess(cmdStr, timeout);
+      capturedStdout += stdout;
       succeedCount++;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -59,24 +70,41 @@ export async function runCommands(
   }
   taskLogger.endGroup();
 
-  return `${succeedCount} cmd succeed, ${skippedCount} cmd skipped, ${failedCommands.length} cmd failed${
-    failedCommands.length > 0 ? ` (${failedCommands.join(", ")})` : ""
-  }`;
+  const summary =
+    `${succeedCount} cmd succeed, ${skippedCount} cmd skipped, ${failedCommands.length} cmd failed${
+      failedCommands.length > 0 ? ` (${failedCommands.join(", ")})` : ""
+    }`;
+
+  return { summary, capturedStdout };
 }
 
-/** @throws */
+/**
+ * @throws
+ * @returns captured stdout from the child process
+ */
 async function runChildProcess(
   cmd: string,
   timeout: number,
-) {
-  await new Promise<void>((resolve, reject) => {
+): Promise<string> {
+  return await new Promise<string>((resolve, reject) => {
     const isWindows = process.platform === "win32";
     const shell = isWindows ? "cmd.exe" : "/bin/sh";
     const shellArgs = isWindows ? ["/d", "/s", "/c"] : ["-c"];
 
     const child = spawn(shell, [...shellArgs, cmd], {
-      stdio: "inherit",
+      // stdin=inherit, stdout=pipe (captured), stderr=inherit
+      stdio: ["inherit", "pipe", "inherit"],
       shell: false,
+    });
+
+    let stdout = "";
+
+    // Stream stdout to logger in real-time while also buffering
+    child.stdout.on("data", (chunk: Buffer) => {
+      const text = chunk.toString();
+      stdout += text;
+      // Pass through to parent process stdout so user can see output in real-time
+      process.stdout.write(chunk);
     });
 
     const timeoutId = setTimeout(() => {
@@ -102,7 +130,7 @@ async function runChildProcess(
     child.on("exit", (code, signal) => {
       clearTimeout(timeoutId);
       if (code === 0) {
-        resolve();
+        resolve(stdout);
       } else {
         reject(
           new Error(
