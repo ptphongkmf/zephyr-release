@@ -732,6 +732,7 @@ export async function prepareChangelogFileToCommit(
   workspacePath: string,
   triggerCommitHash: string,
   patternContext: StringPatternContext,
+  workspaceRelativePath: string = ".",
 ): Promise<string> {
   const {
     path,
@@ -743,12 +744,16 @@ export async function prepareChangelogFileToCommit(
     fileFooterTemplatePath,
   } = changelogConfig;
 
+  const resolvedPath = workspaceRelativePath === "."
+    ? path
+    : `${workspaceRelativePath}/${path}`;
+
   const changelogSourceMode = sourceMode.overrides?.[path] ?? sourceMode.mode;
 
   // If current changelog file not exist, we auto create a brand new one
   const currentFileContent = await getTextFile(
     changelogSourceMode,
-    path,
+    resolvedPath,
     { provider, workspacePath: workspacePath, ref: triggerCommitHash },
   ).catch((error) => {
     if (error instanceof FileNotFoundError) {

@@ -339,6 +339,19 @@ type PrepareChangesConfigParams = {
   commit: Pick<CommitConfigOutput, "localChangesToCommit">;
 };
 
+/**
+ * Resolve a file path relative to a workspace directory.
+ * In single-repo mode (workspaceRelativePath is "."), returns the path as-is.
+ * In monorepo mode, prepends the workspace path: e.g., "packages/core" + "CHANGELOG.md" → "packages/core/CHANGELOG.md".
+ */
+export function resolveWorkspaceFilePath(
+  filePath: string,
+  workspaceRelativePath: string,
+): string {
+  if (workspaceRelativePath === ".") return filePath;
+  return `${workspaceRelativePath}/${filePath}`;
+}
+
 /** @throws */
 export async function prepareChangesToCommit(
   provider: PlatformProvider,
@@ -346,6 +359,7 @@ export async function prepareChangesToCommit(
   config: PrepareChangesConfigParams,
   nextVersion: SemVer,
   patternContext: StringPatternContext,
+  workspaceRelativePath: string = ".",
 ): Promise<Map<string, string | null>> {
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
   const { versionFiles, changelog, commit } = config;
@@ -363,8 +377,9 @@ export async function prepareChangesToCommit(
       workspacePath,
       triggerCommitHash,
       patternContext,
+      workspaceRelativePath,
     );
-    changesData.set(normalize(path), clContent);
+    changesData.set(normalize(resolveWorkspaceFilePath(path, workspaceRelativePath)), clContent);
   } else {
     taskLogger.info("Changelog config write to file is off. Skipping...");
   }
@@ -379,9 +394,10 @@ export async function prepareChangesToCommit(
     workspacePath,
     format(nextVersion),
     triggerCommitHash,
+    workspaceRelativePath,
   );
   for (const [vfPath, vfContent] of vfChangesData) {
-    changesData.set(normalize(vfPath), vfContent);
+    changesData.set(normalize(resolveWorkspaceFilePath(vfPath, workspaceRelativePath)), vfContent);
   }
 
   if (localChangesToCommit) {
@@ -587,4 +603,40 @@ export async function commitChangesToBranch(
   });
 
   return createdCommit;
+}
+
+export interface ParsedReleaseAs {
+  global?: string;
+  workspaces: Map<string, string>;
+}
+
+/**
+ * Parse Release-As footer for monorepo support.
+ *   Release-As: 2.0.0                    → global
+ *   Release-As: core@2.0.0               → workspace-specific
+ *   Release-As: core@2.0.0, cli@3.0.0    → multiple workspace-specific
+ *   Release-As: @scope/pkg@1.0.0         → scoped (uses lastIndexOf("@"))
+ */
+export function parseReleaseAsFooter(
+  value: string,
+): ParsedReleaseAs {
+  const result: ParsedReleaseAs = {
+    global: undefined,
+    workspaces: new Map<string, string>(),
+  };
+  const parts = value.split(",").map((s) => s.trim()).filter(Boolean);
+
+  for (const part of parts) {
+    const lastAtIndex = part.lastIndexOf("@");
+    // No "@" at all → global, or "@" only at position 0 (scoped package without version separator) → global
+    if (lastAtIndex === -1 || lastAtIndex === 0) {
+      result.global = part;
+    } else {
+      const name = part.substring(0, lastAtIndex);
+      const version = part.substring(lastAtIndex + 1);
+      result.workspaces.set(name, version);
+    }
+  }
+
+  return result;
 }

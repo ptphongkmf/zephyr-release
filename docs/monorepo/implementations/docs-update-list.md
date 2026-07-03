@@ -64,11 +64,22 @@ Add to each: *"This path is always relative to the repository root, even in mono
 - [x] `resolveWorkspaces(rootConfig)` in `workspace-resolver.ts` (new file, deepMerge + Valibot)
 - [x] `extractOverrideFromStdout(stdout)` in `runtime-override.ts`
 - [x] `executeHookWithOverride(...)` in `hook-runner.ts` (in `src/workflows/`, uses orchestrator-level `logger`)
+- [x] `parseReleaseAsFooter(value)` in `commit.ts` — parses workspace-specific Release-As footer
+- [x] `resolveWorkspaceFilePath(filePath, workspaceRelativePath)` in `commit.ts` — path resolution for monorepo
 
 ### New/Modified Types
 
 - [x] `ResolvedWorkspace` in `workspace-context.ts` — no redundant `name` field, uses `config.name`
 - [x] `OperationRunSettings` in `operation-context.ts` — added `isMonorepoMode`, `workspaces`
+- [x] `ParsedReleaseAs` in `commit.ts` — `{ global?: string; workspaces: Map<string, string> }`
+- [x] `AffectedWorkspace` in `workspace-detection.ts` — extends `ResolvedWorkspace` with release hash/tag
+
+### Modified Function Signatures (3D)
+
+- [x] `prepareChangesToCommit()` — added `workspaceRelativePath: string = "."`
+- [x] `prepareChangelogFileToCommit()` — added `workspaceRelativePath: string = "."`
+- [x] `getVersionSemVerFromVersionFile()` — added `workspaceRelativePath: string = "."`
+- [x] `prepareVersionFilesToCommit()` — added `workspaceRelativePath: string = "."`
 
 ---
 
