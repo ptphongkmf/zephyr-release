@@ -155,11 +155,13 @@ export async function resolveCommitsFromTriggerToLastRelease(
   provider: PlatformProvider,
   inputs: ResolveCommitsInputsParams,
   config: ResolveCommitsConfigParams,
+  stopHashOverride?: string,
+  pathFilter?: string,
 ): Promise<ResolvedCommitsResult> {
   const { triggerCommitHash } = inputs;
   const { commitTypes, maxCommitsToResolve, resolveUntilCommitHash } = config;
 
-  let stopHash = resolveUntilCommitHash;
+  let stopHash = stopHashOverride ?? resolveUntilCommitHash;
   if (!stopHash) {
     const matchPatterns = buildMatchPatterns(
       config.tag.nameTemplate,
@@ -172,7 +174,7 @@ export async function resolveCommitsFromTriggerToLastRelease(
   const rawCommits = await provider.listCommitsInRange(
     triggerCommitHash,
     stopHash,
-    undefined,
+    pathFilter,
     maxCommitsToResolve,
   ).catch((error) => {
     if (error instanceof NoCommitFoundError) {

@@ -81,7 +81,19 @@ Add to each: *"This path is always relative to the repository root, even in mono
 - [x] `getVersionSemVerFromVersionFile()` — added `workspaceRelativePath: string = "."`
 - [x] `prepareVersionFilesToCommit()` — added `workspaceRelativePath: string = "."`
 
----
+### Modified Function Signatures (3F)
+
+- [x] `resolveCommitsFromTriggerToLastRelease()` — added `stopHashOverride?: string`, `pathFilter?: string`
+- [x] `getCurrentVersion()` — added `workspaceRelativePath: string = "."`
+
+### Refactored Workflow Files (3F)
+
+- [x] `run.ts` — added ungrouped proposals guard for monorepo mode
+- [x] `auto.ts` — workspace-aware 3-phase loop (per-ws version → global commit → per-ws tags/releases)
+- [x] `review.prepare.ts` — workspace-aware loop + single commit + single proposal
+- [x] `review.publish.ts` — per-workspace version extraction + per-ws tags/releases
+
+
 
 ## Docs Updates Required
 

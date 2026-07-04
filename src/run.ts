@@ -36,6 +36,13 @@ export async function run(provider: PlatformProvider) {
   const workspaces = resolveWorkspaces(configResult.config);
   const isMonorepoMode = configResult.config.workspace !== undefined;
 
+  if (isMonorepoMode && !configResult.config.review.groupProposals) {
+    throw new Error(
+      "Ungrouped proposals (review.groupProposals: false) are not yet supported in monorepo mode. " +
+      "Please set review.groupProposals to true or omit it (default is true).",
+    );
+  }
+
   // Init Run Settings //
   let runSettings: OperationRunSettings = {
     rawInputs: inputsResult.rawInputs,

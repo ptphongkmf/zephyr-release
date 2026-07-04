@@ -4,7 +4,7 @@ import {
   compareNextVersionToCurrentVersion,
 } from "../tasks/calculate-next-version/calculate-version.ts";
 import { getCurrentVersion } from "../tasks/calculate-next-version/previous-version.ts";
-import { format } from "@std/semver";
+import { format, type SemVer } from "@std/semver";
 import { generatePrepareChangelogReleaseContent } from "../tasks/changelog.ts";
 import {
   commitChangesToBranch,
@@ -28,6 +28,7 @@ import {
   addNextVersionPatternContext,
   addReleasesPatternContext,
   addTagPatternContext,
+  type ReleaseContextEntry,
   type StringPatternContext,
 } from "../tasks/string-templates-and-patterns/pattern-context.ts";
 import type {
@@ -41,12 +42,26 @@ import { createTag } from "../tasks/tag.ts";
 import { attachReleaseAssets, createRelease } from "../tasks/release.ts";
 import type { ProviderRelease } from "../types/providers/release.ts";
 import { executeHookWithOverride } from "./hook-runner.ts";
+import {
+  type AffectedWorkspace,
+  detectAffectedWorkspaces,
+} from "../tasks/workspace-detection.ts";
+import type { ResolvedWorkspace } from "../types/workspace-context.ts";
 
 interface AutoWorkflowOptions {
   workingBranchResult: WorkingBranchResult;
   associatedProposalForCommit: ProviderProposal | undefined;
   associatedProposalFromBranch: ProviderProposal | undefined;
   triggerContext: OperationTriggerContext;
+  patternContext: StringPatternContext;
+}
+
+/** Per-workspace result accumulated during Phase 1 */
+interface WorkspaceReleaseData {
+  workspace: AffectedWorkspace;
+  nextVersion: SemVer;
+  currentVersion: SemVer | undefined;
+  tagName: string;
   patternContext: StringPatternContext;
 }
 
@@ -70,147 +85,253 @@ export async function executeAutoReleaseFlow(
    */
   let runSettings: OperationRunSettings = currentRunSettings;
 
+  // ═══════════════════════════════════════════════════════════════════
+  // Phase 1: Per-workspace version/changelog/files
+  // ═══════════════════════════════════════════════════════════════════
+
   logger.header("Auto release flow (prepare): Creating commit...");
 
-  logger.stepStart("Starting: Get current version");
-  const currentVersion = await getCurrentVersion(
-    provider,
-    runSettings.inputs,
-    runSettings.config,
-  );
-  logger.stepFinish("Finished: Get current version");
+  // Detect affected workspaces
+  const affectedWorkspaces: AffectedWorkspace[] = runSettings.isMonorepoMode
+    ? await detectAffectedWorkspaces(
+      provider,
+      runSettings.workspaces,
+      runSettings.inputs.triggerCommitHash,
+      runSettings.config.maxCommitsToResolve,
+    )
+    : runSettings.workspaces.map((ws: ResolvedWorkspace) => ({
+      ...ws,
+      lastReleaseHash: undefined,
+      lastReleaseTagName: undefined,
+    }));
 
-  logger.stepStart("Starting: Resolve commits from trigger to last release");
-  const resolvedCommitsResult = await resolveCommitsFromTriggerToLastRelease(
-    provider,
-    runSettings.inputs,
-    runSettings.config,
-  );
-  logger.stepFinish("Finished: Resolve commits from trigger to last release");
-
-  // preCalculateVersion hook
-  // Commits are parsed, version is NOT calculated yet.
-  logger.debugStepStart("Starting: Export pre calculate version variables");
-  await exportPreCalculateVersionVariables(
-    provider,
-    resolvedCommitsResult.entries,
-    patternContext,
-  );
-  logger.debugStepFinish("Finished: Export pre calculate version variables");
-
-  ({ runSettings, patternContext } = await executeHookWithOverride(
-    provider,
-    "preCalculateVersion",
-    runSettings.config.commandHooks,
-    runSettings,
-    patternContext,
-  ));
-
-  // Calculate version
-  logger.stepStart("Starting: Calculate next version");
-  const nextVersion = calculateNextVersion(
-    resolvedCommitsResult,
-    runSettings.config,
-    currentVersion,
-  );
-  logger.stepFinish("Finished: Calculate next version");
-
-  logger.stepStart(
-    "Starting: Compare calculated next version with current version",
-  );
-  compareNextVersionToCurrentVersion(
-    nextVersion,
-    currentVersion,
-  );
-  logger.stepFinish(
-    "Finished: Compare calculated next version with current version",
-  );
-
-  logger.debugStepStart(
-    "Starting: Create fixed current version, next version and tag string pattern context",
-  );
-  if (currentVersion) {
-    patternContext = addCurrentVersionPatternContext(patternContext, currentVersion);
+  if (affectedWorkspaces.length === 0) {
+    logger.stepSkip(
+      "No affected workspaces detected — nothing to release",
+    );
+    return runSettings;
   }
-  patternContext = addNextVersionPatternContext(patternContext, nextVersion);
-  patternContext = await addTagPatternContext(patternContext, runSettings.config.tag.nameTemplate);
 
-  patternContext = addReleasesPatternContext(patternContext, [{
-    name: runSettings.config.name ?? "root",
-    nextVersion: format(nextVersion),
-    tagName: patternContext.tagName as string,
-    isWorkspace: false,
-  }]);
-  logger.debugStepFinish(
-    "Finished: Create fixed current version, next version and tag string pattern context",
-  );
+  const releaseEntries: ReleaseContextEntry[] = [];
+  const allChangesData = new Map<string, string | null>();
+  const workspaceReleaseDataList: WorkspaceReleaseData[] = [];
 
-  // postCalculateVersion hook
-  // Version is locked in, no files modified yet.
-  logger.debugStepStart("Starting: Export post calculate version variables");
-  await exportPostCalculateVersionVariables(
-    provider,
-    currentVersion,
-    nextVersion,
-    patternContext,
-  );
-  logger.debugStepFinish("Finished: Export post calculate version variables");
+  for (const ws of affectedWorkspaces) {
+    const wsConfig = ws.config;
+    const wsLabel = runSettings.isMonorepoMode ? `[${wsConfig.name}] ` : "";
 
-  ({ runSettings, patternContext } = await executeHookWithOverride(
-    provider,
-    "postCalculateVersion",
-    runSettings.config.commandHooks,
-    runSettings,
-    patternContext,
-    { nextVersion, currentVersion },
-  ));
+    if (runSettings.isMonorepoMode) {
+      logger.subHeader(`Workspace: ${wsConfig.name}`);
+      provider.setEnv("ZR_NAME", wsConfig.name ?? "");
+    }
 
-  logger.stepStart("Starting: Evaluate auto release flow trigger strategy");
-  evaluateAutoReleaseFlowTriggerStrategy(
-    resolvedCommitsResult.entries,
-    runSettings.config,
-  );
-  logger.stepFinish("Finished: Evaluate auto release flow trigger strategy");
+    // Get current version
+    logger.stepStart(`${wsLabel}Starting: Get current version`);
+    const currentVersion = await getCurrentVersion(
+      provider,
+      runSettings.inputs,
+      wsConfig,
+      ws.path,
+    );
+    logger.stepFinish(`${wsLabel}Finished: Get current version`);
 
-  // Generate changelog and prepare changes
-  logger.stepStart("Starting: Generate changelog release content");
-  const changelogReleaseResult = await generatePrepareChangelogReleaseContent(
-    provider,
-    resolvedCommitsResult.entries,
-    runSettings.inputs,
-    runSettings.config,
-    patternContext,
-  );
-  logger.stepFinish("Finished: Generate changelog release content");
+    // Resolve commits
+    logger.stepStart(
+      `${wsLabel}Starting: Resolve commits from trigger to last release`,
+    );
+    const resolvedCommitsResult = await resolveCommitsFromTriggerToLastRelease(
+      provider,
+      runSettings.inputs,
+      wsConfig,
+      ws.lastReleaseHash,
+      ws.path === "." ? undefined : ws.path,
+    );
+    logger.stepFinish(
+      `${wsLabel}Finished: Resolve commits from trigger to last release`,
+    );
 
-  logger.debugStepStart(
-    "Starting: Create dynamic changelog string pattern context",
-  );
-  patternContext = addChangelogPatternContext(
-    patternContext,
-    changelogReleaseResult.release,
-    changelogReleaseResult.releaseBody,
-    changelogReleaseResult.releaseAlt,
-    changelogReleaseResult.releaseBodyAlt,
-  );
-  logger.debugStepFinish(
-    "Finished: Create dynamic changelog string pattern context",
-  );
+    // preCalculateVersion hook
+    logger.debugStepStart(
+      `${wsLabel}Starting: Export pre calculate version variables`,
+    );
+    await exportPreCalculateVersionVariables(
+      provider,
+      resolvedCommitsResult.entries,
+      patternContext,
+    );
+    logger.debugStepFinish(
+      `${wsLabel}Finished: Export pre calculate version variables`,
+    );
 
-  logger.stepStart("Starting: Prepare and collect changes data to commit");
-  const changesData = await prepareChangesToCommit(
-    provider,
-    runSettings.inputs,
-    runSettings.config,
-    nextVersion,
-    patternContext,
-  );
-  logger.stepFinish("Finished: Prepare and collect changes data to commit");
+    ({ runSettings, patternContext } = await executeHookWithOverride(
+      provider,
+      "preCalculateVersion",
+      wsConfig.commandHooks,
+      runSettings,
+      patternContext,
+    ));
 
-  // preCommit hook
-  // Files are written to disk, git commit has NOT executed yet.
+    // Calculate version
+    logger.stepStart(`${wsLabel}Starting: Calculate next version`);
+    const nextVersion = calculateNextVersion(
+      resolvedCommitsResult,
+      wsConfig,
+      currentVersion,
+    );
+    logger.stepFinish(`${wsLabel}Finished: Calculate next version`);
+
+    logger.stepStart(
+      `${wsLabel}Starting: Compare calculated next version with current version`,
+    );
+    compareNextVersionToCurrentVersion(
+      nextVersion,
+      currentVersion,
+    );
+    logger.stepFinish(
+      `${wsLabel}Finished: Compare calculated next version with current version`,
+    );
+
+    // Build per-workspace pattern context
+    logger.debugStepStart(
+      `${wsLabel}Starting: Create fixed version and tag string pattern context`,
+    );
+    let wsPatternContext = patternContext;
+    if (currentVersion) {
+      wsPatternContext = addCurrentVersionPatternContext(
+        wsPatternContext,
+        currentVersion,
+      );
+    }
+    wsPatternContext = addNextVersionPatternContext(
+      wsPatternContext,
+      nextVersion,
+    );
+    wsPatternContext = await addTagPatternContext(
+      wsPatternContext,
+      wsConfig.tag.nameTemplate,
+    );
+    logger.debugStepFinish(
+      `${wsLabel}Finished: Create fixed version and tag string pattern context`,
+    );
+
+    // Collect release entry for later aggregation
+    const tagName = wsPatternContext.tagName as string;
+    releaseEntries.push({
+      name: wsConfig.name ?? "root",
+      nextVersion: format(nextVersion),
+      tagName,
+      isWorkspace: ws.isWorkspace,
+    });
+
+    // postCalculateVersion hook
+    logger.debugStepStart(
+      `${wsLabel}Starting: Export post calculate version variables`,
+    );
+    await exportPostCalculateVersionVariables(
+      provider,
+      currentVersion,
+      nextVersion,
+      wsPatternContext,
+    );
+    logger.debugStepFinish(
+      `${wsLabel}Finished: Export post calculate version variables`,
+    );
+
+    ({ runSettings, patternContext: wsPatternContext } =
+      await executeHookWithOverride(
+        provider,
+        "postCalculateVersion",
+        wsConfig.commandHooks,
+        runSettings,
+        wsPatternContext,
+        { nextVersion, currentVersion },
+      ));
+
+    // Evaluate auto trigger strategy
+    logger.stepStart(
+      `${wsLabel}Starting: Evaluate auto release flow trigger strategy`,
+    );
+    evaluateAutoReleaseFlowTriggerStrategy(
+      resolvedCommitsResult.entries,
+      wsConfig,
+    );
+    logger.stepFinish(
+      `${wsLabel}Finished: Evaluate auto release flow trigger strategy`,
+    );
+
+    // Generate changelog
+    logger.stepStart(
+      `${wsLabel}Starting: Generate changelog release content`,
+    );
+    const changelogReleaseResult = await generatePrepareChangelogReleaseContent(
+      provider,
+      resolvedCommitsResult.entries,
+      runSettings.inputs,
+      wsConfig,
+      wsPatternContext,
+    );
+    logger.stepFinish(
+      `${wsLabel}Finished: Generate changelog release content`,
+    );
+
+    logger.debugStepStart(
+      `${wsLabel}Starting: Create dynamic changelog string pattern context`,
+    );
+    wsPatternContext = addChangelogPatternContext(
+      wsPatternContext,
+      changelogReleaseResult.release,
+      changelogReleaseResult.releaseBody,
+      changelogReleaseResult.releaseAlt,
+      changelogReleaseResult.releaseBodyAlt,
+    );
+    logger.debugStepFinish(
+      `${wsLabel}Finished: Create dynamic changelog string pattern context`,
+    );
+
+    // Prepare changes to commit (workspace-relative paths)
+    logger.stepStart(
+      `${wsLabel}Starting: Prepare and collect changes data to commit`,
+    );
+    const wsChangesData = await prepareChangesToCommit(
+      provider,
+      runSettings.inputs,
+      wsConfig,
+      nextVersion,
+      wsPatternContext,
+      ws.path,
+    );
+    logger.stepFinish(
+      `${wsLabel}Finished: Prepare and collect changes data to commit`,
+    );
+
+    // Accumulate changes across all workspaces
+    for (const [filePath, content] of wsChangesData) {
+      allChangesData.set(filePath, content);
+    }
+
+    // Store per-workspace data for Phase 3
+    workspaceReleaseDataList.push({
+      workspace: ws,
+      nextVersion,
+      currentVersion,
+      tagName,
+      patternContext: wsPatternContext,
+    });
+
+    // Update shared pattern context for the next workspace iteration
+    patternContext = wsPatternContext;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Phase 2: Global commit
+  // ═══════════════════════════════════════════════════════════════════
+
+  // Set releases pattern context (all workspaces)
+  patternContext = addReleasesPatternContext(patternContext, releaseEntries);
+
+  // preCommit hook (global, root config)
   logger.debugStepStart("Starting: Export pre commit variables");
-  await exportPreCommitVariables(provider, changesData, patternContext);
+  await exportPreCommitVariables(provider, allChangesData, patternContext);
   logger.debugStepFinish("Finished: Export pre commit variables");
 
   ({ runSettings, patternContext } = await executeHookWithOverride(
@@ -219,10 +340,13 @@ export async function executeAutoReleaseFlow(
     runSettings.config.commandHooks,
     runSettings,
     patternContext,
-    { nextVersion, currentVersion },
+    {
+      nextVersion: workspaceReleaseDataList[0]?.nextVersion,
+      currentVersion: workspaceReleaseDataList[0]?.currentVersion,
+    },
   ));
 
-  // Commit
+  // Commit all changes in one commit
   logger.stepStart("Starting: Commit changes");
   const commitResult = await commitChangesToBranch(
     provider,
@@ -230,7 +354,7 @@ export async function executeAutoReleaseFlow(
     runSettings.config,
     {
       baseTreeHash: triggerContext.latestTriggerCommit.treeHash,
-      changesToCommit: changesData,
+      changesToCommit: allChangesData,
       targetBranchName: runSettings.inputs.triggerBranchName,
       force: false,
     },
@@ -239,13 +363,11 @@ export async function executeAutoReleaseFlow(
   logger.stepFinish("Finished: Commit changes");
 
   // postCommit hook
-  // Changes are committed and pushed. (No proposal in auto release flow.)
   logger.debugStepStart("Starting: Export post commit variables");
   await exportPostCommitVariables(provider, commitResult.hash, patternContext);
   logger.debugStepFinish("Finished: Export post commit variables");
 
-  // In auto release flow, postProposal is merged with postCommit since there is no proposal.
-  // In auto release flow, there is no proposal step. Export jobs data here alongside post commit.
+  // In auto release flow, postProposal is merged with postCommit
   logger.debugStepStart(
     "Starting: Export post proposal variables (auto release flow)",
   );
@@ -267,106 +389,158 @@ export async function executeAutoReleaseFlow(
     runSettings.config.commandHooks,
     runSettings,
     patternContext,
-    { nextVersion, currentVersion },
+    {
+      nextVersion: workspaceReleaseDataList[0]?.nextVersion,
+      currentVersion: workspaceReleaseDataList[0]?.currentVersion,
+    },
   ));
 
-  /////////////////////
+  // ═══════════════════════════════════════════════════════════════════
+  // Phase 3: Per-workspace tags and releases
+  // ═══════════════════════════════════════════════════════════════════
 
   if (runSettings.config.tag.createTag) {
     logger.header(
       "Auto release flow (publish): Creating tag and release...",
     );
 
-    // preTag hook
-    logger.debugStepStart("Starting: Export pre tag variables");
-    await exportPreTagVariables(provider, nextVersion, patternContext);
-    logger.debugStepFinish("Finished: Export pre tag variables");
+    for (const wsData of workspaceReleaseDataList) {
+      const wsConfig = wsData.workspace.config;
+      const wsLabel = runSettings.isMonorepoMode ? `[${wsConfig.name}] ` : "";
+      let wsPatternCtx = wsData.patternContext;
 
-    ({ runSettings, patternContext } = await executeHookWithOverride(
-      provider,
-      "preTag",
-      runSettings.config.commandHooks,
-      runSettings,
-      patternContext,
-      { nextVersion, currentVersion },
-    ));
+      // Re-apply releases context to each workspace's pattern context
+      wsPatternCtx = addReleasesPatternContext(wsPatternCtx, releaseEntries);
 
-    // Create tag
-    logger.stepStart("Starting: Create tag");
-    const createdTag = await createTag(
-      provider,
-      commitResult.hash,
-      runSettings.inputs,
-      runSettings.config,
-      patternContext,
-    );
-    logger.stepFinish("Finished: Create tag");
+      if (runSettings.isMonorepoMode) {
+        logger.subHeader(`Workspace: ${wsConfig.name}`);
+        provider.setEnv("ZR_NAME", wsConfig.name ?? "");
+      }
 
-    // preRelease hook
-    // Tag exists, platform release has NOT been created yet.
-    logger.debugStepStart("Starting: Export pre release variables");
-    await exportPreReleaseVariables(provider, createdTag.hash, patternContext);
-    logger.debugStepFinish("Finished: Export pre release variables");
-
-    ({ runSettings, patternContext } = await executeHookWithOverride(
-      provider,
-      "preRelease",
-      runSettings.config.commandHooks,
-      runSettings,
-      patternContext,
-      { nextVersion, currentVersion },
-    ));
-
-    // Create release and attach assets
-    logger.stepStart("Starting: Create release");
-    let createdReleaseNote: ProviderRelease | undefined;
-    if (runSettings.config.release.createRelease) {
-      createdReleaseNote = await createRelease(
+      // preTag hook
+      logger.debugStepStart(
+        `${wsLabel}Starting: Export pre tag variables`,
+      );
+      await exportPreTagVariables(
         provider,
+        wsData.nextVersion,
+        wsPatternCtx,
+      );
+      logger.debugStepFinish(
+        `${wsLabel}Finished: Export pre tag variables`,
+      );
+
+      ({ runSettings, patternContext: wsPatternCtx } =
+        await executeHookWithOverride(
+          provider,
+          "preTag",
+          wsConfig.commandHooks,
+          runSettings,
+          wsPatternCtx,
+          {
+            nextVersion: wsData.nextVersion,
+            currentVersion: wsData.currentVersion,
+          },
+        ));
+
+      // Create tag
+      logger.stepStart(`${wsLabel}Starting: Create tag`);
+      const createdTag = await createTag(
+        provider,
+        commitResult.hash,
         runSettings.inputs,
-        runSettings.config,
-        patternContext,
+        wsConfig,
+        wsPatternCtx,
       );
-      logger.stepFinish("Finished: Create release");
-    } else {
-      logger.stepSkip(
-        "Skipped: Create release (config create release is false)",
-      );
-    }
+      logger.stepFinish(`${wsLabel}Finished: Create tag`);
 
-    logger.stepStart("Starting: Attach release assets");
-    if (createdReleaseNote?.id && runSettings.config.release.assets) {
-      await attachReleaseAssets(
+      // preRelease hook
+      logger.debugStepStart(
+        `${wsLabel}Starting: Export pre release variables`,
+      );
+      await exportPreReleaseVariables(
         provider,
-        createdReleaseNote.id,
-        runSettings.config.release.assets,
+        createdTag.hash,
+        wsPatternCtx,
       );
-      logger.stepFinish("Finished: Attach release assets");
-    } else {
-      logger.stepSkip(
-        "Skipped: Attach release assets (no assets to attach or config create release is false)",
+      logger.debugStepFinish(
+        `${wsLabel}Finished: Export pre release variables`,
       );
+
+      ({ runSettings, patternContext: wsPatternCtx } =
+        await executeHookWithOverride(
+          provider,
+          "preRelease",
+          wsConfig.commandHooks,
+          runSettings,
+          wsPatternCtx,
+          {
+            nextVersion: wsData.nextVersion,
+            currentVersion: wsData.currentVersion,
+          },
+        ));
+
+      // Create release and attach assets
+      logger.stepStart(`${wsLabel}Starting: Create release`);
+      let createdReleaseNote: ProviderRelease | undefined;
+      if (wsConfig.release.createRelease) {
+        createdReleaseNote = await createRelease(
+          provider,
+          runSettings.inputs,
+          wsConfig,
+          wsPatternCtx,
+        );
+        logger.stepFinish(`${wsLabel}Finished: Create release`);
+      } else {
+        logger.stepSkip(
+          `${wsLabel}Skipped: Create release (config create release is false)`,
+        );
+      }
+
+      logger.stepStart(`${wsLabel}Starting: Attach release assets`);
+      if (createdReleaseNote?.id && wsConfig.release.assets) {
+        await attachReleaseAssets(
+          provider,
+          createdReleaseNote.id,
+          wsConfig.release.assets,
+        );
+        logger.stepFinish(`${wsLabel}Finished: Attach release assets`);
+      } else {
+        logger.stepSkip(
+          `${wsLabel}Skipped: Attach release assets (no assets to attach or config create release is false)`,
+        );
+      }
+
+      // postRelease hook
+      logger.debugStepStart(
+        `${wsLabel}Starting: Export post release variables`,
+      );
+      await exportPostReleaseVariables(
+        provider,
+        wsPatternCtx,
+        createdReleaseNote?.id,
+        createdReleaseNote?.uploadUrl,
+      );
+      logger.debugStepFinish(
+        `${wsLabel}Finished: Export post release variables`,
+      );
+
+      ({ runSettings, patternContext: wsPatternCtx } =
+        await executeHookWithOverride(
+          provider,
+          "postRelease",
+          wsConfig.commandHooks,
+          runSettings,
+          wsPatternCtx,
+          {
+            nextVersion: wsData.nextVersion,
+            currentVersion: wsData.currentVersion,
+          },
+        ));
+
+      // Preserve pattern context for next iteration
+      patternContext = wsPatternCtx;
     }
-
-    // postRelease hook
-    // Platform release is live and assets are attached.
-    logger.debugStepStart("Starting: Export post release variables");
-    await exportPostReleaseVariables(
-      provider,
-      patternContext,
-      createdReleaseNote?.id,
-      createdReleaseNote?.uploadUrl,
-    );
-    logger.debugStepFinish("Finished: Export post release variables");
-
-    ({ runSettings, patternContext } = await executeHookWithOverride(
-      provider,
-      "postRelease",
-      runSettings.config.commandHooks,
-      runSettings,
-      patternContext,
-      { nextVersion, currentVersion },
-    ));
   } else {
     logger.header(
       "Auto release flow (publish): Skip create tag and release (disabled in config)",

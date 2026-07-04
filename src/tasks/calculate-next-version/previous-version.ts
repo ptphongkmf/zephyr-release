@@ -23,6 +23,7 @@ export async function getCurrentVersion(
   provider: PlatformProvider,
   inputs: GetCurrentVersionInputsParams,
   config: GetCurrentVersionConfigParams,
+  workspaceRelativePath: string = ".",
 ): Promise<SemVer | undefined> {
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
   const { versionFiles } = config;
@@ -35,6 +36,7 @@ export async function getCurrentVersion(
     provider,
     workspacePath,
     triggerCommitHash,
+    workspaceRelativePath,
   );
 
   return primaryVersion;
