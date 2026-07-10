@@ -11,10 +11,17 @@ import type {
   PreCommitVariables,
   PreReleaseVariables,
   PreTagVariables,
+  WorkspaceSummaryVariables,
+  WorkspaceVariableData,
 } from "../types/operation-variables.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import type { ProviderProposal } from "../types/providers/proposal.ts";
-import { toEnvKey, toOutputKey } from "../utils/transformers/case.ts";
+import {
+  toEnvKey,
+  toOutputKey,
+  toWorkspaceEnvKey,
+  toWorkspaceOutputKey,
+} from "../utils/transformers/case.ts";
 import { jsonValueNormalizer } from "../utils/transformers/json.ts";
 import { format, type SemVer } from "@std/semver";
 import type { WorkingBranchResult } from "./branch.ts";
@@ -411,5 +418,64 @@ export async function exportFinalOperationVariables(
   Object.entries(prepareExportObject).forEach(([k, v]) => {
     provider.setOutput(toOutputKey(k), v);
     provider.setEnv(toEnvKey(k), v);
+  });
+}
+
+/**
+ * Export workspace-namespaced variables and a global workspace summary.
+ * In monorepo mode, exports:
+ * - Per-workspace: `ZR__<name>__NEXT_VERSION`, `ZR__<name>__TAG_NAME`, `ZR__<name>__PATH`
+ * - Summary: `ZR_IS_MONOREPO`, `ZR_WORKSPACES` (JSON), `ZR_AFFECTED_WORKSPACES` (JSON)
+ * - Current workspace shortcut: `ZR_NAME`
+ *
+ * In single-repo mode, exports only `ZR_IS_MONOREPO=false`.
+ */
+export function exportWorkspaceSummaryVariables(
+  provider: PlatformProvider,
+  isMonorepoMode: boolean,
+  currentWorkspaceName: string | undefined,
+  allWorkspaceData: WorkspaceVariableData[],
+  affectedWorkspaceNames: string[],
+) {
+  const exportObject = {
+    isMonorepo: isMonorepoMode ? "true" : "false",
+    name: currentWorkspaceName ?? "",
+    workspaces: JSON.stringify(allWorkspaceData),
+    affectedWorkspaces: JSON.stringify(affectedWorkspaceNames),
+  } satisfies WorkspaceSummaryVariables;
+
+  // Global summary variables
+  Object.entries(exportObject).forEach(([k, v]) => {
+    provider.setOutput(toOutputKey(k), v);
+    provider.setEnv(toEnvKey(k), v);
+  });
+
+  if (!isMonorepoMode) return;
+
+  // Per-workspace namespaced variables
+  for (const ws of allWorkspaceData) {
+    const wsVars = {
+      nextVersion: ws.nextVersion,
+      tagName: ws.tagName,
+      path: ws.path,
+    };
+
+    Object.entries(wsVars).forEach(([varName, value]) => {
+      provider.setEnv(toWorkspaceEnvKey(ws.name, varName), value);
+      provider.setOutput(toWorkspaceOutputKey(ws.name, varName), value);
+    });
+  }
+
+  taskLogger.debugWrap((dLogger) => {
+    dLogger.startGroup(
+      "Workspace summary variables to export (internal key name):",
+    );
+    dLogger.info(JSON.stringify(exportObject, null, 2));
+    for (const ws of allWorkspaceData) {
+      dLogger.info(
+        `  ${ws.name}: nextVersion=${ws.nextVersion}, tagName=${ws.tagName}, path=${ws.path}`,
+      );
+    }
+    dLogger.endGroup();
   });
 }

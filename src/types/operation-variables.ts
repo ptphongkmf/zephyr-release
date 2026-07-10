@@ -115,3 +115,32 @@ export type PostReleaseVariables = Pick<
 >;
 
 export type FinalOperationVariables = Pick<OperationVariables, "outcome">;
+
+// --- Workspace-aware variables ---
+
+export interface WorkspaceVariableData {
+  /** Sanitized workspace name */
+  name: string;
+  /** Formatted next version (e.g. "1.2.3") */
+  nextVersion: string;
+  /** Resolved tag name (e.g. "core-v1.2.3") */
+  tagName: string;
+  /** Relative path from repo root */
+  path: string;
+}
+
+/**
+ * Variables exported once per operation for workspace summary.
+ * In monorepo mode, these give downstream consumers a structured view
+ * of all workspaces and their resolved versions.
+ */
+export interface WorkspaceSummaryVariables {
+  /** "true" in monorepo mode, "false" otherwise */
+  isMonorepo: string;
+  /** Current workspace name (set during per-workspace phases) */
+  name: string;
+  /** JSON array of all workspace variable data */
+  workspaces: string;
+  /** JSON array of affected workspace names */
+  affectedWorkspaces: string;
+}

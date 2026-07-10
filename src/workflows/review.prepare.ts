@@ -31,6 +31,7 @@ import {
   exportPostProposalVariables,
   exportPreCalculateVersionVariables,
   exportPreCommitVariables,
+  exportWorkspaceSummaryVariables,
 } from "../tasks/export-variables.ts";
 import type { OperationRunSettings } from "../types/operation-context.ts";
 import { addLabelsToProposalOnCreate } from "../tasks/label.ts";
@@ -297,6 +298,20 @@ export async function executeReviewPreparePhase(
     // Update shared pattern context
     patternContext = wsPatternContext;
   }
+
+  // Export workspace summary variables (after all workspace versions are known)
+  exportWorkspaceSummaryVariables(
+    provider,
+    runSettings.isMonorepoMode,
+    affectedWorkspaces[0]?.config.name,
+    releaseEntries.map((entry, i) => ({
+      name: entry.name,
+      nextVersion: entry.nextVersion,
+      tagName: entry.tagName,
+      path: affectedWorkspaces[i]!.path,
+    })),
+    affectedWorkspaces.map((ws) => ws.config.name ?? "root"),
+  );
 
   // ═══════════════════════════════════════════════════════════════════
   // Phase 2: Global commit + proposal

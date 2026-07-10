@@ -20,6 +20,7 @@ import {
   exportPreCommitVariables,
   exportPreReleaseVariables,
   exportPreTagVariables,
+  exportWorkspaceSummaryVariables,
 } from "../tasks/export-variables.ts";
 import { logger } from "../tasks/logger.ts";
 import {
@@ -321,6 +322,20 @@ export async function executeAutoReleaseFlow(
     // Update shared pattern context for the next workspace iteration
     patternContext = wsPatternContext;
   }
+
+  // Export workspace summary variables (after all workspace versions are known)
+  exportWorkspaceSummaryVariables(
+    provider,
+    runSettings.isMonorepoMode,
+    affectedWorkspaces[0]?.config.name,
+    releaseEntries.map((entry, i) => ({
+      name: entry.name,
+      nextVersion: entry.nextVersion,
+      tagName: entry.tagName,
+      path: affectedWorkspaces[i]!.path,
+    })),
+    affectedWorkspaces.map((ws) => ws.config.name ?? "root"),
+  );
 
   // ═══════════════════════════════════════════════════════════════════
   // Phase 2: Global commit

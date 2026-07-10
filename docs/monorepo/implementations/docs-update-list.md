@@ -92,7 +92,15 @@ Add to each: *"This path is always relative to the repository root, even in mono
 - [x] `auto.ts` — workspace-aware 3-phase loop (per-ws version → global commit → per-ws tags/releases)
 - [x] `review.prepare.ts` — workspace-aware loop + single commit + single proposal
 - [x] `review.publish.ts` — per-workspace version extraction + per-ws tags/releases
+### Exported Variables (3G)
 
+- [x] `WorkspaceVariableData` + `WorkspaceSummaryVariables` types in `operation-variables.ts`
+- [x] `exportWorkspaceSummaryVariables()` in `export-variables.ts` — per-workspace namespaced env/output variables
+  - `ZR__<name>__NEXT_VERSION`, `ZR__<name>__TAG_NAME`, `ZR__<name>__PATH`
+  - `ZR_IS_MONOREPO`, `ZR_WORKSPACES` (JSON), `ZR_AFFECTED_WORKSPACES` (JSON)
+- [x] Integration in `auto.ts` + `review.prepare.ts` (after Phase 1 loop)
+
+---
 
 
 ## Docs Updates Required
