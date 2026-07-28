@@ -14,6 +14,13 @@ export interface RunCommandsResult {
   capturedStdout: string;
 }
 
+/**
+ * Maximum size for the captured stdout buffer (10 MB).
+ * Stdout beyond this limit is still streamed to the console but not buffered.
+ * This prevents unbounded memory growth from verbose hook commands.
+ */
+const MAX_STDOUT_BUFFER_BYTES = 10 * 1024 * 1024;
+
 /** @throws if `continueOnError` is false and command fails */
 export async function runCommands(
   commandHooks: CommandHooksOutput | undefined,
@@ -34,6 +41,7 @@ export async function runCommands(
   let skippedCount = 0;
   const failedCommands: string[] = [];
   let capturedStdout = "";
+  let stdoutBufferExceeded = false;
 
   taskLogger.startGroup("Commands log:");
   for (const cmd of commands) {
@@ -49,7 +57,20 @@ export async function runCommands(
 
     try {
       const stdout = await runChildProcess(cmdStr, timeout);
-      capturedStdout += stdout;
+
+      // Guard: stop buffering if we exceed the memory limit
+      if (!stdoutBufferExceeded) {
+        if (capturedStdout.length + stdout.length > MAX_STDOUT_BUFFER_BYTES) {
+          stdoutBufferExceeded = true;
+          taskLogger.warn(
+            `Stdout buffer limit (${MAX_STDOUT_BUFFER_BYTES / 1024 / 1024} MB) exceeded. ` +
+              "Further stdout will not be captured for config override extraction.",
+          );
+        } else {
+          capturedStdout += stdout;
+        }
+      }
+
       succeedCount++;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
