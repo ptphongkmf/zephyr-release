@@ -326,3 +326,78 @@ The outcome status of the operation. Possible values are "success" (completed su
 
 - Output: `zr-outcome`
 - Env: `ZR_OUTCOME`
+
+## Workspace Variables (Monorepo Mode)
+
+When operating in monorepo mode (i.e., the config has a [`workspace`](./config-options.md#workspace-optional) property), additional variables are exported.
+
+### Summary Variables
+
+These are exported after all per-workspace version calculations complete, before the commit phase.
+
+#### isMonorepo
+
+Whether the operation is running in monorepo mode.
+
+- Output: `zr-is-monorepo`
+- Env: `ZR_IS_MONOREPO`
+- Value: `"true"` or `"false"`
+
+#### name
+
+The current workspace name. Updated during per-workspace phases.
+
+- Output: `zr-name`
+- Env: `ZR_NAME`
+
+#### workspaces
+
+JSON array of all workspace data objects. Each object contains: `name`, `nextVersion`, `tagName`, `path`.
+
+- Output: `zr-workspaces`
+- Env: `ZR_WORKSPACES`
+- Value: `[{"name":"core","nextVersion":"1.2.3","tagName":"core-v1.2.3","path":"packages/core"}, ...]`
+
+#### affectedWorkspaces
+
+JSON array of affected workspace names (workspaces with changes since their last release).
+
+- Output: `zr-affected-workspaces`
+- Env: `ZR_AFFECTED_WORKSPACES`
+- Value: `["core","cli"]`
+
+### Per-Workspace Namespaced Variables
+
+In monorepo mode, each workspace also gets **namespaced** env and output variables. These are useful for accessing specific workspace data in downstream CI/CD steps.
+
+#### Naming Convention
+
+| Type | Pattern | Example |
+|---|---|---|
+| Env | `ZR__<sanitized_name>__<CONSTANT_VAR>` | `ZR__core__NEXT_VERSION` |
+| Output | `zr--<sanitized_name>--<kebab-var>` | `zr--core--next-version` |
+
+#### Name Sanitization Rules
+
+Workspace names may contain characters that are invalid in environment variable or output names. The following rules are applied:
+
+- **Env vars**: any character not matching `[a-zA-Z0-9_]` is replaced with `_`
+- **Output keys**: any character not matching `[a-zA-Z0-9_-]` is replaced with `_`
+
+**Examples:**
+
+| Original Name | Env Prefix | Output Prefix |
+|---|---|---|
+| `core` | `ZR__core__` | `zr--core--` |
+| `@scope/pkg` | `ZR___scope_pkg__` | `zr--@scope_pkg--` |
+| `my-lib` | `ZR__my_lib__` | `zr--my-lib--` |
+
+#### Available Namespaced Variables
+
+For each workspace, the following variables are exported:
+
+| Variable | Env Example | Output Example |
+|---|---|---|
+| `nextVersion` | `ZR__core__NEXT_VERSION` | `zr--core--next-version` |
+| `tagName` | `ZR__core__TAG_NAME` | `zr--core--tag-name` |
+| `path` | `ZR__core__PATH` | `zr--core--path` |

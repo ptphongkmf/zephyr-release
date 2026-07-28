@@ -31,6 +31,7 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to the file where the generated changelog will be written to, relative to the project root.\n" +
+          "In monorepo mode, this path is relative to the workspace directory (auto-prepended with the workspace path key).\n" +
           `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional \n` +
           'Default: "CHANGELOG.md"',
       }),
@@ -73,7 +74,8 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing changelog file header. Overrides `fileHeaderTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     fileReleaseTemplate: v.pipe(
@@ -90,7 +92,8 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing changelog release template. Overrides `fileReleaseTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     fileFooterTemplate: v.pipe(
@@ -106,7 +109,8 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing changelog file footer. Overrides `fileFooterTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
 
@@ -127,7 +131,8 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing changelog release header. Overrides `releaseHeaderTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     releaseSectionHeadingTemplate: v.pipe(
@@ -150,7 +155,8 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing changelog release section heading template. Overrides `releaseSectionHeadingTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     releaseSectionEntryTemplate: v.pipe(
@@ -174,7 +180,8 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing changelog release section entry template. Overrides `releaseSectionEntryTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     releaseBreakingSectionHeading: v.pipe(
@@ -203,7 +210,8 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing changelog release breaking section entry template. Overrides `releaseBreakingSectionEntryTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     releaseBodyOverride: v.pipe(
@@ -220,7 +228,8 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing changelog release body override, will take precedence over `releaseBodyOverride`.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     releaseFooterTemplate: v.pipe(
@@ -236,7 +245,8 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing changelog release footer. Overrides `releaseFooterTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
 
@@ -252,7 +262,8 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing alternative changelog release header. Overrides `releaseHeaderTemplateAlt` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     releaseSectionHeadingTemplateAlt: v.pipe(
@@ -273,7 +284,8 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing alternative changelog release section heading template. Overrides `releaseSectionHeadingTemplateAlt` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     releaseSectionEntryTemplateAlt: v.pipe(
@@ -288,7 +300,8 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing alternative changelog release section entry template. Overrides `releaseSectionEntryTemplateAlt` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     releaseBreakingSectionHeadingAlt: v.pipe(
@@ -310,7 +323,8 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing alternative changelog release breaking section entry template. Overrides `releaseBreakingSectionEntryTemplateAlt` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     releaseBodyOverrideAlt: v.pipe(
@@ -325,7 +339,8 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing alternative changelog release body override. Overrides `releaseBodyOverrideAlt` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     releaseFooterTemplateAlt: v.pipe(
@@ -340,7 +355,8 @@ export const ChangelogConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing alternative changelog release footer. Overrides `releaseFooterTemplateAlt` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
   }),

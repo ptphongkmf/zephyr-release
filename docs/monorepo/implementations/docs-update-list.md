@@ -11,31 +11,31 @@
 
 #### Paths that ARE auto-prepended (workspace-relative)
 
-- [ ] `versionFiles > path` in `base-config.ts` — add: *"In monorepo mode, this path is relative to the workspace directory (auto-prepended with the workspace path key)."*
-- [ ] `changelog > path` in `changelog-config.ts` — same note
+- [x] `versionFiles > path` in `base-config.ts` — add: *"In monorepo mode, this path is relative to the workspace directory (auto-prepended with the workspace path key)."*
+- [x] `changelog > path` in `changelog-config.ts` — same note
 
 #### Paths that are NOT auto-prepended (always repo-root-relative)
 
 Add to each: *"This path is always relative to the repository root, even in monorepo mode."*
 
-- [ ] `runtimeConfigOverride > path` — global, not per-workspace
-- [ ] `changelog > releaseBodyOverridePath`
-- [ ] `changelog > releaseBodyOverrideAltPath`
-- [ ] `review > titleTemplatePath`
-- [ ] `review > headerTemplatePath`
-- [ ] `review > bodyTemplatePath`
-- [ ] `review > footerTemplatePath`
-- [ ] `tag > messageTemplatePath`
-- [ ] `changelog > releaseHeaderTemplatePath`
-- [ ] `changelog > releaseSectionHeadingTemplatePath`
-- [ ] `changelog > releaseSectionEntryTemplatePath`
-- [ ] `changelog > releaseBreakingSectionEntryTemplatePath`
-- [ ] `changelog > releaseFooterTemplatePath`
-- [ ] `changelog > releaseHeaderTemplateAltPath`
-- [ ] `changelog > releaseSectionHeadingTemplateAltPath`
-- [ ] `changelog > releaseSectionEntryTemplateAltPath`
-- [ ] `changelog > releaseFooterTemplateAltPath`
-- [ ] `changelog > fileHeaderTemplatePath`
+- [x] `runtimeConfigOverride > path` — global, not per-workspace
+- [x] `changelog > releaseBodyOverridePath`
+- [x] `changelog > releaseBodyOverrideAltPath`
+- [x] `review > titleTemplatePath`
+- [x] `review > headerTemplatePath`
+- [x] `review > bodyTemplatePath`
+- [x] `review > footerTemplatePath`
+- [x] `tag > messageTemplatePath`
+- [x] `changelog > releaseHeaderTemplatePath`
+- [x] `changelog > releaseSectionHeadingTemplatePath`
+- [x] `changelog > releaseSectionEntryTemplatePath`
+- [x] `changelog > releaseBreakingSectionEntryTemplatePath`
+- [x] `changelog > releaseFooterTemplatePath`
+- [x] `changelog > releaseHeaderTemplateAltPath`
+- [x] `changelog > releaseSectionHeadingTemplateAltPath`
+- [x] `changelog > releaseSectionEntryTemplateAltPath`
+- [x] `changelog > releaseFooterTemplateAltPath`
+- [x] `changelog > fileHeaderTemplatePath`
 
 ---
 
@@ -106,41 +106,48 @@ Add to each: *"This path is always relative to the repository root, even in mono
 ## Docs Updates Required
 
 ### [NEW] docs/workspace-config-options.md
-- [ ] Full reference for workspace member config
-- [ ] Path resolution rules section (which paths are auto-prepended, which are not)
-- [ ] Per-workspace hook inheritance explanation
+- [x] Full reference for workspace member config
+- [x] Path resolution rules section (which paths are auto-prepended, which are not)
+- [x] Per-workspace hook inheritance explanation
 
 ### [MODIFY] docs/config-options.md
-- [ ] Add `workspace` property section with link to workspace-config-options.md
-- [ ] Add `review > group-proposals` description
+- [x] Add `workspace` property section with link to workspace-config-options.md
+- [x] Add `review > group-proposals` description
 
 ### [MODIFY] docs/export-variables.md
-- [ ] Document `ZR_NAME` — set during per-workspace hooks
-- [ ] Document `ZR_IS_MONOREPO` — boolean
-- [ ] Document `ZR_WORKSPACES` — JSON summary of all workspaces
-- [ ] Document workspace-namespaced variables (`ZR__<name>__*` / `zr--<name>--*`)
-- [ ] Sanitization rules table (env: `[^a-zA-Z0-9_]` → `_`, output: `[^a-zA-Z0-9_-]` → `_`)
+- [x] Document `ZR_NAME` — set during per-workspace hooks
+- [x] Document `ZR_IS_MONOREPO` — boolean
+- [x] Document `ZR_WORKSPACES` — JSON summary of all workspaces
+- [x] Document workspace-namespaced variables (`ZR__<name>__*` / `zr--<name>--*`)
+- [x] Sanitization rules table (env: `[^a-zA-Z0-9_]` → `_`, output: `[^a-zA-Z0-9_-]` → `_`)
 
 ### [MODIFY] docs/command-hooks.md
-- [ ] Document global vs per-workspace hook table
-- [ ] Document per-workspace hook inheritance via deepMerge (field-level)
-- [ ] Document stdout-based config override with `ZR_CONFIG_OVERRIDE_START` / `ZR_CONFIG_OVERRIDE_END` markers
-- [ ] Note: `preCommit`, `postCommit`, `postProposal` hooks ignored per-workspace when `groupProposals: true`
-- [ ] Note: `preRun`, `postRun` are always global (root config only)
+- [x] Document global vs per-workspace hook table
+- [x] Document per-workspace hook inheritance via deepMerge (field-level)
+- [x] Document stdout-based config override with marker delimiters
+- [x] Note: `preCommit`, `postCommit`, `postProposal` hooks ignored per-workspace when `groupProposals: true`
+- [x] Note: `preRun`, `postRun` are always global (root config only)
 
 ### [MODIFY] docs/input-options.md
-- [ ] Note about source-mode interaction with workspace paths (template paths are always repo-root-relative)
+- [x] Note about source-mode interaction with workspace paths (template paths are always repo-root-relative)
 
 ### [MODIFY] README.md
-- [ ] Update "Dynamic Configuration Overrides" section to mention stdout capture
-- [ ] Add monorepo section / link to workspace docs
-- [ ] Update "Force a Specific Version" to mention workspace-scoped Release-As syntax
+- [x] Update "Dynamic Configuration Overrides" section to mention stdout capture
+- [x] Add monorepo section / link to workspace docs
+- [x] Update "Force a Specific Version" to mention workspace-scoped Release-As syntax
 
----
+### Schema Description Updates
+- [x] `versionFiles > path` — added monorepo note (auto-prepended with workspace path)
+- [x] `changelog > path` — added monorepo note (auto-prepended with workspace path)
+- [x] `runtimeConfigOverride > path` — added monorepo note (always repo-root-relative) + metadata description
+- [x] All template paths (changelog, review, commit, tag, release) — added monorepo note (always repo-root-relative)
+
+### Stdout Buffer Memory Safety
+- [x] `command.ts` — added `MAX_STDOUT_BUFFER_BYTES` (10 MB) guard to prevent unbounded memory growth
 
 ## Behavioral Changes (Breaking)
 
 - [x] Runtime config override: extracted from 15 inline blocks to `executeHookWithOverride` utility. Behavior unchanged in single-repo. In monorepo, file-based override only at global level, stdout at all levels.
 - [x] `runCommands` now returns `RunCommandsResult` with `capturedStdout`. Stdout piped + streamed to parent process in real-time. Buffered for marker extraction.
-- [ ] Workspace tag defaults: if `workspace` key is present and member doesn't set `tag.nameTemplate`, defaults to `{{ name }}-v{{ nextVersion }}` instead of `v{{ nextVersion }}`.
-- [ ] Env var names for workspaces use minimal sanitization (casing preserved, only invalid chars replaced).
+- [x] Workspace tag defaults: if `workspace` key is present and member doesn't set `tag.nameTemplate`, defaults to `{{ name }}-v{{ nextVersion }}` instead of `v{{ nextVersion }}`.
+- [x] Env var names for workspaces use minimal sanitization (casing preserved, only invalid chars replaced).

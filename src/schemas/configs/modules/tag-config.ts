@@ -74,7 +74,8 @@ export const TagConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing Git annotated or signed tag message template. Overrides `messageTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     tagger: v.pipe(

@@ -33,6 +33,15 @@ Zephyr Release isn't a black box. You can easily plug into almost every step of 
 
 [See the full list of available hooks here](./docs/command-hooks.md).
 
+### Monorepo Support
+
+Manage multiple packages in a single repository with independent versioning, changelogs, tags, and releases — all in one operation.
+
+- **Workspace-Aware Releases:** Define workspace members in your config with the [`workspace`](./docs/config-options.md#workspace-optional) property. Each workspace gets its own version, changelog, and tag while sharing a single commit. See the [full workspace config reference](./docs/workspace-config-options.md).
+- **Affected Workspace Detection:** Only workspaces with changes since their last release are processed. Changes are detected via tag-based lookup and path-filtered commit analysis.
+- **Per-Workspace Hooks:** Some hooks fire once per workspace (like `pre-tag` and `post-release`), while others fire globally (like `pre-commit`). Each workspace can override hook commands independently. See [hook scoping in monorepo mode](./docs/command-hooks.md#monorepo-mode-hook-scoping).
+- **Namespaced Variables:** Access per-workspace data in your CI/CD pipelines via namespaced [environment variables and outputs](./docs/export-variables.md#workspace-variables-monorepo-mode) (e.g., `ZR__core__NEXT_VERSION`).
+
 ## Getting Started
 
 ### First, a config file
@@ -186,9 +195,9 @@ Sometimes a static configuration file is not enough. For example, you might want
 
 Sometimes you need to set a version number manually instead of letting the tool calculate it for you.
 
-You can do this by adding `release-as:` or `release as:` (case insensitive) followed by the version you want.
+You can do this by adding `release-as:` or `release as:` (case insensitive) as a commit footer, followed by the version you want.
 
-**Example:**
+**Single-repo:**
 
 ```text
 feat: add a massive new feature
@@ -197,6 +206,19 @@ This change is so big we want to jump to 2.0.0.
 
 release-as: 2.0.0
 ```
+
+**Monorepo** — use the `name@version` syntax to target specific workspaces:
+
+```text
+feat: update core and cli packages
+
+release-as: core@2.0.0
+release-as: cli@1.5.0
+```
+
+- `release-as: <version>` (without a name) applies to **all** workspaces globally.
+- `release-as: <name>@<version>` overrides a **specific** workspace.
+- Workspace-scoped overrides take precedence over global overrides.
 
 ### Important things to know
 

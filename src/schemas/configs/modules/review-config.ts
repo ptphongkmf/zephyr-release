@@ -59,7 +59,8 @@ export const ReviewConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing proposal title template. Overrides `titleTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     headerTemplate: v.pipe(
@@ -76,7 +77,8 @@ export const ReviewConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing proposal header template. Overrides `headerTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     bodyTemplate: v.pipe(
@@ -93,7 +95,8 @@ export const ReviewConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing proposal body template. Overrides `bodyTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     footerTemplate: v.pipe(
@@ -110,7 +113,8 @@ export const ReviewConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing proposal footer template. Overrides `footerTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
 

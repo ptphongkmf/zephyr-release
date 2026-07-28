@@ -139,3 +139,43 @@ In auto release flow, the operation executes both the prepare and publish steps 
 24. Export final operation variables.
 
 25. **Run [`command-hooks.post-run`](./config-options.md#command-hooks--post-run-optional) commands.**
+
+## Monorepo Mode: Hook Scoping
+
+In monorepo mode, hooks are categorized as **global** or **per-workspace**. This determines which config's `command-hooks` definition is used and how many times the hook fires.
+
+### Hook Scope Table
+
+| Hook | Scope | Fires per... | Config source |
+|---|---|---|---|
+| `pre-run` | Global | Once | Root config only |
+| `pre-calculate-version` | Per-workspace | Each workspace | Workspace config (merged with root) |
+| `post-calculate-version` | Per-workspace | Each workspace | Workspace config (merged with root) |
+| `pre-commit` | Global | Once | Root config only |
+| `post-commit` | Global | Once | Root config only |
+| `post-proposal` | Global | Once | Root config only |
+| `pre-tag` | Per-workspace | Each workspace | Workspace config (merged with root) |
+| `pre-release` | Per-workspace | Each workspace | Workspace config (merged with root) |
+| `post-release` | Per-workspace | Each workspace | Workspace config (merged with root) |
+| `post-run` | Global | Once | Root config only |
+
+### Per-Workspace Hook Behavior
+
+When a hook fires per-workspace:
+
+1. **Config inheritance**: The workspace's `command-hooks` is deeply merged with the root's `command-hooks`. If a workspace defines `pre-tag`, it overrides the root's `pre-tag`. If it doesn't define `pre-tag`, the root's `pre-tag` is used.
+
+2. **`ZR_NAME` env var**: During per-workspace hook execution, the `ZR_NAME` environment variable is set to the current workspace name.
+
+3. **Config override via stdout**: Per-workspace hooks support the same stdout-based config override mechanism as single-repo mode. The override marker delimiters (`---zephyr-release-config-override-start---` / `---zephyr-release-config-override-end---`) work the same way. Overrides apply to the **current workspace's config** only.
+
+### Global Hook Behavior
+
+When a hook fires globally:
+
+1. **Config source**: Always uses the **root** config's `command-hooks` definition. Workspace-level `command-hooks` for global hooks are **ignored**.
+
+2. **Context**: `ZR_NAME` is not set (or empty). Global hooks operate on the aggregated state across all workspaces.
+
+> [!NOTE]
+> If a workspace defines `pre-commit`, `post-commit`, or `post-proposal` in its `command-hooks`, those definitions are silently ignored in grouped proposal mode. Only the root config's definitions for these hooks are used.

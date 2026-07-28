@@ -24,6 +24,7 @@ Some example [config files](./examples/).
   - [release-flow (Optional)](#release-flow-optional)
   - [review (Optional)](#review-optional)
     - [review \> draft (Optional)](#review--draft-optional)
+    - [review \> group-proposals (Optional)](#review--group-proposals-optional)
     - [review \> working-branch-name-template (Optional)](#review--working-branch-name-template-optional)
     - [review \> title-template (Optional)](#review--title-template-optional)
     - [review \> title-template-path (Optional)](#review--title-template-path-optional)
@@ -181,6 +182,7 @@ Some example [config files](./examples/).
   - [runtime-config-override (Optional)](#runtime-config-override-optional)
     - [runtime-config-override \> path (Required)](#runtime-config-override--path-required)
     - [runtime-config-override \> format (Optional)](#runtime-config-override--format-optional)
+  - [workspace (Optional)](#workspace-optional)
 - [Type Definitions](#type-definitions)
   - [AutoStrategy](#autostrategy)
   - [SemverExtension](#semverextension)
@@ -245,6 +247,19 @@ Type: `boolean`\
 Default: `false`
 
 If enabled, the proposal will be created as draft.
+
+[⬆ Back to top](#table-of-content)
+
+#### review > group-proposals (Optional)
+
+Type: `boolean`\
+Default: `true`
+
+When `true` (default), all workspace changes are grouped into a single release proposal in monorepo mode. All workspace version bumps, changelogs, and file changes are committed together and presented in one PR/MR.
+
+When `false`, each workspace would get its own proposal with its own working branch. *(Note: `false` is not yet supported and will throw an error.)*
+
+This option only has effect in monorepo mode (when [`workspace`](#workspace-optional) is defined). In single-repo mode, it is ignored.
 
 [⬆ Back to top](#table-of-content)
 
@@ -1857,5 +1872,41 @@ A discriminated union based on the `type` field. Specifies the type of pre-relea
 - `type` (Required): `"date"`
 - `format` (Optional): The date format. `"YYYYMMDD"` or `"YYYY-MM-DD"`. Default: `"YYYYMMDD"`
 - `time-zone` (Optional): The timezone to use for the date. If not specified, falls back to base [`time-zone`](#time-zone-optional).
+
+[⬆ Back to top](#table-of-content)
+
+### workspace (Optional)
+
+Type: `object` (key-value map)\
+Default: not set (single-repo mode)
+
+Defines workspace members for monorepo support. When this property is present, the tool operates in **monorepo mode**.
+
+Each key is the **relative path** from the repository root to the workspace directory. Each value is a workspace member configuration object.
+
+For the full workspace member configuration reference, see [workspace-config-options.md](./workspace-config-options.md).
+
+**Example:**
+
+```json
+{
+  "workspace": {
+    "packages/core": {
+      "name": "core",
+      "version-files": [{ "path": "package.json", "selector": "$.version" }],
+      "tag": {
+        "name-template": "core-v{{nextVersion}}"
+      }
+    },
+    "packages/cli": {
+      "name": "cli",
+      "version-files": [{ "path": "package.json", "selector": "$.version" }]
+    }
+  }
+}
+```
+
+> [!IMPORTANT]
+> Workspace names must be unique across all members. Version file paths within a workspace config are **relative to the workspace directory**, not the repository root.
 
 [⬆ Back to top](#table-of-content)

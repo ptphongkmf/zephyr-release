@@ -126,3 +126,6 @@ Tie version file resolution to a specific file path (matching your [`version-fil
 
 > [!Important]
 > If `source-mode` is set to `local` (globally or for a specific path override), a valid local workspace must exist. If required files are missing from the disk, the operation will fail with an error to prevent state mismatch between the local environment and the remote provider.
+
+> [!NOTE]
+> **Monorepo mode:** All paths used in source-mode (template paths, changelog body override paths, etc.) are always **relative to the repository root**, even when defined inside a workspace member config. Only `version-files > path` and `changelog > path` are auto-resolved relative to the workspace directory. See [workspace-config-options.md](./workspace-config-options.md) for details.
