@@ -1,5 +1,6 @@
 import * as v from "@valibot/valibot";
 import { trimNonEmptyStringSchema } from "../../../string.ts";
+import { ConfigFileFormatsWithAuto } from "../../../../constants/file-formats.ts";
 
 export const CommandSchema = v.pipe(
   v.union([
@@ -32,6 +33,15 @@ export const CommandSchema = v.pipe(
         v.metadata({
           description: "Continue or stop the process on commands error.\n" +
             "Defaults to `commandHooks` root `continueOnError` value",
+        }),
+      ),
+      stdoutOverrideFormat: v.pipe(
+        v.optional(v.enum(ConfigFileFormatsWithAuto)),
+        v.metadata({
+          description:
+            "Format to parse stdout config override content for this specific command.\n" +
+            "Overrides the `commandHooks` root `stdoutOverrideFormat` value.\n" +
+            "If set, only the stdout from this command (not the combined output) is checked for override markers.",
         }),
       ),
     }),

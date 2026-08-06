@@ -1,6 +1,7 @@
 import * as v from "@valibot/valibot";
 import { DOCS_EXT_REF_TOKEN } from "../../../token.ts";
 import { CommandSchema } from "./command.ts";
+import { ConfigFileFormatsWithAuto } from "../../../../constants/file-formats.ts";
 
 export const commandHookCommandsSchema = v.pipe(
   v.optional(
@@ -46,6 +47,16 @@ export const CommandHooksSchema = v.object({
         "Default: false",
     }),
   ),
+  stdoutOverrideFormat: v.pipe(
+    v.optional(v.enum(ConfigFileFormatsWithAuto), "auto"),
+    v.metadata({
+      description:
+        "Default format for parsing stdout config override content.\n" +
+        "Supported formats: json, jsonc, json5, yaml, toml, auto (best-effort detection).\n" +
+        "Can be overridden per command. When overridden per command, only that command's stdout is checked for override markers.\n" +
+        'Default: "auto"',
+    }),
+  ),
 
   preRun: v.pipe(
     commandHookCommandsSchema,
@@ -62,7 +73,7 @@ export const CommandHooksSchema = v.object({
     v.metadata({
       description:
         "Commands to run after commits are parsed but before version calculation. Each command runs from the repository root.\n" +
-        "Useful for injecting `runtimeConfigOverride` to manipulate bump logic based on commit data.\n" +
+        "Useful for printing a stdout config override to manipulate bump logic based on commit data.\n" +
         "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
         `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
@@ -157,5 +168,5 @@ export type CommandHooksOutput = v.InferOutput<typeof CommandHooksSchema>;
 
 export type CommandHookKind = Exclude<
   keyof CommandHooksOutput,
-  "timeout" | "continueOnError"
+  "timeout" | "continueOnError" | "stdoutOverrideFormat"
 >;

@@ -6,12 +6,22 @@ import type {
   CommandHooksOutput,
 } from "../schemas/configs/modules/components/command-hook.ts";
 import { failedNonCriticalTasks } from "../main.ts";
+import type { ConfigFileFormatWithAuto } from "../constants/file-formats.ts";
+
+export interface PerCommandOverride {
+  /** Stdout from this specific command */
+  stdout: string;
+  /** The format to parse the override as */
+  format: ConfigFileFormatWithAuto;
+}
 
 export interface RunCommandsResult {
   /** Summary string (undefined if no commands ran) */
   summary: string | undefined;
-  /** Combined stdout from all hook commands in this invocation */
+  /** Combined stdout from all hook commands that do NOT have per-command stdoutOverrideFormat */
   capturedStdout: string;
+  /** Per-command overrides for commands that have their own stdoutOverrideFormat */
+  perCommandOverrides: PerCommandOverride[];
 }
 
 /**
@@ -28,10 +38,10 @@ export async function runCommands(
 ): Promise<RunCommandsResult> {
   const commands = commandHooks?.[kind];
   if (!commands || commands.length === 0) {
-    return { summary: undefined, capturedStdout: "" };
+    return { summary: undefined, capturedStdout: "", perCommandOverrides: [] };
   }
   if (!commands.some((cmd) => Boolean(cmd.cmd))) {
-    return { summary: undefined, capturedStdout: "" };
+    return { summary: undefined, capturedStdout: "", perCommandOverrides: [] };
   }
 
   const baseTimeout = commandHooks.timeout;
@@ -42,6 +52,7 @@ export async function runCommands(
   const failedCommands: string[] = [];
   let capturedStdout = "";
   let stdoutBufferExceeded = false;
+  const perCommandOverrides: PerCommandOverride[] = [];
 
   taskLogger.startGroup("Commands log:");
   for (const cmd of commands) {
@@ -58,16 +69,24 @@ export async function runCommands(
     try {
       const stdout = await runChildProcess(cmdStr, timeout);
 
-      // Guard: stop buffering if we exceed the memory limit
-      if (!stdoutBufferExceeded) {
-        if (capturedStdout.length + stdout.length > MAX_STDOUT_BUFFER_BYTES) {
-          stdoutBufferExceeded = true;
-          taskLogger.warn(
-            `Stdout buffer limit (${MAX_STDOUT_BUFFER_BYTES / 1024 / 1024} MB) exceeded. ` +
-              "Further stdout will not be captured for config override extraction.",
-          );
-        } else {
-          capturedStdout += stdout;
+      // If this command has its own stdoutOverrideFormat, track its stdout separately
+      if (cmd.stdoutOverrideFormat) {
+        perCommandOverrides.push({
+          stdout,
+          format: cmd.stdoutOverrideFormat,
+        });
+      } else {
+        // Guard: stop buffering if we exceed the memory limit
+        if (!stdoutBufferExceeded) {
+          if (capturedStdout.length + stdout.length > MAX_STDOUT_BUFFER_BYTES) {
+            stdoutBufferExceeded = true;
+            taskLogger.warn(
+              `Stdout buffer limit (${MAX_STDOUT_BUFFER_BYTES / 1024 / 1024} MB) exceeded. ` +
+                "Further stdout will not be captured for config override extraction.",
+            );
+          } else {
+            capturedStdout += stdout;
+          }
         }
       }
 
@@ -96,7 +115,7 @@ export async function runCommands(
       failedCommands.length > 0 ? ` (${failedCommands.join(", ")})` : ""
     }`;
 
-  return { summary, capturedStdout };
+  return { summary, capturedStdout, perCommandOverrides };
 }
 
 /**

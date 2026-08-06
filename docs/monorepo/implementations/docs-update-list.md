@@ -151,3 +151,55 @@ Add to each: *"This path is always relative to the repository root, even in mono
 - [x] `runCommands` now returns `RunCommandsResult` with `capturedStdout`. Stdout piped + streamed to parent process in real-time. Buffered for marker extraction.
 - [x] Workspace tag defaults: if `workspace` key is present and member doesn't set `tag.nameTemplate`, defaults to `{{ name }}-v{{ nextVersion }}` instead of `v{{ nextVersion }}`.
 - [x] Env var names for workspaces use minimal sanitization (casing preserved, only invalid chars replaced).
+
+---
+
+# Phase 4: Remove File-Based Runtime Config Override
+
+> Track all docs/schema changes for the removal of `runtime-config-override` (file-based override).
+> See full plan: [4_remove_file_override.md](./4_remove_file_override.md)
+
+## Schema Description Updates
+
+- [x] `base-config.ts` — remove `runtimeConfigOverride` property + import
+- [x] `runtime-config-override.ts` — DELETE file entirely
+- [x] `command-hook.ts` — remove `runtimeConfigOverride` reference in `preCalculateVersion` description
+- [x] `review-config.ts` — update `workingBranchNameTemplate` immutability note (change "runtimeConfigOverride" → "stdout config override")
+- [x] `workspace-member-config.ts` — remove `runtimeConfigOverride` from global-only fields comment
+
+## Source Code Changes
+
+- [x] `runtime-override.ts` — delete `resolveRuntimeConfigOverride()` function + `ResolvedRuntimeConfigResult` interface
+- [x] `hook-runner.ts` — remove `resolveRuntimeConfigOverride` import, remove `isPerWorkspaceHook` param, remove file-based override block
+- [x] `auto.ts` — no changes needed (callers never passed `isPerWorkspaceHook`)
+- [x] `review.prepare.ts` — same
+- [x] `review.publish.ts` — same
+
+## Docs Updates Required
+
+### [MODIFY] docs/config-options.md
+- [ ] Remove TOC entries: `runtime-config-override`, `runtime-config-override > path`, `runtime-config-override > format`
+- [ ] Remove the full `runtime-config-override` property section (~lines 1784-1817)
+- [ ] Update `working-branch-name-template` immutability note — change "runtime-config-override" → "stdout config override"
+- [ ] Update `pre-calculate-version` hook description — remove `runtime-config-override` reference
+
+### [MODIFY] docs/command-hooks.md
+- [ ] Update all `*(If overridden runtime config is returned, it applies moving forward).*` notes to clarify stdout-based mechanism
+
+### [MODIFY] docs/export-variables.md
+- [ ] Update `ZR_CONFIG` description — change `runtime-config-override` link to stdout config override mention
+- [ ] Update `ZR_INTERNAL_CONFIG` description — same
+
+### [MODIFY] README.md
+- [ ] Rewrite "Dynamic Configuration Overrides" section: replace "Runtime File Override" with "Runtime Stdout Override" (marker delimiters)
+
+### [MODIFY] docs/workspace-config-options.md
+- [ ] Check for and remove any references to file-based override
+
+## JSON Schema Regeneration
+- [ ] Run `deno run -A scripts/gen-json-schema.ts` — `runtime-config-override` must disappear from generated schemas
+
+## Behavioral Changes (Breaking)
+
+- [ ] `runtime-config-override` config property removed — users must migrate to stdout-based override via marker delimiters
+- [ ] `isPerWorkspaceHook` parameter removed from `executeHookWithOverride` — all hooks now use the same stdout-only path

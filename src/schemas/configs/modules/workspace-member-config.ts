@@ -12,7 +12,7 @@ import { trimNonEmptyStringSchema } from "../../string.ts";
 
 // Cherry-pick from BaseCoreConfigSchema — include per-workspace fields only
 // OMIT: releaseFlow, timeZone, customStringPatterns, maxCommitsToResolve,
-//       resolveUntilCommitHash, runtimeConfigOverride (these are global)
+//       resolveUntilCommitHash (these are global)
 // INCLUDE: name (REQUIRED), versionFiles, commitTypes, allowedReleaseAsCommitTypes,
 //          initialVersion, commandHooks
 

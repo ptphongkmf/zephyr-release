@@ -40,7 +40,7 @@ export const ReviewConfigSchema = v.pipe(
         description:
           "String template for branch name that Zephyr Release will use.\n" +
           "Allowed patterns to use are: fixed base string patterns.\n" +
-          "Note: This value is immutable at runtime and cannot be changed via `runtimeConfigOverride`.\n" +
+          "Note: This value is immutable at runtime and cannot be changed via stdout config override.\n" +
           `Default: ${JSON.stringify(DEFAULT_WORKING_BRANCH_NAME_TEMPLATE)}`,
       }),
     ),

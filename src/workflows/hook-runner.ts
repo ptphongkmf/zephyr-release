@@ -9,7 +9,6 @@ import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import { runCommands } from "../tasks/command.ts";
 import {
   extractOverrideFromStdout,
-  resolveRuntimeConfigOverride,
   synchronizeRuntimeStateAfterOverride,
 } from "../tasks/runtime-override.ts";
 import { parseConfig } from "../tasks/configs/config-parser.ts";
@@ -20,6 +19,7 @@ import { ConfigSchema } from "../schemas/configs/config.ts";
 import { transformObjKeyToCamelCase } from "../utils/transformers/object.ts";
 import { formatValibotIssues } from "../utils/formatters/valibot.ts";
 import { jsonValueNormalizer } from "../utils/transformers/json.ts";
+import type { ConfigFileFormatWithAuto } from "../constants/file-formats.ts";
 
 export interface HookRunnerOptions {
   nextVersion?: SemVer;
@@ -34,15 +34,13 @@ export interface HookRunnerResult {
 /**
  * Execute a command hook and apply runtime config override if applicable.
  *
- * Consolidates the previously duplicated pattern of:
- *   1. Run hook commands (now with stdout capture)
+ * Consolidates the pattern of:
+ *   1. Run hook commands (with stdout capture)
  *   2. Check for stdout-based config override (marker delimiters)
- *   3. Check for file-based config override (global hooks only)
- *   4. Re-validate config through Valibot
- *   5. Synchronize runtime state (pattern context, env vars)
- *
- * For global hooks: checks both stdout capture and file-based override.
- * For per-workspace hooks: checks stdout capture only (avoids cross-contamination).
+ *      - Per-command overrides (with their own format) are checked first
+ *      - Falls back to combined stdout with the default `stdoutOverrideFormat`
+ *   3. Re-validate config through Valibot
+ *   4. Synchronize runtime state (pattern context, env vars)
  */
 export async function executeHookWithOverride(
   provider: PlatformProvider,
@@ -51,7 +49,6 @@ export async function executeHookWithOverride(
   runSettings: OperationRunSettings,
   patternContext: StringPatternContext,
   options: HookRunnerOptions = {},
-  isPerWorkspaceHook: boolean = false,
 ): Promise<HookRunnerResult> {
   // 1. Run hook commands and capture stdout
   logger.stepStart(`Starting: Execute ${hookKind} commands`);
@@ -64,21 +61,45 @@ export async function executeHookWithOverride(
     logger.stepSkip(`Skipped: Execute ${hookKind} commands (empty)`);
   }
 
-  // 2. Try stdout-based override (always available)
+  // 2. Try stdout-based override
   logger.stepStart(
     `Starting: Resolve runtime config override (${hookKind})`,
   );
-  let overrideApplied = false;
-  const stdoutOverride = extractOverrideFromStdout(
-    hookResult.capturedStdout,
-  );
-  if (stdoutOverride) {
-    taskLogger.info(
-      `Detected stdout config override from ${hookKind} hook`,
-    );
 
-    // Parse as JSON (stdout overrides are always JSON)
-    const parsedRaw = parseConfig(stdoutOverride, "json", "<stdout>");
+  // Resolve override content and format:
+  //   - Per-command overrides (own format + isolated stdout) take priority
+  //   - Falls back to combined stdout with the default stdoutOverrideFormat
+  let overrideContent: string | undefined;
+  let overrideFormat: ConfigFileFormatWithAuto | undefined;
+
+  // Check per-command overrides first
+  for (const perCmd of hookResult.perCommandOverrides) {
+    const extracted = extractOverrideFromStdout(perCmd.stdout);
+    if (extracted) {
+      overrideContent = extracted;
+      overrideFormat = perCmd.format;
+      taskLogger.info(
+        `Detected per-command stdout config override (format: ${overrideFormat})`,
+      );
+      break;
+    }
+  }
+
+  // Fall back to combined stdout
+  if (!overrideContent && commandHooks) {
+    const extracted = extractOverrideFromStdout(hookResult.capturedStdout);
+    if (extracted) {
+      overrideContent = extracted;
+      overrideFormat = commandHooks.stdoutOverrideFormat;
+      taskLogger.info(
+        `Detected stdout config override from ${hookKind} hook (format: ${overrideFormat})`,
+      );
+    }
+  }
+
+  let overrideApplied = false;
+  if (overrideContent && overrideFormat) {
+    const parsedRaw = parseConfig(overrideContent, overrideFormat);
 
     taskLogger.info(
       `Stdout config override parsed successfully (${parsedRaw.resolvedFormatResult})`,
@@ -129,31 +150,6 @@ export async function executeHookWithOverride(
       ...options,
     });
     overrideApplied = true;
-  }
-
-  // 3. Try file-based override (global hooks only, and only if stdout didn't already apply one)
-  if (!isPerWorkspaceHook && !overrideApplied) {
-    const fileResult = await resolveRuntimeConfigOverride(
-      runSettings.rawConfig,
-      runSettings.config,
-      runSettings.inputs.workspacePath,
-    );
-    if (fileResult) {
-      runSettings = {
-        ...runSettings,
-        rawConfig: fileResult.rawResolvedRuntime,
-        config: fileResult.resolvedRuntime,
-      };
-      patternContext = await synchronizeRuntimeStateAfterOverride({
-        provider,
-        config: runSettings.config,
-        rawConfig: runSettings.rawConfig,
-        triggerBranchName: runSettings.inputs.triggerBranchName,
-        currentPatternContext: patternContext,
-        ...options,
-      });
-      overrideApplied = true;
-    }
   }
 
   if (overrideApplied) {
