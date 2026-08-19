@@ -189,7 +189,7 @@ Sometimes a static configuration file is not enough. For example, you might want
 
 **1. Workflow Input Override:** You can generate configuration data in an earlier step of your CI/CD workflow and pass it directly into the operation using the [`config-override`](./docs/input-options.md#config-override-optional) input. This is great if your workflow already knows what needs to change before Zephyr Release even starts.
 
-**2. Runtime File Override:** If you need to calculate settings *during* the release process itself, you can use [`runtime-config-override`](./docs/config-options.md#runtime-config-override-optional). By pairing it with various [`command-hooks`](./docs/config-options.md#command-hooks-optional) options, you can run a custom script that generates a temporary JSON file on the runner. Zephyr Release will automatically read this file and merge it into your configuration after any command hook runs.
+**2. Runtime Stdout Override:** If you need to calculate settings *during* the release process itself, you can use [`command-hooks`](./docs/config-options.md#command-hooks-optional) to run a custom script that prints configuration data to stdout between special marker delimiters. Zephyr Release captures the output, parses it (format controlled by [`stdout-override-format`](./docs/config-options.md#command-hooks--stdout-override-format-optional)), and merges it into your configuration. This works with any format: JSON, YAML, TOML, and more.
 
 ## Force a Specific Version
 

@@ -41,7 +41,8 @@ export const CommandSchema = v.pipe(
           description:
             "Format to parse stdout config override content for this specific command.\n" +
             "Overrides the `commandHooks` root `stdoutOverrideFormat` value.\n" +
-            "If set, only the stdout from this command (not the combined output) is checked for override markers.",
+            "If set, only the stdout from this command (not the combined output) is checked for override markers.\n" +
+            "Defaults to `commandHooks` root `stdoutOverrideFormat` value",
         }),
       ),
     }),

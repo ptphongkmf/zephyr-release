@@ -238,14 +238,14 @@ The operation start time in ISO format
 
 #### config
 
-**Current** resolved config object taken directly from the user, preserved as-is (JSON stringified). This value updates dynamically if a [`runtime-config-override`](./config-options.md#runtime-config-override-optional) is applied during execution, ensuring it always reflects the active configuration rules.
+**Current** resolved config object taken directly from the user, preserved as-is (JSON stringified). This value updates dynamically if a stdout config override is applied during execution, ensuring it always reflects the active configuration rules.
 
 - Output: `zr-config`
 - Env: `ZR_CONFIG`
 
 #### internalConfig
 
-**Current** internally resolved config object, with camelCase keys and normalized values (e.g., a prop that accepts a string or an array is normalized to an array containing a single string) (JSON stringified). This value also updates dynamically if a [`runtime-config-override`](./config-options.md#runtime-config-override-optional) is applied during execution. For schema shape see: [config.ts](../src/schemas/configs/config.ts)
+**Current** internally resolved config object, with camelCase keys and normalized values (e.g., a prop that accepts a string or an array is normalized to an array containing a single string) (JSON stringified). This value also updates dynamically if a stdout config override is applied during execution. For schema shape see: [config.ts](../src/schemas/configs/config.ts)
 
 - Output: `zr-internal-config`
 - Env: `ZR_INTERNAL_CONFIG`

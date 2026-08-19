@@ -157,10 +157,12 @@ Some example [config files](./examples/).
   - [command-hooks (Optional)](#command-hooks-optional)
     - [command-hooks \> timeout (Optional)](#command-hooks--timeout-optional)
     - [command-hooks \> continue-on-error (Optional)](#command-hooks--continue-on-error-optional)
+    - [command-hooks \> stdout-override-format (Optional)](#command-hooks--stdout-override-format-optional)
     - [command-hooks \> pre-run (Optional)](#command-hooks--pre-run-optional)
       - [\> pre-run \> cmd (Required)](#-pre-run--cmd-required)
       - [\> pre-run \> timeout (Optional)](#-pre-run--timeout-optional)
       - [\> pre-run \> continue-on-error (Optional)](#-pre-run--continue-on-error-optional)
+      - [\> pre-run \> stdout-override-format (Optional)](#-pre-run--stdout-override-format-optional)
     - [command-hooks \> pre-calculate-version (Optional)](#command-hooks--pre-calculate-version-optional)
       - [\> pre-calculate-version \> same properties as command-hooks \> pre-run](#-pre-calculate-version--same-properties-as-command-hooks--pre-run)
     - [command-hooks \> post-calculate-version (Optional)](#command-hooks--post-calculate-version-optional)
@@ -179,9 +181,6 @@ Some example [config files](./examples/).
       - [\> post-release \> same properties as command-hooks \> pre-run](#-post-release--same-properties-as-command-hooks--pre-run)
     - [command-hooks \> post-run (Optional)](#command-hooks--post-run-optional)
       - [\> post-run \> same properties as command-hooks \> pre-run](#-post-run--same-properties-as-command-hooks--pre-run)
-  - [runtime-config-override (Optional)](#runtime-config-override-optional)
-    - [runtime-config-override \> path (Required)](#runtime-config-override--path-required)
-    - [runtime-config-override \> format (Optional)](#runtime-config-override--format-optional)
   - [workspace (Optional)](#workspace-optional)
 - [Type Definitions](#type-definitions)
   - [AutoStrategy](#autostrategy)
@@ -271,7 +270,7 @@ Default: [`DEFAULT_WORKING_BRANCH_NAME_TEMPLATE`](../src/constants/defaults/stri
 String template for branch name that Zephyr Release will use.\
 Allowed patterns to use are: fixed base string patterns.
 
-**Note on Immutability:** This property is considered a core structural configuration and is **immutable at runtime**. It cannot be overridden by a [`runtime-config-override`](#runtime-config-override-optional) file. This ensures that the branch naming strategy remains consistent throughout the entire release process, preventing potential conflicts or unexpected branch creations during dynamic configuration updates.
+**Note on Immutability:** This property is considered a core structural configuration and is **immutable at runtime**. It cannot be overridden by a stdout config override. This ensures that the branch naming strategy remains consistent throughout the entire release process, preventing potential conflicts or unexpected branch creations during dynamic configuration updates.
 
 [⬆ Back to top](#table-of-content)
 
@@ -1533,7 +1532,7 @@ List of local asset path(s) to attach to the release. Accepts a single string or
 ### command-hooks (Optional)
 
 Type: `object`\
-**Properties:** [`timeout`](#command-hooks--timeout-optional), [`continue-on-error`](#command-hooks--continue-on-error-optional), [`pre-run`](#command-hooks--pre-run-optional), [`pre-calculate-version`](#command-hooks--pre-calculate-version-optional), [`post-calculate-version`](#command-hooks--post-calculate-version-optional), [`pre-commit`](#command-hooks--pre-commit-optional), [`post-commit`](#command-hooks--post-commit-optional), [`post-proposal`](#command-hooks--post-proposal-optional), [`pre-tag`](#command-hooks--pre-tag-optional), [`pre-release`](#command-hooks--pre-release-optional), [`post-release`](#command-hooks--post-release-optional), [`post-run`](#command-hooks--post-run-optional)
+**Properties:** [`timeout`](#command-hooks--timeout-optional), [`continue-on-error`](#command-hooks--continue-on-error-optional), [`stdout-override-format`](#command-hooks--stdout-override-format-optional), [`pre-run`](#command-hooks--pre-run-optional), [`pre-calculate-version`](#command-hooks--pre-calculate-version-optional), [`post-calculate-version`](#command-hooks--post-calculate-version-optional), [`pre-commit`](#command-hooks--pre-commit-optional), [`post-commit`](#command-hooks--post-commit-optional), [`post-proposal`](#command-hooks--post-proposal-optional), [`pre-tag`](#command-hooks--pre-tag-optional), [`pre-release`](#command-hooks--pre-release-optional), [`post-release`](#command-hooks--post-release-optional), [`post-run`](#command-hooks--post-run-optional)
 
 Command hooks to run at different phases of the operation. Each command runs from the repository root.
 
@@ -1557,12 +1556,22 @@ Default behavior for all command hooks on error, can be overridden per command.
 
 [⬆ Back to top](#table-of-content)
 
+#### command-hooks > stdout-override-format (Optional)
+
+Type: `string`\
+Default: `"auto"`
+
+Default format for parsing stdout config override content. Can be overridden per command via the per-command [`stdout-override-format`](#-pre-run--stdout-override-format-optional) property. When overridden per command, only that command's stdout is checked for override markers.\
+Supported formats: `json`, `jsonc`, `json5`, `yaml`, `toml`, `auto` (best-effort detection).
+
+[⬆ Back to top](#table-of-content)
+
 #### command-hooks > pre-run (Optional)
 
 Type: `string | object | (string | object)[]`
 
 Commands to run at the very start of the operation, before any actions are taken. Each command runs from the repository root.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1593,13 +1602,24 @@ Continue or stop the process on commands error.
 
 [⬆ Back to top](#table-of-content)
 
+##### > pre-run > stdout-override-format (Optional)
+
+Type: `string`
+
+Format to parse stdout config override content for this specific command. Overrides the root [`stdout-override-format`](#command-hooks--stdout-override-format-optional) value.\
+If set, only the stdout from this command (not the combined output) is checked for override markers.\
+Supported formats: `json`, `jsonc`, `json5`, `yaml`, `toml`, `auto`.\
+Default: Base default stdout-override-format
+
+[⬆ Back to top](#table-of-content)
+
 #### command-hooks > pre-calculate-version (Optional)
 
 Type: `string | object | (string | object)[]`
 
 Commands to run after commits are parsed but before version calculation. Each command runs from the repository root.\
-Useful for injecting `runtime-config-override` to manipulate bump logic based on commit data.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Useful for printing a stdout config override to manipulate bump logic based on commit data.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1620,7 +1640,7 @@ Type: `string | object | (string | object)[]`
 
 Commands to run after version is calculated but before files are modified. Each command runs from the repository root.\
 Useful for syncing external metadata using the newly resolved `nextVersion`.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1641,7 +1661,7 @@ Type: `string | object | (string | object)[]`
 
 Commands to run after changelog and version files are written to disk, but before `git commit`. Each command runs from the repository root.\
 Useful for running formatters, linters, or custom replacements on the generated files before they enter git history.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1661,7 +1681,7 @@ Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 Type: `string | object | (string | object)[]`
 
 Commands to run after changes are committed and pushed. Each command runs from the repository root.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1682,7 +1702,7 @@ Type: `string | object | (string | object)[]`
 
 Commands to run after the Release Proposal (PR, MR, ...) is created or updated. Each command runs from the repository root.\
 Useful for triggering downstream CI jobs or proposal review notifications.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1703,7 +1723,7 @@ Type: `string | object | (string | object)[]`
 
 Commands to run before the Git tag is created. Each command runs from the repository root.\
 Useful for final guardrails or external API sanity checks before cutting the permanent tag.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1724,7 +1744,7 @@ Type: `string | object | (string | object)[]`
 
 Commands to run after the Git tag is created but before the platform release (GitHub Release, etc.). Each command runs from the repository root.\
 Useful for building/compiling binaries so they can be atomically attached during the release creation step.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1745,7 +1765,7 @@ Type: `string | object | (string | object)[]`
 
 Commands to run after the platform release is fully live and assets are attached. Each command runs from the repository root.\
 Useful for announcements, webhooks, and publishing packages to external registries.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1766,7 +1786,7 @@ Type: `string | object | (string | object)[]`
 
 Commands to run after the main operation. Each command runs from the repository root.\
 These commands will always run regardless of operation outcome (success, skipped or failure). It is recommended to check the outcome export variable if your script should only run under specific conditions.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1780,38 +1800,6 @@ Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 - [`continue-on-error`](#-pre-run--continue-on-error-optional)
 
 [⬆ Back to top](#table-of-content)
-
-### runtime-config-override (Optional)
-
-Type: `object`\
-**Properties:** [`path`](#runtime-config-override--path-required), [`format`](#runtime-config-override--format-optional)
-
-A dynamic configuration file to deep-merge over the resolved config at runtime, typically generated by a [`command-hooks`](#command-hooks-optional) script.
-
-This file is always read from the local filesystem. If the file does not exist or is empty, it is safely ignored. However, if the file exists but the merged result fails schema validation, the operation will throw an error.
-
-**Immutable Fields:** For security and structural consistency, certain core fields are protected and cannot be overridden at runtime. Any values provided for these fields in the override file will be ignored, and the original configuration values will be preserved.
-
-Currently protected fields:
-
-- [`review > working-branch-name-template`](#review--working-branch-name-template-optional)
-
-[⬆ Back to top](#table-of-content)
-
-#### runtime-config-override > path (Required)
-
-Type: `string`
-
-Path to the runtime override config file, read from the local filesystem.
-
-[⬆ Back to top](#table-of-content)
-
-#### runtime-config-override > format (Optional)
-
-Type: `string`\
-Default: `"auto"`
-
-Config file format. Allowed values: `auto`, `json`, `jsonc`, `json5`, `yaml`, `toml`.
 
 [⬆ Back to top](#table-of-content)
 

@@ -63,7 +63,7 @@ export const CommandHooksSchema = v.object({
     v.metadata({
       description:
         "Commands to run at the very start of the operation, before any actions are taken. Each command runs from the repository root.\n" +
-        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout`, `continueOnError`, and `stdoutOverrideFormat`), or an array of these.\n" +
         `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),
@@ -74,7 +74,7 @@ export const CommandHooksSchema = v.object({
       description:
         "Commands to run after commits are parsed but before version calculation. Each command runs from the repository root.\n" +
         "Useful for printing a stdout config override to manipulate bump logic based on commit data.\n" +
-        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout`, `continueOnError`, and `stdoutOverrideFormat`), or an array of these.\n" +
         `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),
@@ -84,7 +84,7 @@ export const CommandHooksSchema = v.object({
       description:
         "Commands to run after version is calculated but before files are modified. Each command runs from the repository root.\n" +
         "Useful for syncing external metadata using the newly resolved `nextVersion`.\n" +
-        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout`, `continueOnError`, and `stdoutOverrideFormat`), or an array of these.\n" +
         `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),
@@ -95,7 +95,7 @@ export const CommandHooksSchema = v.object({
       description:
         "Commands to run after changelog and version files are written to disk, but before `git commit`. Each command runs from the repository root.\n" +
         "Useful for running formatters, linters, or custom replacements on the generated files before they enter git history.\n" +
-        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout`, `continueOnError`, and `stdoutOverrideFormat`), or an array of these.\n" +
         `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),
@@ -104,7 +104,7 @@ export const CommandHooksSchema = v.object({
     v.metadata({
       description:
         "Commands to run after changes are committed and pushed. Each command runs from the repository root.\n" +
-        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout`, `continueOnError`, and `stdoutOverrideFormat`), or an array of these.\n" +
         `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),
@@ -114,7 +114,7 @@ export const CommandHooksSchema = v.object({
       description:
         "Commands to run after the Release Proposal (PR, MR, ...) is created or updated. Each command runs from the repository root.\n" +
         "Useful for triggering downstream CI jobs or proposal review notifications.\n" +
-        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout`, `continueOnError`, and `stdoutOverrideFormat`), or an array of these.\n" +
         `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),
@@ -125,7 +125,7 @@ export const CommandHooksSchema = v.object({
       description:
         "Commands to run before the Git tag is created. Each command runs from the repository root.\n" +
         "Useful for final guardrails or external API sanity checks before cutting the permanent tag.\n" +
-        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout`, `continueOnError`, and `stdoutOverrideFormat`), or an array of these.\n" +
         `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),
@@ -135,7 +135,7 @@ export const CommandHooksSchema = v.object({
       description:
         "Commands to run after the Git tag is created but before the platform release (GitHub Release, etc.). Each command runs from the repository root.\n" +
         "Useful for building/compiling binaries so they can be atomically attached during the release creation step.\n" +
-        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout`, `continueOnError`, and `stdoutOverrideFormat`), or an array of these.\n" +
         `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),
@@ -145,7 +145,7 @@ export const CommandHooksSchema = v.object({
       description:
         "Commands to run after the platform release is fully live and assets are attached. Each command runs from the repository root.\n" +
         "Useful for announcements, webhooks, and publishing packages to external registries.\n" +
-        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout`, `continueOnError`, and `stdoutOverrideFormat`), or an array of these.\n" +
         `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),
@@ -157,7 +157,7 @@ export const CommandHooksSchema = v.object({
         "Commands to run after the main operation. Each command runs from the repository root.\n" +
         "These commands will always run regardless of operation outcome (success, skipped or failure). " +
         "It is recommended to check the outcome export variable if your script should only run under specific conditions.\n" +
-        "Can be specified as a single command string, a configuration object (to configure `timeout` and `continueOnError`), or an array of these.\n" +
+        "Can be specified as a single command string, a configuration object (to configure `timeout`, `continueOnError`, and `stdoutOverrideFormat`), or an array of these.\n" +
         `Available variables that cmds can use: ${DOCS_EXT_REF_TOKEN}/docs/export-variables.md`,
     }),
   ),

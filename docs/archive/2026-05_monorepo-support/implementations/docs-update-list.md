@@ -178,28 +178,28 @@ Add to each: *"This path is always relative to the repository root, even in mono
 ## Docs Updates Required
 
 ### [MODIFY] docs/config-options.md
-- [ ] Remove TOC entries: `runtime-config-override`, `runtime-config-override > path`, `runtime-config-override > format`
-- [ ] Remove the full `runtime-config-override` property section (~lines 1784-1817)
-- [ ] Update `working-branch-name-template` immutability note — change "runtime-config-override" → "stdout config override"
-- [ ] Update `pre-calculate-version` hook description — remove `runtime-config-override` reference
+- [x] Remove TOC entries: `runtime-config-override`, `runtime-config-override > path`, `runtime-config-override > format`
+- [x] Remove the full `runtime-config-override` property section (~lines 1784-1817)
+- [x] Update `working-branch-name-template` immutability note — change "runtime-config-override" → "stdout config override"
+- [x] Update `pre-calculate-version` hook description — remove `runtime-config-override` reference
 
 ### [MODIFY] docs/command-hooks.md
-- [ ] Update all `*(If overridden runtime config is returned, it applies moving forward).*` notes to clarify stdout-based mechanism
+- [x] Update all `*(If overridden runtime config is returned, it applies moving forward).*` notes to clarify stdout-based mechanism
 
 ### [MODIFY] docs/export-variables.md
-- [ ] Update `ZR_CONFIG` description — change `runtime-config-override` link to stdout config override mention
-- [ ] Update `ZR_INTERNAL_CONFIG` description — same
+- [x] Update `ZR_CONFIG` description — change `runtime-config-override` link to stdout config override mention
+- [x] Update `ZR_INTERNAL_CONFIG` description — same
 
 ### [MODIFY] README.md
-- [ ] Rewrite "Dynamic Configuration Overrides" section: replace "Runtime File Override" with "Runtime Stdout Override" (marker delimiters)
+- [x] Rewrite "Dynamic Configuration Overrides" section: replace "Runtime File Override" with "Runtime Stdout Override" (marker delimiters)
 
 ### [MODIFY] docs/workspace-config-options.md
-- [ ] Check for and remove any references to file-based override
+- [x] Check for and remove any references to file-based override
 
 ## JSON Schema Regeneration
-- [ ] Run `deno run -A scripts/gen-json-schema.ts` — `runtime-config-override` must disappear from generated schemas
+- [ ] Run `deno run -A scripts/gen-json-schema.ts` — `runtime-config-override` must disappear from generated schemas (deferred per user)
 
 ## Behavioral Changes (Breaking)
 
-- [ ] `runtime-config-override` config property removed — users must migrate to stdout-based override via marker delimiters
-- [ ] `isPerWorkspaceHook` parameter removed from `executeHookWithOverride` — all hooks now use the same stdout-only path
+- [x] `runtime-config-override` config property removed — users must migrate to stdout-based override via marker delimiters
+- [x] `isPerWorkspaceHook` parameter removed from `executeHookWithOverride` — all hooks now use the same stdout-only path
