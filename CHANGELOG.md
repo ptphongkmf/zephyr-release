@@ -3,6 +3,12 @@
 <br>
 
 <!-- CHANGELOG-BODY-START -->
+## [0.12.1](https://github.com/ptphongkmf/zephyr-release/compare/v0.12.0...v0.12.1) (2026-08-19) <!-- timezone: Asia/Ho_Chi_Minh -->
+
+### Bug Fixes
+
+- correct resolve order of working branch name template ([97b2fcd](https://github.com/ptphongkmf/zephyr-release/commit/97b2fcd33140190596797e075cf02b81d5d250ed))
+
 ## [0.12.0](https://github.com/ptphongkmf/zephyr-release/compare/v0.11.0...v0.12.0) (2026-08-19) <!-- timezone: Asia/Ho_Chi_Minh -->
 
 ### ⚠ BREAKING CHANGES
