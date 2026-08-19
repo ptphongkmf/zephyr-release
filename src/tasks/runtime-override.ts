@@ -3,6 +3,7 @@ import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import type { SemVer } from "@std/semver";
 import {
   addBasePatternContext,
+  addWorkingBranchPatternContext,
   addCurrentVersionPatternContext,
   addCustomPatternContext,
   addDatetimePatternContext,
@@ -77,16 +78,20 @@ export async function synchronizeRuntimeStateAfterOverride(
     config.customStringPatterns,
   );
 
-  const workingBranchName = await resolveStringTemplate(
-    config.review.workingBranchNameTemplate,
-    patternContext,
-  );
-
   patternContext = addBasePatternContext(
     patternContext,
     provider,
     triggerBranchName,
     config,
+  );
+
+  const workingBranchName = await resolveStringTemplate(
+    config.review.workingBranchNameTemplate,
+    patternContext,
+  );
+
+  patternContext = addWorkingBranchPatternContext(
+    patternContext,
     workingBranchName,
   );
 

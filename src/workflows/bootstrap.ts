@@ -15,6 +15,7 @@ import {
   createEmptyPatternContext,
   addCustomPatternContext,
   addBasePatternContext,
+  addWorkingBranchPatternContext,
   addDatetimePatternContext,
   type StringPatternContext,
 } from "../tasks/string-templates-and-patterns/pattern-context.ts";
@@ -53,18 +54,23 @@ export async function bootstrapOperation(
   let patternContext = createEmptyPatternContext();
   patternContext = addCustomPatternContext(patternContext, config.customStringPatterns);
 
-  const workingBranchName = await resolveStringTemplate(
-    config.review.workingBranchNameTemplate,
-    patternContext,
-  );
-
   patternContext = addBasePatternContext(
     patternContext,
     provider,
     inputs.triggerBranchName,
     config,
+  );
+
+  const workingBranchName = await resolveStringTemplate(
+    config.review.workingBranchNameTemplate,
+    patternContext,
+  );
+
+  patternContext = addWorkingBranchPatternContext(
+    patternContext,
     workingBranchName,
   );
+
   patternContext = addDatetimePatternContext(patternContext, config.timeZone);
   logger.debugStepFinish("Finished: Create string pattern context");
 

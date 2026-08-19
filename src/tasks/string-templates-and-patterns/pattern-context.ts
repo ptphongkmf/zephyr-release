@@ -65,7 +65,6 @@ export function addBasePatternContext(
   provider: PlatformProvider,
   triggerBranchName: string,
   config: AddBaseContextConfigParams,
-  workingBranchName: string,
 ): StringPatternContext {
   const base = {
     name: config.name,
@@ -76,16 +75,29 @@ export function addBasePatternContext(
     referencePathPart: provider.getReferencePathPart(),
 
     triggerBranchName: triggerBranchName,
-    workingBranchName: workingBranchName,
 
     timeZone: config.timeZone,
-  } satisfies Record<FixedBaseStringPattern, string | number | undefined>;
+  } satisfies Record<
+    Exclude<FixedBaseStringPattern, "workingBranchName">,
+    string | number | undefined
+  >;
 
   taskLogger.debug(
     "Fixed base string pattern context: " + JSON.stringify(base, null, 2),
   );
 
   return { ...patternContext, ...base };
+}
+
+export function addWorkingBranchPatternContext(
+  patternContext: StringPatternContext,
+  workingBranchName: string,
+): StringPatternContext {
+  taskLogger.debug(
+    "Working branch string pattern context: " +
+      JSON.stringify({ workingBranchName }, null, 2),
+  );
+  return { ...patternContext, workingBranchName };
 }
 
 export function addDatetimePatternContext(
