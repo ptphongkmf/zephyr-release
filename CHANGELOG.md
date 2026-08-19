@@ -3,6 +3,21 @@
 <br>
 
 <!-- CHANGELOG-BODY-START -->
+## [0.12.0](https://github.com/ptphongkmf/zephyr-release/compare/v0.11.0...v0.12.0) (2026-08-19) <!-- timezone: Asia/Ho_Chi_Minh -->
+
+### ⚠ BREAKING CHANGES
+
+- add experimental monorepo support (#39)
+- rename config prop `mode` to `releaseFlow`
+
+### Features
+
+- add experimental monorepo support ([#39](https://github.com/ptphongkmf/zephyr-release/issues/39)) ([d5bf91c](https://github.com/ptphongkmf/zephyr-release/commit/d5bf91c3fe9c5bd4e44ec2bf1e6ef3a4cc204843))
+
+### Code Refactoring
+
+- rename config prop `mode` to `releaseFlow` ([663ed13](https://github.com/ptphongkmf/zephyr-release/commit/663ed13fe948d3c187c1c460a2ceecb3122dfd5e))
+
 ## [0.11.0](https://github.com/ptphongkmf/zephyr-release/compare/v0.10.0...v0.11.0) (2026-05-25) <!-- timezone: Asia/Ho_Chi_Minh -->
 
 ### ⚠ BREAKING CHANGES
