@@ -30,7 +30,7 @@ jobs:
           private-key: ${{ secrets.WAYFEA_PRIVATE_KEY }}
 
       - name: Run Zephyr Release
-        uses: Pandoriux/zephyr-release@canary
+        uses: ptphongkmf/zephyr-release@v0.12.1
         with:
           token: ${{ steps.generate-token.outputs.token }}
           config-path: ".zephyr-release/config.json"
