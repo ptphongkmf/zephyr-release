@@ -1,28 +1,22 @@
-import { canParse, compare, parse } from "@std/semver";
+import * as v from "@valibot/valibot";
 import {
   githubGetHost,
   githubGetNamespace,
   githubGetRepositoryName,
 } from "./repository.ts";
 import type { GetOctokitFn, OctokitClient } from "./octokit.ts";
-import { RequestError } from "@octokit/request-error";
 import { joinUrlSegments } from "../../utils/transformers/url.ts";
 import type { TaggerRequest } from "../../types/tag.ts";
-import type { ProviderTag } from "../../types/providers/tag.ts";
+import type {
+  ProviderMatchedTag,
+  ProviderTag,
+} from "../../types/providers/tag.ts";
 import type { TagTypeOption } from "../../constants/release-tag-options.ts";
 import { execFileAsync } from "../../utils/child-process.ts";
 import process from "node:process";
 
 export function githubGetCompareTagUrl(tag1: string, tag2: string): string {
-  let compareSegment = tag1 + "..." + tag2;
-
-  if (canParse(tag1) && canParse(tag2)) {
-    const cmp = compare(parse(tag1), parse(tag2));
-
-    if (cmp === 1) {
-      compareSegment = tag2 + "..." + tag1;
-    }
-  }
+  const compareSegment = tag1 + "..." + tag2;
 
   return new URL(
     joinUrlSegments(
@@ -87,25 +81,70 @@ async function githubGetCompareTagUrlFromCurrentToLatest(
   ).href;
 }
 
+const GraphQlListTagsResponseSchema = v.object({
+  repository: v.object({
+    refs: v.object({
+      nodes: v.array(v.object({
+        name: v.string(),
+        target: v.object({
+          oid: v.string(),
+          target: v.optional(v.object({
+            oid: v.string(),
+          })),
+        }),
+      })),
+    }),
+  }),
+});
+
 /** @throws */
-async function githubGetLatestReleaseTag(
+async function githubFindLastReleaseTag(
   octokit: OctokitClient,
-): Promise<string | undefined> {
-  try {
-    const res = await octokit.rest.repos.getLatestRelease({
-      owner: githubGetNamespace(),
-      repo: githubGetRepositoryName(),
-    });
-
-    return res.data.tag_name;
-  } catch (error) {
-    if (error instanceof RequestError && error.status === 404) {
-      // No releases found
-      return undefined;
+  matchPatterns: RegExp[],
+): Promise<ProviderMatchedTag | undefined> {
+  const query = `
+    query($owner: String!, $repo: String!, $cursor: String) {
+      repository(owner: $owner, name: $repo) {
+        refs(refPrefix: "refs/tags/", first: 100, after: $cursor, orderBy: {field: TAG_COMMIT_DATE, direction: DESC}) {
+          nodes {
+            name
+            target {
+              oid
+              ... on Tag {
+                target {
+                  oid
+                }
+              }
+            }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
     }
+  `;
 
-    throw error;
+  const tagsIterator = octokit.graphql.paginate.iterator(query, {
+    owner: githubGetNamespace(),
+    repo: githubGetRepositoryName(),
+  });
+
+  for await (const response of tagsIterator) {
+    const parsedResponse = v.parse(GraphQlListTagsResponseSchema, response);
+
+    const nodes = parsedResponse.repository.refs.nodes;
+    for (const node of nodes) {
+      if (matchPatterns.some((p) => p.test(node.name))) {
+        const commitHash = node.target.target?.oid ?? node.target.oid;
+
+        return { hash: commitHash, tagName: node.name };
+      }
+    }
   }
+
+  return undefined;
 }
 
 /** @throws */
@@ -185,8 +224,9 @@ export function makeGithubGetCompareTagUrlFromCurrentToLatest(
     );
 }
 
-export function makeGithubGetLatestReleaseTag(getOctokit: GetOctokitFn) {
-  return () => githubGetLatestReleaseTag(getOctokit());
+export function makeGithubFindLastReleaseTag(getOctokit: GetOctokitFn) {
+  return (matchPatterns: RegExp[]) =>
+    githubFindLastReleaseTag(getOctokit(), matchPatterns);
 }
 
 export function makeGithubCreateTag(getOctokit: GetOctokitFn) {

@@ -28,11 +28,11 @@ export const DEFAULT_RELEASE_SECTION_HEADING_TEMPLATE_ALT =
 
 // Commit
 export const DEFAULT_COMMIT_HEADER_TEMPLATE =
-  liquid`chore: release v{{ nextVersion }}`;
+  liquid`chore: release {{ releases | format_releases }}`;
 
 // Proposal (PR, MR, ...)
 export const DEFAULT_PROPOSAL_TITLE_TEMPLATE =
-  liquid`chore: release v{{ nextVersion }}`;
+  liquid`chore: release {{ releases | format_releases }}`;
 
 export const DEFAULT_PROPOSAL_HEADER_TEMPLATE = "# 🤖 Release Proposal";
 
@@ -49,3 +49,10 @@ export const DEFAULT_TAG_MESSAGE_TEMPLATE = liquid`Release {{ tagName }}`;
 export const DEFAULT_RELEASE_TITLE_TEMPLATE = liquid`{{ tagName }}`;
 
 export const DEFAULT_RELEASE_BODY_TEMPLATE = liquid`{{ changelogRelease }}`;
+
+// Workspace (monorepo) defaults
+export const DEFAULT_WORKSPACE_TAG_NAME_TEMPLATE =
+  liquid`{{ name }}-v{{ nextVersion }}`;
+
+export const DEFAULT_WORKSPACE_WORKING_BRANCH_NAME_TEMPLATE =
+  "zephyr-release/{{ name }}/{{ triggerBranchName }}";

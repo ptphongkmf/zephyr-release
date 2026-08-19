@@ -5,6 +5,7 @@ import type { ProviderProposal } from "../types/providers/proposal.ts";
 import type { ReviewConfigOutput } from "../schemas/configs/modules/review-config.ts";
 import { getTextFile } from "./file.ts";
 import { resolveStringTemplate } from "./string-templates-and-patterns/resolve-template.ts";
+import type { StringPatternContext } from "./string-templates-and-patterns/pattern-context.ts";
 import { PROPOSAL_MARKERS } from "../constants/markers.ts";
 
 type FindProposalInputsParams = Pick<
@@ -74,6 +75,7 @@ export async function createProposalContent(
     "triggerCommitHash" | "sourceMode" | "workspacePath"
   >,
   config: CreateProposalContentConfigParams,
+  patternContext: StringPatternContext,
 ): Promise<string> {
   const {
     headerTemplate,
@@ -92,9 +94,9 @@ export async function createProposalContent(
       headerTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );
-    proposalHeader = await resolveStringTemplate(proposalHeaderTemplate);
+    proposalHeader = await resolveStringTemplate(proposalHeaderTemplate, patternContext);
   } else {
-    proposalHeader = await resolveStringTemplate(headerTemplate);
+    proposalHeader = await resolveStringTemplate(headerTemplate, patternContext);
   }
 
   let proposalBody: string;
@@ -104,9 +106,9 @@ export async function createProposalContent(
       bodyTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );
-    proposalBody = await resolveStringTemplate(proposalBodyTemplate);
+    proposalBody = await resolveStringTemplate(proposalBodyTemplate, patternContext);
   } else {
-    proposalBody = await resolveStringTemplate(bodyTemplate);
+    proposalBody = await resolveStringTemplate(bodyTemplate, patternContext);
   }
   const proposalBodyWithMarkers = [
     PROPOSAL_MARKERS.bodyStart,
@@ -122,9 +124,9 @@ export async function createProposalContent(
       footerTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );
-    proposalFooter = await resolveStringTemplate(proposalFooterTemplate);
+    proposalFooter = await resolveStringTemplate(proposalFooterTemplate, patternContext);
   } else {
-    proposalFooter = await resolveStringTemplate(footerTemplate);
+    proposalFooter = await resolveStringTemplate(footerTemplate, patternContext);
   }
 
   return [proposalHeader, proposalBodyWithMarkers, proposalFooter].filter(
@@ -160,6 +162,7 @@ export async function createOrUpdateProposal(
     "triggerCommitHash" | "workspacePath" | "sourceMode"
   >,
   config: CreateOrUpdateProposalConfigParams,
+  patternContext: StringPatternContext,
 ): Promise<ProviderProposal> {
   const {
     workingBranchName,
@@ -168,11 +171,12 @@ export async function createOrUpdateProposal(
   } = proposalData;
   const { draft, titleTemplate } = config.review;
 
-  const proposalTitle = await resolveStringTemplate(titleTemplate);
+  const proposalTitle = await resolveStringTemplate(titleTemplate, patternContext);
   const proposalContent = await createProposalContent(
     provider,
     inputs,
     config,
+    patternContext,
   );
 
   let proposal: ProviderProposal;

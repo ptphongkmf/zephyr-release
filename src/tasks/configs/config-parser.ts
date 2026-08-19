@@ -1,5 +1,8 @@
 import { taskLogger } from "../logger.ts";
-import type { ConfigFileFormat, ConfigFileFormatWithAuto } from "../../constants/file-formats.ts";
+import type {
+  ConfigFileFormat,
+  ConfigFileFormatWithAuto,
+} from "../../constants/file-formats.ts";
 import {
   ConfigFileFormatMap,
   ConfigFileFormats,
@@ -45,7 +48,10 @@ export function parseConfig(
       return { parsedConfig, resolvedFormatResult: configFormat };
     }
 
-    const detectedFormat = detectFileFormatFromPath(configPath, ConfigFileFormatMap);
+    const detectedFormat = detectFileFormatFromPath(
+      configPath,
+      ConfigFileFormatMap,
+    );
     const trialOrder = getConfigFormatTrialOrder(detectedFormat);
 
     const triedFormats: string[] = [];

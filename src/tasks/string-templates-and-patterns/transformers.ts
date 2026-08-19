@@ -129,7 +129,25 @@ export function registerTransformersToTemplateEngine(
       });
     },
   );
+
+  liquidEngine.registerFilter(
+    "format_releases",
+    (releases: unknown, separator?: unknown) => {
+      const parsedReleases = v.safeParse(parseFormatReleasesSchema, releases);
+      if (!parsedReleases.success) {
+        throw new Error(
+          `Filter "format_releases" input is invalid: requires an array of objects with a string "tagName" property.`,
+        );
+      }
+
+      const sep = typeof separator === "string" ? separator : ", ";
+
+      return parsedReleases.output.map((r) => r.tagName).join(sep);
+    },
+  );
 }
+
+const parseFormatReleasesSchema = v.array(v.object({ tagName: v.string() }));
 
 const parseReferencesCommitSchema = v.object({
   references: v.array(v.object({ prefix: v.string(), issue: v.string() })),

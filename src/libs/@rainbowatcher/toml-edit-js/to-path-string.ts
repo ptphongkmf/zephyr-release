@@ -8,7 +8,7 @@ export function toTomlPathString(pathArray: (string | number)[]): string {
       // Numbers are always in brackets, no dot needed before them
       return acc + `[${seg}]`;
     }
-    
+
     const needsQuotes = /[^a-zA-Z0-9_-]/.test(seg) ? `"${seg}"` : seg;
 
     // Add dot separator only if not the first segment

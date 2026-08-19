@@ -12,10 +12,13 @@ import {
   findOpenProposal,
 } from "../tasks/proposal.ts";
 import {
-  createCustomStringPatternContext,
-  createFixedAndDynamicDatetimeStringPatternContext,
-  createFixedBaseStringPatternContext,
+  createEmptyPatternContext,
+  addCustomPatternContext,
+  addBasePatternContext,
+  addDatetimePatternContext,
+  type StringPatternContext,
 } from "../tasks/string-templates-and-patterns/pattern-context.ts";
+import { resolveStringTemplate } from "../tasks/string-templates-and-patterns/resolve-template.ts";
 import { registerTransformersToTemplateEngine } from "../tasks/string-templates-and-patterns/transformers.ts";
 import type { OperationTriggerContext } from "../types/operation-context.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
@@ -26,6 +29,7 @@ export interface BootstrapResult {
   workingBranchResult: WorkingBranchResult;
   associatedProposalForCommit: ProviderProposal | undefined;
   associatedProposalFromBranch: ProviderProposal | undefined;
+  patternContext: StringPatternContext;
 }
 
 export async function bootstrapOperation(
@@ -45,28 +49,30 @@ export async function bootstrapOperation(
   registerTransformersToTemplateEngine(provider);
   logger.stepFinish("Finished: Register transformers to template engine");
 
-  logger.debugStepStart("Starting: Create custom string pattern context");
-  createCustomStringPatternContext(config.customStringPatterns);
-  logger.debugStepFinish("Finished: Create custom string pattern context");
+  logger.debugStepStart("Starting: Create string pattern context");
+  let patternContext = createEmptyPatternContext();
+  patternContext = addCustomPatternContext(patternContext, config.customStringPatterns);
 
-  logger.debugStepStart(
-    "Starting: Create fixed base and datetime string pattern context",
+  const workingBranchName = await resolveStringTemplate(
+    config.review.workingBranchNameTemplate,
+    patternContext,
   );
-  await createFixedBaseStringPatternContext(
+
+  patternContext = addBasePatternContext(
+    patternContext,
     provider,
     inputs.triggerBranchName,
     config,
+    workingBranchName,
   );
-  createFixedAndDynamicDatetimeStringPatternContext(config.timeZone);
-  logger.debugStepFinish(
-    "Finished: Create fixed base and datetime string pattern context",
-  );
+  patternContext = addDatetimePatternContext(patternContext, config.timeZone);
+  logger.debugStepFinish("Finished: Create string pattern context");
 
   logger.stepStart("Starting: Ensure working branch is prepared");
   const workingBranchResult = await setupWorkingBranch(
     provider,
     inputs,
-    config,
+    workingBranchName,
   );
   logger.stepFinish("Finished: Ensure working branch is prepared");
 
@@ -99,5 +105,6 @@ export async function bootstrapOperation(
     workingBranchResult,
     associatedProposalForCommit,
     associatedProposalFromBranch,
+    patternContext: patternContext,
   };
 }

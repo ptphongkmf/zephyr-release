@@ -22,39 +22,53 @@ import { resolveStringTemplate } from "./resolve-template.ts";
 import type { ReviewConfigOutput } from "../../schemas/configs/modules/review-config.ts";
 import { jsonValueNormalizer } from "../../utils/transformers/json.ts";
 
-export const STRING_PATTERN_CONTEXT: Record<string, unknown> = {};
+// --- Type ---
 
-// new introduced
-const BUILT_IN_CONTEXT: Record<string, unknown> = {};
-const CUSTOM_CONTEXT: Record<string, unknown> = {};
+export type StringPatternContext = Record<string, unknown>;
 
-export function createCustomStringPatternContext(
-  context: ConfigOutput["customStringPatterns"],
-): void {
-  Object.assign(CUSTOM_CONTEXT, context);
-  Object.assign(STRING_PATTERN_CONTEXT, CUSTOM_CONTEXT, BUILT_IN_CONTEXT);
+// --- Pure builder functions ---
 
-  taskLogger.debug(
-    "Custom string pattern context: " + JSON.stringify(CUSTOM_CONTEXT, null, 2),
-  );
+export function createEmptyPatternContext(): StringPatternContext {
+  return {};
 }
 
-type CreateFixedStrPatCtxConfigParams =
+export function addCustomPatternContext(
+  patternContext: StringPatternContext,
+  customPatterns: ConfigOutput["customStringPatterns"],
+): StringPatternContext {
+  if (!customPatterns || Object.keys(customPatterns).length === 0) return patternContext;
+
+  taskLogger.debug(
+    "Custom string pattern context: " +
+      JSON.stringify(customPatterns, null, 2),
+  );
+  // Custom goes first so built-in keys always win (spread order = last wins)
+  return { ...customPatterns, ...patternContext };
+}
+
+export type AddBaseContextConfigParams =
   & Pick<ConfigOutput, "name" | "timeZone">
   & {
     review: Pick<ReviewConfigOutput, "workingBranchNameTemplate">;
   };
 
-export async function createFixedBaseStringPatternContext(
+/**
+ * Add base project/repo patterns to context.
+ *
+ * The caller must resolve `workingBranchName` BEFORE calling this,
+ * using the partial context built so far. This removes the old circular
+ * dependency where createFixedBaseStringPatternContext called
+ * resolveStringTemplate while mutating the same global it read from.
+ */
+export function addBasePatternContext(
+  patternContext: StringPatternContext,
   provider: PlatformProvider,
   triggerBranchName: string,
-  config: CreateFixedStrPatCtxConfigParams,
-): Promise<void> {
-  const { name, timeZone } = config;
-  const { workingBranchNameTemplate } = config.review;
-
-  const context = {
-    name: name,
+  config: AddBaseContextConfigParams,
+  workingBranchName: string,
+): StringPatternContext {
+  const base = {
+    name: config.name,
     host: provider.getHost(),
     namespace: provider.getNamespace(),
     repository: provider.getRepositoryName(),
@@ -62,34 +76,22 @@ export async function createFixedBaseStringPatternContext(
     referencePathPart: provider.getReferencePathPart(),
 
     triggerBranchName: triggerBranchName,
+    workingBranchName: workingBranchName,
 
-    timeZone: timeZone,
-  } satisfies Omit<
-    Record<FixedBaseStringPattern, string | number | undefined>,
-    "workingBranchName"
-  >;
-
-  Object.assign(BUILT_IN_CONTEXT, context);
-  Object.assign(STRING_PATTERN_CONTEXT, CUSTOM_CONTEXT, BUILT_IN_CONTEXT);
-
-  const workingBranchContext = {
-    workingBranchName: await resolveStringTemplate(
-      workingBranchNameTemplate,
-    ),
-  } satisfies Pick<Record<FixedBaseStringPattern, string>, "workingBranchName">;
-
-  Object.assign(BUILT_IN_CONTEXT, workingBranchContext);
-  Object.assign(STRING_PATTERN_CONTEXT, CUSTOM_CONTEXT, BUILT_IN_CONTEXT);
+    timeZone: config.timeZone,
+  } satisfies Record<FixedBaseStringPattern, string | number | undefined>;
 
   taskLogger.debug(
-    "Fixed base string pattern context: " +
-      JSON.stringify({ ...context, ...workingBranchContext }, null, 2),
+    "Fixed base string pattern context: " + JSON.stringify(base, null, 2),
   );
+
+  return { ...patternContext, ...base };
 }
 
-export function createFixedAndDynamicDatetimeStringPatternContext(
+export function addDatetimePatternContext(
+  patternContext: StringPatternContext,
   timeZone: string,
-): void {
+): StringPatternContext {
   const targetZoneId = ZoneId.of(timeZone);
   const fixedZonedDateTime = nativeJs(startTime, targetZoneId);
 
@@ -117,18 +119,18 @@ export function createFixedAndDynamicDatetimeStringPatternContext(
     nowss: () => zdtFormat(nativeJs(new Date(), targetZoneId), "ss"),
   } satisfies Record<DynamicDatetimeStringPattern, () => string | number>;
 
-  Object.assign(BUILT_IN_CONTEXT, fixedContext, dynamicContext);
-  Object.assign(STRING_PATTERN_CONTEXT, CUSTOM_CONTEXT, BUILT_IN_CONTEXT);
-
   taskLogger.debug(
     "Fixed and dynamic datetime string pattern context initialized.",
   );
+
+  return { ...patternContext, ...fixedContext, ...dynamicContext };
 }
 
-export function createFixedCurrentVersionStringPatternContext(
+export function addCurrentVersionPatternContext(
+  patternContext: StringPatternContext,
   currentVersion?: SemVer,
-) {
-  if (!currentVersion) return;
+): StringPatternContext {
+  if (!currentVersion) return patternContext;
 
   const versionContext = {
     currentVersion: format(currentVersion),
@@ -142,18 +144,18 @@ export function createFixedCurrentVersionStringPatternContext(
       : undefined,
   } satisfies Record<FixedCurrentVersionStringPattern, string | undefined>;
 
-  Object.assign(BUILT_IN_CONTEXT, versionContext);
-  Object.assign(STRING_PATTERN_CONTEXT, CUSTOM_CONTEXT, BUILT_IN_CONTEXT);
-
   taskLogger.debug(
     "Fixed current version string pattern context: " +
       JSON.stringify(versionContext, null, 2),
   );
+
+  return { ...patternContext, ...versionContext };
 }
 
-export function createFixedNextVersionStringPatternContext(
+export function addNextVersionPatternContext(
+  patternContext: StringPatternContext,
   nextVersion: SemVer,
-) {
+): StringPatternContext {
   const versionContext = {
     nextVersion: format(nextVersion),
     nextVersionCore:
@@ -166,37 +168,36 @@ export function createFixedNextVersionStringPatternContext(
       : undefined,
   } satisfies Record<FixedNextVersionStringPattern, string | undefined>;
 
-  Object.assign(BUILT_IN_CONTEXT, versionContext);
-  Object.assign(STRING_PATTERN_CONTEXT, CUSTOM_CONTEXT, BUILT_IN_CONTEXT);
-
   taskLogger.debug(
     "Fixed next version string pattern context: " +
       JSON.stringify(versionContext, null, 2),
   );
+
+  return { ...patternContext, ...versionContext };
 }
 
-export async function createFixedTagStringPatternContext(
+export async function addTagPatternContext(
+  patternContext: StringPatternContext,
   tagTemplate: string,
-) {
+): Promise<StringPatternContext> {
   const tagContext = {
-    tagName: await resolveStringTemplate(tagTemplate),
+    tagName: await resolveStringTemplate(tagTemplate, patternContext),
   } satisfies Record<FixedTagStringPattern, string>;
 
-  Object.assign(BUILT_IN_CONTEXT, tagContext);
-  Object.assign(STRING_PATTERN_CONTEXT, CUSTOM_CONTEXT, BUILT_IN_CONTEXT);
-
   taskLogger.debug(
-    "Fixed tag string pattern context: " +
-      JSON.stringify(tagContext, null, 2),
+    "Fixed tag string pattern context: " + JSON.stringify(tagContext, null, 2),
   );
+
+  return { ...patternContext, ...tagContext };
 }
 
-export function createDynamicChangelogStringPatternContext(
+export function addChangelogPatternContext(
+  patternContext: StringPatternContext,
   changelogRelease?: string,
   changelogReleaseBody?: string,
   changelogReleaseAlt?: string,
   changelogReleaseBodyAlt?: string,
-) {
+): StringPatternContext {
   const context = {
     changelogRelease,
     changelogReleaseBody,
@@ -204,19 +205,38 @@ export function createDynamicChangelogStringPatternContext(
     changelogReleaseBodyAlt,
   } satisfies Record<DynamicChangelogStringPattern, string | undefined>;
 
-  Object.assign(BUILT_IN_CONTEXT, context);
-  Object.assign(STRING_PATTERN_CONTEXT, CUSTOM_CONTEXT, BUILT_IN_CONTEXT);
-
   taskLogger.debug(
     "Dynamic changelog string pattern context: " +
       JSON.stringify(context, null, 2),
   );
+
+  return { ...patternContext, ...context };
 }
 
-export async function stringifyCurrentPatternContext(): Promise<string> {
+// --- New: releases context ---
+
+export interface ReleaseContextEntry {
+  name: string;
+  nextVersion: string;
+  tagName: string;
+  isWorkspace: boolean;
+}
+
+export function addReleasesPatternContext(
+  patternContext: StringPatternContext,
+  releases: ReleaseContextEntry[],
+): StringPatternContext {
+  return { ...patternContext, releases };
+}
+
+// --- Stringify ---
+
+export async function stringifyPatternContext(
+  patternContext: StringPatternContext,
+): Promise<string> {
   const resolvedContext: Record<string, unknown> = {};
 
-  for (const [key, value] of Object.entries(STRING_PATTERN_CONTEXT)) {
+  for (const [key, value] of Object.entries(patternContext)) {
     if (typeof value === "function") {
       try {
         const result = await value();

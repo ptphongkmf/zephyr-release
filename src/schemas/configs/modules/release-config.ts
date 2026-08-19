@@ -52,7 +52,8 @@ export const ReleaseConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing release title template. Overrides `titleTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     headerTemplate: v.pipe(
@@ -68,7 +69,8 @@ export const ReleaseConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing release header template. Overrides `headerTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     bodyTemplate: v.pipe(
@@ -85,7 +87,8 @@ export const ReleaseConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing release body template. Overrides `bodyTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     footerTemplate: v.pipe(
@@ -101,7 +104,8 @@ export const ReleaseConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing release footer template. Overrides `footerTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
 

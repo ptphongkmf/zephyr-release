@@ -1,101 +1,38 @@
-import { deepMerge } from "@std/collections";
-import * as v from "@valibot/valibot";
-import type { ConfigOutput } from "../schemas/configs/config.ts";
-import { parseConfig } from "./configs/config-parser.ts";
-import { getTextFile } from "./file.ts";
-import { taskLogger } from "./logger.ts";
-import { jsonValueNormalizer } from "../utils/transformers/json.ts";
-import { transformObjKeyToCamelCase } from "../utils/transformers/object.ts";
-import { formatValibotIssues } from "../utils/formatters/valibot.ts";
-import { ConfigSchema } from "../schemas/configs/config.ts";
+import { CONFIG_OVERRIDE_MARKERS } from "../constants/config-override-markers.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import type { SemVer } from "@std/semver";
 import {
-  createCustomStringPatternContext,
-  createFixedAndDynamicDatetimeStringPatternContext,
-  createFixedBaseStringPatternContext,
-  createFixedCurrentVersionStringPatternContext,
-  createFixedNextVersionStringPatternContext,
-  createFixedTagStringPatternContext,
-  stringifyCurrentPatternContext,
+  addBasePatternContext,
+  addCurrentVersionPatternContext,
+  addCustomPatternContext,
+  addDatetimePatternContext,
+  addNextVersionPatternContext,
+  addTagPatternContext,
+  createEmptyPatternContext,
+  stringifyPatternContext,
+  type StringPatternContext,
 } from "./string-templates-and-patterns/pattern-context.ts";
-import {
-  toOutputKey,
-  toEnvKey,
-} from "../utils/transformers/case.ts";
+import { resolveStringTemplate } from "./string-templates-and-patterns/resolve-template.ts";
+import { toEnvKey, toOutputKey } from "../utils/transformers/case.ts";
+import { jsonValueNormalizer } from "../utils/transformers/json.ts";
+import { taskLogger } from "./logger.ts";
+import type { ConfigOutput } from "../schemas/configs/config.ts";
 
-interface ResolvedRuntimeConfigResult {
-  rawResolvedRuntime: object;
-  resolvedRuntime: ConfigOutput;
-}
+/**
+ * Extract config override JSON from captured stdout using marker delimiters.
+ * Returns undefined if no markers found.
+ */
+export function extractOverrideFromStdout(
+  stdout: string,
+): string | undefined {
+  const startIdx = stdout.indexOf(CONFIG_OVERRIDE_MARKERS.start);
+  const endIdx = stdout.lastIndexOf(CONFIG_OVERRIDE_MARKERS.end);
 
-/** @throws */
-export async function resolveRuntimeConfigOverride(
-  rawConfig: object,
-  config: ConfigOutput,
-  workspacePath: string,
-): Promise<ResolvedRuntimeConfigResult | undefined> {
-  const runtimeConfigOverride = config.runtimeConfigOverride;
+  if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) return undefined;
 
-  if (!runtimeConfigOverride) return undefined;
-
-  const runtimeOverrideText = await getTextFile(
-    "local",
-    runtimeConfigOverride.path,
-    { workspacePath },
-  );
-
-  if (!runtimeOverrideText.trim()) return undefined;
-
-  const parsedRawResult = parseConfig(
-    runtimeOverrideText,
-    runtimeConfigOverride.format,
-    runtimeConfigOverride.path,
-  );
-
-  taskLogger.info(
-    `Runtime config override parsed successfully (${parsedRawResult.resolvedFormatResult})`,
-  );
-
-  taskLogger.info("Merging runtime override with current config...");
-  const rawFinalConfig = deepMerge(
-    rawConfig,
-    parsedRawResult.parsedConfig,
-    { arrays: "replace" },
-  );
-
-  const finalConfig = deepMerge(
-    config,
-    transformObjKeyToCamelCase(parsedRawResult.parsedConfig),
-    { arrays: "replace" },
-  );
-
-  // Preserve core structural fields
-  // workingBranchNameTemplate
-  finalConfig.review.workingBranchNameTemplate =
-    config.review.workingBranchNameTemplate;
-
-  const resolvedFinalConfigResult = v.safeParse(
-    ConfigSchema,
-    finalConfig,
-  );
-  if (!resolvedFinalConfigResult.success) {
-    throw new Error(
-      `\`${resolveRuntimeConfigOverride.name}\` failed!` +
-        formatValibotIssues(resolvedFinalConfigResult.issues),
-    );
-  }
-
-  taskLogger.startGroup("Resolved runtime override config:");
-  taskLogger.info(
-    JSON.stringify(resolvedFinalConfigResult.output, jsonValueNormalizer, 2),
-  );
-  taskLogger.endGroup();
-
-  return {
-    rawResolvedRuntime: rawFinalConfig,
-    resolvedRuntime: resolvedFinalConfigResult.output,
-  };
+  return stdout
+    .substring(startIdx + CONFIG_OVERRIDE_MARKERS.start.length, endIdx)
+    .trim();
 }
 
 interface SynchronizeRuntimeStateParams {
@@ -103,16 +40,17 @@ interface SynchronizeRuntimeStateParams {
   config: ConfigOutput;
   rawConfig: object;
   triggerBranchName: string;
+  currentPatternContext: StringPatternContext;
   nextVersion?: SemVer;
   currentVersion?: SemVer;
 }
 
 /**
- * Resets and recalculates the global STRING_PATTERN_CONTEXT and re-exports
- * stale environment variables after a runtime config override.
+ * Rebuilds the pattern context from scratch and re-exports stale
+ * environment variables after a runtime config override.
  *
- * This must be called every time `resolveRuntimeConfigOverride` produces a
- * new config, so that template-derived values (e.g. `tagName`,
+ * This must be called every time a stdout config override is applied,
+ * so that template-derived values (e.g. `tagName`,
  * `workingBranchName`) and the exported `ZR_CONFIG`, `ZR_INTERNAL_CONFIG`,
  * and `ZR_PATTERN_CONTEXT` stay in sync with the overridden config.
  *
@@ -120,54 +58,67 @@ interface SynchronizeRuntimeStateParams {
  */
 export async function synchronizeRuntimeStateAfterOverride(
   params: SynchronizeRuntimeStateParams,
-): Promise<void> {
+): Promise<StringPatternContext> {
   const {
     provider,
     config,
     rawConfig,
     triggerBranchName,
+    currentPatternContext,
     nextVersion,
     currentVersion,
   } = params;
 
   taskLogger.debug("Synchronizing runtime state after config override...");
 
-  // 1. Refresh custom string patterns (user-defined context keys).
-  createCustomStringPatternContext(config.customStringPatterns);
+  let patternContext = createEmptyPatternContext();
+  patternContext = addCustomPatternContext(
+    patternContext,
+    config.customStringPatterns,
+  );
 
-  // 2. Refresh fixed base context (name, timeZone, workingBranchName, etc.).
-  //
-  // NOTE ON IMMUTABLE FIELDS:
-  // The `config` object passed here has already rejected overrides for immutable fields
-  // during the resolution phase. Re-evaluating this context is perfectly safe; it
-  // ensures dynamic patterns update while strictly preserving the original structural
-  // templates for:
-  // - `review.workingBranchNameTemplate`
-  await createFixedBaseStringPatternContext(
+  const workingBranchName = await resolveStringTemplate(
+    config.review.workingBranchNameTemplate,
+    patternContext,
+  );
+
+  patternContext = addBasePatternContext(
+    patternContext,
     provider,
     triggerBranchName,
     config,
+    workingBranchName,
   );
 
-  // 3. Refresh datetime context (timezone may have changed).
-  createFixedAndDynamicDatetimeStringPatternContext(config.timeZone);
+  patternContext = addDatetimePatternContext(patternContext, config.timeZone);
 
-  // 4. Refresh version context if version is available at this lifecycle stage.
-  // Also affect tag name
   if (currentVersion) {
-    createFixedCurrentVersionStringPatternContext(currentVersion);
+    patternContext = addCurrentVersionPatternContext(
+      patternContext,
+      currentVersion,
+    );
   }
 
   if (nextVersion) {
-    createFixedNextVersionStringPatternContext(nextVersion);
-    await createFixedTagStringPatternContext(config.tag.nameTemplate);
+    patternContext = addNextVersionPatternContext(patternContext, nextVersion);
+    patternContext = await addTagPatternContext(
+      patternContext,
+      config.tag.nameTemplate,
+    );
   }
 
-  // 5. Re-export the three dynamic variables that become stale after override.
+  // Preserve releases from the current context if they exist
+  if (currentPatternContext.releases) {
+    patternContext = {
+      ...patternContext,
+      releases: currentPatternContext.releases,
+    };
+  }
+
   const staleExports = {
     config: JSON.stringify(rawConfig, jsonValueNormalizer),
     internalConfig: JSON.stringify(config, jsonValueNormalizer),
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   };
 
   Object.entries(staleExports).forEach(([k, v]) => {
@@ -176,4 +127,6 @@ export async function synchronizeRuntimeStateAfterOverride(
   });
 
   taskLogger.debug("Runtime state synchronized.");
+
+  return patternContext;
 }

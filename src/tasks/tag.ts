@@ -1,5 +1,6 @@
 import { getTextFile } from "./file.ts";
 import { resolveStringTemplate } from "./string-templates-and-patterns/resolve-template.ts";
+import type { StringPatternContext } from "./string-templates-and-patterns/pattern-context.ts";
 import { TaggerDateOptions } from "../constants/release-tag-options.ts";
 import type { TagConfigOutput } from "../schemas/configs/modules/tag-config.ts";
 import type { InputsOutput } from "../schemas/inputs/inputs.ts";
@@ -28,6 +29,7 @@ export async function createTag(
   targetCommitHash: string,
   inputs: CreateTagInputsParams,
   config: CreateTagConfigParams,
+  patternContext: StringPatternContext,
 ) {
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
   const {
@@ -45,9 +47,9 @@ export async function createTag(
       messageTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );
-    tagMessage = await resolveStringTemplate(msgTemplate);
+    tagMessage = await resolveStringTemplate(msgTemplate, patternContext);
   } else {
-    tagMessage = await resolveStringTemplate(messageTemplate);
+    tagMessage = await resolveStringTemplate(messageTemplate, patternContext);
   }
 
   let taggerData: TaggerRequest | undefined;
@@ -83,7 +85,7 @@ export async function createTag(
   }
 
   return await provider.createTag(
-    await resolveStringTemplate(nameTemplate),
+    await resolveStringTemplate(nameTemplate, patternContext),
     targetCommitHash,
     type,
     tagMessage,

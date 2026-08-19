@@ -7,76 +7,17 @@ import type {
   ProviderCommit,
   ProviderCompareCommits,
 } from "../../types/providers/commit.ts";
-import { parseLooseSemVer } from "../../utils/parsers/semver.ts";
 
 /** @throws */
-async function githubListCommitsFromGivenToLastRelease(
+async function githubListCommitsInRange(
   octokit: OctokitClient,
-  commitHash: string,
-  maxCommitsToResolve: number,
-  resolveUntilCommitHash?: string,
+  fromHash: string,
+  stopHash?: string,
+  path?: string,
+  maxCommits: number = 100,
 ): Promise<ProviderCommit[]> {
   const owner = githubGetNamespace();
   const repo = githubGetRepositoryName();
-
-  let platformReleaseTargetSha: string | undefined = undefined;
-  const coercedTagMap = new Map<string, string>();
-
-  if (!resolveUntilCommitHash) {
-    try {
-      const releasesIterator = octokit.paginate.iterator(
-        octokit.rest.repos.listReleases,
-        {
-          owner,
-          repo,
-          per_page: 100,
-        },
-      );
-
-      for await (const response of releasesIterator) {
-        const validRelease = response.data.find((r) => r.draft === false);
-
-        if (validRelease) {
-          const commitRes = await octokit.rest.repos.getCommit({
-            owner,
-            repo,
-            ref: validRelease.tag_name,
-          });
-
-          platformReleaseTargetSha = commitRes.data.sha;
-          break;
-        }
-      }
-    } catch { /* ignore */ }
-  }
-
-  if (!resolveUntilCommitHash && !platformReleaseTargetSha) {
-    let tagCount = 0;
-    const TAG_LIMIT = 100;
-
-    const tagsIterator = octokit.paginate.iterator(
-      octokit.rest.repos.listTags,
-      {
-        owner,
-        repo,
-        per_page: 100,
-      },
-    );
-
-    tagsLoop: for await (const response of tagsIterator) {
-      for (const tag of response.data) {
-        if (!coercedTagMap.has(tag.commit.sha)) {
-          const coerced = parseLooseSemVer(tag.name, true);
-          if (coerced) {
-            coercedTagMap.set(tag.commit.sha, tag.name);
-          }
-        }
-
-        tagCount++;
-        if (tagCount >= TAG_LIMIT) break tagsLoop;
-      }
-    }
-  }
 
   const collectedCommits: ProviderCommit[] = [];
 
@@ -85,42 +26,21 @@ async function githubListCommitsFromGivenToLastRelease(
     {
       owner,
       repo,
-      sha: commitHash,
+      sha: fromHash,
+      path: path,
       per_page: 100,
     },
   );
 
   for await (const response of commitsIterator) {
     for (const commit of response.data) {
-      // The Force (Explicit Hash Override) --
-      if (resolveUntilCommitHash && commit.sha === resolveUntilCommitHash) {
-        return collectedCommits;
-      }
-
-      // Happy case (Platform Release)
-      if (
-        !resolveUntilCommitHash && platformReleaseTargetSha &&
-        commit.sha === platformReleaseTargetSha
-      ) {
+      if (stopHash && commit.sha === stopHash) {
         if (collectedCommits.length === 0) {
           throw new NoCommitFoundError(
             `No new commits found. The starting commit is already released.`,
           );
         }
         return collectedCommits;
-      }
-
-      // Local Fallback (Coerced Tag)
-      if (!resolveUntilCommitHash && !platformReleaseTargetSha) {
-        const coercedTagName = coercedTagMap.get(commit.sha);
-        if (coercedTagName) {
-          if (collectedCommits.length === 0) {
-            throw new NoCommitFoundError(
-              `No new commits found. The starting commit is already tagged (${coercedTagName}).`,
-            );
-          }
-          return collectedCommits;
-        }
       }
 
       collectedCommits.push({
@@ -132,22 +52,21 @@ async function githubListCommitsFromGivenToLastRelease(
         author: {
           name: commit.commit.author?.name ?? "",
           email: commit.commit.author?.email ?? "",
-          // waiting for temporal support in node
-          //           date: safeParseTemporalInstant(commit.commit.author?.date) ??
-          //             Temporal.Instant.fromEpochMilliseconds(0),
           date: new Date(commit.commit.author?.date ?? 0),
         },
         committer: {
           name: commit.commit.committer?.name ?? "",
           email: commit.commit.committer?.email ?? "",
-          // waiting for temporal support in node
-          //           date: safeParseTemporalInstant(commit.commit.committer?.date) ??
-          //             Temporal.Instant.fromEpochMilliseconds(0),
           date: new Date(commit.commit.committer?.date ?? 0),
         },
       });
 
-      if (collectedCommits.length >= maxCommitsToResolve) {
+      if (collectedCommits.length >= maxCommits) {
+        if (stopHash) {
+          throw new Error(
+            `Reached the maximum commit limit (${maxCommits}) before encountering the stop hash (${stopHash.substring(0, 7)}).`,
+          );
+        }
         return collectedCommits;
       }
     }
@@ -155,7 +74,7 @@ async function githubListCommitsFromGivenToLastRelease(
 
   if (collectedCommits.length === 0) {
     throw new NoCommitFoundError(
-      `No commits found for hash ${commitHash.substring(0, 7)}`,
+      `No commits found for hash ${fromHash.substring(0, 7)}`,
     );
   }
 
@@ -323,19 +242,21 @@ async function githubGetCommit(
   };
 }
 
-export function makeGithubListCommitsFromGivenToLastRelease(
+export function makeGithubListCommitsInRange(
   getOctokit: GetOctokitFn,
 ) {
   return (
-    commitHash: string,
-    maxCommitsToResolve: number,
-    resolveUntilCommitHash?: string,
+    fromHash: string,
+    stopHash?: string,
+    path?: string,
+    maxCommits?: number,
   ) =>
-    githubListCommitsFromGivenToLastRelease(
+    githubListCommitsInRange(
       getOctokit(),
-      commitHash,
-      maxCommitsToResolve,
-      resolveUntilCommitHash,
+      fromHash,
+      stopHash,
+      path,
+      maxCommits,
     );
 }
 

@@ -41,10 +41,15 @@ export async function getVersionSemVerFromVersionFile(
   provider: PlatformProvider,
   workspacePath: string,
   triggerCommitHash: string,
+  workspaceRelativePath: string = ".",
 ): Promise<SemVer | undefined> {
+  const resolvedFilePath = workspaceRelativePath === "."
+    ? versionFile.path
+    : `${workspaceRelativePath}/${versionFile.path}`;
+
   const fileContent = await getTextFile(
     sourceMode.overrides?.[versionFile.path] ?? sourceMode.mode,
-    versionFile.path,
+    resolvedFilePath,
     { workspacePath: workspacePath, provider, ref: triggerCommitHash },
   );
 
@@ -86,13 +91,18 @@ export async function prepareVersionFilesToCommit(
   workspacePath: string,
   nextVersion: string,
   triggerCommitHash: string,
+  workspaceRelativePath: string = ".",
 ): Promise<[string, string][]> {
   const vfChangesData: [string, string][] = [];
 
   for (const vf of versionFiles) {
+    const resolvedFilePath = workspaceRelativePath === "."
+      ? vf.path
+      : `${workspaceRelativePath}/${vf.path}`;
+
     const fileContent = await getTextFile(
       sourceMode.overrides?.[vf.path] ?? sourceMode.mode,
-      vf.path,
+      resolvedFilePath,
       {
         provider,
         workspacePath: workspacePath,

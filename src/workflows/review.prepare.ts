@@ -15,28 +15,39 @@ import {
   compareNextVersionToCurrentVersion,
 } from "../tasks/calculate-next-version/calculate-version.ts";
 import { getCurrentVersion } from "../tasks/calculate-next-version/previous-version.ts";
+import { format, type SemVer } from "@std/semver";
 import {
-  createDynamicChangelogStringPatternContext,
-  createFixedCurrentVersionStringPatternContext,
-  createFixedNextVersionStringPatternContext,
-  createFixedTagStringPatternContext,
+  addChangelogPatternContext,
+  addCurrentVersionPatternContext,
+  addNextVersionPatternContext,
+  addReleasesPatternContext,
+  addTagPatternContext,
+  type ReleaseContextEntry,
 } from "../tasks/string-templates-and-patterns/pattern-context.ts";
 import { generatePrepareChangelogReleaseContent } from "../tasks/changelog.ts";
-import { runCommands } from "../tasks/command.ts";
 import {
   exportPostCalculateVersionVariables,
   exportPostCommitVariables,
   exportPostProposalVariables,
   exportPreCalculateVersionVariables,
   exportPreCommitVariables,
+  exportWorkspaceSummaryVariables,
 } from "../tasks/export-variables.ts";
 import type { OperationRunSettings } from "../types/operation-context.ts";
 import { addLabelsToProposalOnCreate } from "../tasks/label.ts";
 import type { BootstrapResult } from "./bootstrap.ts";
+import { executeHookWithOverride } from "./hook-runner.ts";
 import {
-  resolveRuntimeConfigOverride,
-  synchronizeRuntimeStateAfterOverride,
-} from "../tasks/runtime-override.ts";
+  type AffectedWorkspace,
+  detectAffectedWorkspaces,
+} from "../tasks/workspace-detection.ts";
+import type { ResolvedWorkspace } from "../types/workspace-context.ts";
+
+/** Per-workspace result accumulated during Phase 1 */
+interface WorkspaceVersionData {
+  nextVersion: SemVer;
+  currentVersion: SemVer | undefined;
+}
 
 export async function executeReviewPreparePhase(
   provider: PlatformProvider,
@@ -47,251 +58,289 @@ export async function executeReviewPreparePhase(
     workingBranchResult,
     associatedProposalFromBranch,
     triggerContext,
+    patternContext: initialPatternContext,
   } = bootstrapData;
 
+  let patternContext = initialPatternContext;
+
   /**
-   * Prepare phase run settings.
+   * Review prepare phase run settings.
    */
   let runSettings: OperationRunSettings = currentRunSettings;
 
-  logger.stepStart("Starting: Get current version");
-  const currentVersion = await getCurrentVersion(
-    provider,
-    runSettings.inputs,
-    runSettings.config,
-  );
-  logger.stepFinish("Finished: Get current version");
+  // ═══════════════════════════════════════════════════════════════════
+  // Phase 1: Per-workspace version/changelog/files
+  // ═══════════════════════════════════════════════════════════════════
 
-  logger.stepStart("Starting: Resolve commits from trigger to last release");
-  const resolvedCommitsResult = await resolveCommitsFromTriggerToLastRelease(
-    provider,
-    runSettings.inputs,
-    runSettings.config,
+  logger.header(
+    "Review release flow (prepare): Creating commit and proposal...",
   );
-  logger.stepFinish("Finished: Resolve commits from trigger to last release");
 
-  // preCalculateVersion hook
-  // Commits are parsed, version is NOT calculated yet.
-  logger.debugStepStart("Starting: Export pre calculate version variables");
-  await exportPreCalculateVersionVariables(
-    provider,
-    resolvedCommitsResult.entries,
-  );
-  logger.debugStepFinish("Finished: Export pre calculate version variables");
-
-  logger.stepStart("Starting: Execute pre calculate version commands");
-  const preCalculateVersionResult = await runCommands(
-    runSettings.config.commandHooks,
-    "preCalculateVersion",
-  );
-  if (preCalculateVersionResult) {
-    logger.stepFinish(
-      `Finished: Execute pre calculate version commands. ${preCalculateVersionResult}`,
-    );
-  } else {
-    logger.stepSkip("Skipped: Execute pre calculate version commands (empty)");
-  }
-
-  logger.stepStart(
-    "Starting: Resolve runtime config override (pre calculate version commands)",
-  );
-  const _preCalculateVersionRuntimeConfigResult =
-    await resolveRuntimeConfigOverride(
-      runSettings.rawConfig,
-      runSettings.config,
-      runSettings.inputs.workspacePath,
-    );
-  if (_preCalculateVersionRuntimeConfigResult) {
-    runSettings = {
-      ...runSettings,
-      rawConfig: _preCalculateVersionRuntimeConfigResult.rawResolvedRuntime,
-      config: _preCalculateVersionRuntimeConfigResult.resolvedRuntime,
-    };
-    await synchronizeRuntimeStateAfterOverride({
+  // Detect affected workspaces
+  const affectedWorkspaces: AffectedWorkspace[] = runSettings.isMonorepoMode
+    ? await detectAffectedWorkspaces(
       provider,
-      config: runSettings.config,
-      rawConfig: runSettings.rawConfig,
-      triggerBranchName: runSettings.inputs.triggerBranchName,
-    });
-    logger.stepFinish(
-      "Finished: Resolve runtime config override (pre calculate version commands)",
-    );
-  } else {
+      runSettings.workspaces,
+      runSettings.inputs.triggerCommitHash,
+      runSettings.config.maxCommitsToResolve,
+    )
+    : runSettings.workspaces.map((ws: ResolvedWorkspace) => ({
+      ...ws,
+      lastReleaseHash: undefined,
+      lastReleaseTagName: undefined,
+    }));
+
+  if (affectedWorkspaces.length === 0) {
     logger.stepSkip(
-      "Skipped: Resolve runtime config override (pre calculate version commands)",
+      "No affected workspaces detected — nothing to release",
     );
+    return runSettings;
   }
 
-  // Calculate version
-  logger.stepStart("Starting: Calculate next version");
-  const nextVersion = calculateNextVersion(
-    resolvedCommitsResult,
-    runSettings.config,
-    currentVersion,
-  );
-  logger.stepFinish("Finished: Calculate next version");
+  const releaseEntries: ReleaseContextEntry[] = [];
+  const allChangesData = new Map<string, string | null>();
+  const workspaceVersionDataMap = new Map<
+    string,
+    WorkspaceVersionData
+  >();
 
-  logger.stepStart(
-    "Starting: Compare calculated next version with current version",
-  );
-  compareNextVersionToCurrentVersion(
-    nextVersion,
-    currentVersion,
-  );
-  logger.stepFinish(
-    "Finished: Compare calculated next version with current version",
-  );
+  for (const ws of affectedWorkspaces) {
+    const wsConfig = ws.config;
+    const wsLabel = runSettings.isMonorepoMode
+      ? `[${wsConfig.name}] `
+      : "";
 
-  logger.debugStepStart(
-    "Starting: Create fixed current version, next version and tag string pattern context",
-  );
-  createFixedCurrentVersionStringPatternContext(currentVersion);
-  createFixedNextVersionStringPatternContext(nextVersion);
-  await createFixedTagStringPatternContext(
-    runSettings.config.tag.nameTemplate,
-  );
-  logger.debugStepFinish(
-    "Finished: Create fixed current version, next version and tag string pattern context",
-  );
+    if (runSettings.isMonorepoMode) {
+      logger.subHeader(`Workspace: ${wsConfig.name}`);
+      provider.setEnv("ZR_NAME", wsConfig.name ?? "");
+    }
 
-  // postCalculateVersion hook
-  // Version is locked in, no files modified yet.
-  logger.debugStepStart("Starting: Export post calculate version variables");
-  await exportPostCalculateVersionVariables(
-    provider,
-    currentVersion,
-    nextVersion,
-  );
-  logger.debugStepFinish("Finished: Export post calculate version variables");
-
-  logger.stepStart("Starting: Execute post calculate version commands");
-  const postCalculateVersionResult = await runCommands(
-    runSettings.config.commandHooks,
-    "postCalculateVersion",
-  );
-  if (postCalculateVersionResult) {
-    logger.stepFinish(
-      `Finished: Execute post calculate version commands. ${postCalculateVersionResult}`,
-    );
-  } else {
-    logger.stepSkip("Skipped: Execute post calculate version commands (empty)");
-  }
-
-  logger.stepStart(
-    "Starting: Resolve runtime config override (post calculate version commands)",
-  );
-  const _postCalculateVersionRuntimeConfigResult =
-    await resolveRuntimeConfigOverride(
-      runSettings.rawConfig,
-      runSettings.config,
-      runSettings.inputs.workspacePath,
-    );
-  if (_postCalculateVersionRuntimeConfigResult) {
-    runSettings = {
-      ...runSettings,
-      rawConfig: _postCalculateVersionRuntimeConfigResult.rawResolvedRuntime,
-      config: _postCalculateVersionRuntimeConfigResult.resolvedRuntime,
-    };
-    await synchronizeRuntimeStateAfterOverride({
+    // Get current version
+    logger.stepStart(`${wsLabel}Starting: Get current version`);
+    const currentVersion = await getCurrentVersion(
       provider,
-      config: runSettings.config,
-      rawConfig: runSettings.rawConfig,
-      triggerBranchName: runSettings.inputs.triggerBranchName,
+      runSettings.inputs,
+      wsConfig,
+      ws.path,
+    );
+    logger.stepFinish(`${wsLabel}Finished: Get current version`);
+
+    // Resolve commits
+    logger.stepStart(
+      `${wsLabel}Starting: Resolve commits from trigger to last release`,
+    );
+    const resolvedCommitsResult =
+      await resolveCommitsFromTriggerToLastRelease(
+        provider,
+        runSettings.inputs,
+        wsConfig,
+        ws.lastReleaseHash,
+        ws.path === "." ? undefined : ws.path,
+      );
+    logger.stepFinish(
+      `${wsLabel}Finished: Resolve commits from trigger to last release`,
+    );
+
+    // preCalculateVersion hook
+    logger.debugStepStart(
+      `${wsLabel}Starting: Export pre calculate version variables`,
+    );
+    await exportPreCalculateVersionVariables(
+      provider,
+      resolvedCommitsResult.entries,
+      patternContext,
+    );
+    logger.debugStepFinish(
+      `${wsLabel}Finished: Export pre calculate version variables`,
+    );
+
+    ({ runSettings, patternContext } = await executeHookWithOverride(
+      provider,
+      "preCalculateVersion",
+      wsConfig.commandHooks,
+      runSettings,
+      patternContext,
+    ));
+
+    // Calculate version
+    logger.stepStart(`${wsLabel}Starting: Calculate next version`);
+    const nextVersion = calculateNextVersion(
+      resolvedCommitsResult,
+      wsConfig,
+      currentVersion,
+    );
+    logger.stepFinish(`${wsLabel}Finished: Calculate next version`);
+
+    logger.stepStart(
+      `${wsLabel}Starting: Compare calculated next version with current version`,
+    );
+    compareNextVersionToCurrentVersion(
+      nextVersion,
+      currentVersion,
+    );
+    logger.stepFinish(
+      `${wsLabel}Finished: Compare calculated next version with current version`,
+    );
+
+    // Build per-workspace pattern context
+    logger.debugStepStart(
+      `${wsLabel}Starting: Create fixed version and tag string pattern context`,
+    );
+    let wsPatternContext = patternContext;
+    if (currentVersion) {
+      wsPatternContext = addCurrentVersionPatternContext(
+        wsPatternContext,
+        currentVersion,
+      );
+    }
+    wsPatternContext = addNextVersionPatternContext(
+      wsPatternContext,
+      nextVersion,
+    );
+    wsPatternContext = await addTagPatternContext(
+      wsPatternContext,
+      wsConfig.tag.nameTemplate,
+    );
+    logger.debugStepFinish(
+      `${wsLabel}Finished: Create fixed version and tag string pattern context`,
+    );
+
+    // Collect release entry
+    const tagName = wsPatternContext.tagName as string;
+    releaseEntries.push({
+      name: wsConfig.name ?? "root",
+      nextVersion: format(nextVersion),
+      tagName,
+      isWorkspace: ws.isWorkspace,
+    });
+
+    // postCalculateVersion hook
+    logger.debugStepStart(
+      `${wsLabel}Starting: Export post calculate version variables`,
+    );
+    await exportPostCalculateVersionVariables(
+      provider,
+      currentVersion,
+      nextVersion,
+      wsPatternContext,
+    );
+    logger.debugStepFinish(
+      `${wsLabel}Finished: Export post calculate version variables`,
+    );
+
+    ({ runSettings, patternContext: wsPatternContext } =
+      await executeHookWithOverride(
+        provider,
+        "postCalculateVersion",
+        wsConfig.commandHooks,
+        runSettings,
+        wsPatternContext,
+        { nextVersion, currentVersion },
+      ));
+
+    // Generate changelog
+    logger.stepStart(
+      `${wsLabel}Starting: Generate changelog release content`,
+    );
+    const changelogReleaseResult =
+      await generatePrepareChangelogReleaseContent(
+        provider,
+        resolvedCommitsResult.entries,
+        runSettings.inputs,
+        wsConfig,
+        wsPatternContext,
+      );
+    logger.stepFinish(
+      `${wsLabel}Finished: Generate changelog release content`,
+    );
+
+    logger.debugStepStart(
+      `${wsLabel}Starting: Create dynamic changelog string pattern context`,
+    );
+    wsPatternContext = addChangelogPatternContext(
+      wsPatternContext,
+      changelogReleaseResult.release,
+      changelogReleaseResult.releaseBody,
+      changelogReleaseResult.releaseAlt,
+      changelogReleaseResult.releaseBodyAlt,
+    );
+    logger.debugStepFinish(
+      `${wsLabel}Finished: Create dynamic changelog string pattern context`,
+    );
+
+    // Prepare changes to commit (workspace-relative paths)
+    logger.stepStart(
+      `${wsLabel}Starting: Prepare and collect changes data to commit`,
+    );
+    const wsChangesData = await prepareChangesToCommit(
+      provider,
+      runSettings.inputs,
+      wsConfig,
+      nextVersion,
+      wsPatternContext,
+      ws.path,
+    );
+    logger.stepFinish(
+      `${wsLabel}Finished: Prepare and collect changes data to commit`,
+    );
+
+    // Accumulate changes across all workspaces
+    for (const [filePath, content] of wsChangesData) {
+      allChangesData.set(filePath, content);
+    }
+
+    // Store per-workspace version data
+    workspaceVersionDataMap.set(wsConfig.name ?? "root", {
       nextVersion,
       currentVersion,
     });
-    logger.stepFinish(
-      "Finished: Resolve runtime config override (post calculate version commands)",
-    );
-  } else {
-    logger.stepSkip(
-      "Skipped: Resolve runtime config override (post calculate version commands)",
-    );
+
+    // Update shared pattern context
+    patternContext = wsPatternContext;
   }
 
-  // Generate changelog and prepare changes
-  logger.stepStart("Starting: Generate changelog release content");
-  const changelogReleaseResult = await generatePrepareChangelogReleaseContent(
+  // Export workspace summary variables (after all workspace versions are known)
+  exportWorkspaceSummaryVariables(
     provider,
-    resolvedCommitsResult.entries,
-    runSettings.inputs,
-    runSettings.config,
-  );
-  logger.stepFinish("Finished: Generate changelog release content");
-
-  logger.debugStepStart(
-    "Starting: Create dynamic changelog string pattern context",
-  );
-  createDynamicChangelogStringPatternContext(
-    changelogReleaseResult.release,
-    changelogReleaseResult.releaseBody,
-    changelogReleaseResult.releaseAlt,
-    changelogReleaseResult.releaseBodyAlt,
-  );
-  logger.debugStepFinish(
-    "Finished: Create dynamic changelog string pattern context",
+    runSettings.isMonorepoMode,
+    affectedWorkspaces[0]?.config.name,
+    releaseEntries.map((entry, i) => ({
+      name: entry.name,
+      nextVersion: entry.nextVersion,
+      tagName: entry.tagName,
+      path: affectedWorkspaces[i]!.path,
+    })),
+    affectedWorkspaces.map((ws) => ws.config.name ?? "root"),
   );
 
-  logger.stepStart("Starting: Prepare and collect changes data to commit");
-  const changesData = await prepareChangesToCommit(
-    provider,
-    runSettings.inputs,
-    runSettings.config,
-    nextVersion,
-  );
-  logger.stepFinish("Finished: Prepare and collect changes data to commit");
+  // ═══════════════════════════════════════════════════════════════════
+  // Phase 2: Global commit + proposal
+  // ═══════════════════════════════════════════════════════════════════
 
-  // preCommit hook
-  // Files are written to disk, git commit has NOT executed yet.
+  // Set releases pattern context (all workspaces)
+  patternContext = addReleasesPatternContext(patternContext, releaseEntries);
+
+  // Get first workspace version for backward compat in global hooks
+  const firstWsVersionData = workspaceVersionDataMap.values().next().value;
+
+  // preCommit hook (global, root config)
   logger.debugStepStart("Starting: Export pre commit variables");
-  await exportPreCommitVariables(provider, changesData);
+  await exportPreCommitVariables(provider, allChangesData, patternContext);
   logger.debugStepFinish("Finished: Export pre commit variables");
 
-  logger.stepStart("Starting: Execute pre commit commands");
-  const preCommitResult = await runCommands(
-    runSettings.config.commandHooks,
+  ({ runSettings, patternContext } = await executeHookWithOverride(
+    provider,
     "preCommit",
-  );
-  if (preCommitResult) {
-    logger.stepFinish(
-      `Finished: Execute pre commit commands. ${preCommitResult}`,
-    );
-  } else {
-    logger.stepSkip("Skipped: Execute pre commit commands (empty)");
-  }
+    runSettings.config.commandHooks,
+    runSettings,
+    patternContext,
+    {
+      nextVersion: firstWsVersionData?.nextVersion,
+      currentVersion: firstWsVersionData?.currentVersion,
+    },
+  ));
 
-  logger.stepStart(
-    "Starting: Resolve runtime config override (pre commit commands)",
-  );
-  const _preCommitRuntimeConfigResult = await resolveRuntimeConfigOverride(
-    runSettings.rawConfig,
-    runSettings.config,
-    runSettings.inputs.workspacePath,
-  );
-  if (_preCommitRuntimeConfigResult) {
-    runSettings = {
-      ...runSettings,
-      rawConfig: _preCommitRuntimeConfigResult.rawResolvedRuntime,
-      config: _preCommitRuntimeConfigResult.resolvedRuntime,
-    };
-    await synchronizeRuntimeStateAfterOverride({
-      provider,
-      config: runSettings.config,
-      rawConfig: runSettings.rawConfig,
-      triggerBranchName: runSettings.inputs.triggerBranchName,
-      nextVersion,
-      currentVersion,
-    });
-    logger.stepFinish(
-      "Finished: Resolve runtime config override (pre commit commands)",
-    );
-  } else {
-    logger.stepSkip(
-      "Skipped: Resolve runtime config override (pre commit commands)",
-    );
-  }
-
-  // Commit
+  // Commit all changes in one commit
   logger.stepStart("Starting: Commit changes");
   const commitResult = await commitChangesToBranch(
     provider,
@@ -299,64 +348,35 @@ export async function executeReviewPreparePhase(
     runSettings.config,
     {
       baseTreeHash: triggerContext.latestTriggerCommit.treeHash,
-      changesToCommit: changesData,
+      changesToCommit: allChangesData,
       targetBranchName: workingBranchResult.name,
       force: true,
     },
+    patternContext,
   );
   logger.stepFinish("Finished: Commit changes");
 
   // postCommit hook
-  // Changes are committed and pushed.
   logger.debugStepStart("Starting: Export post commit variables");
-  await exportPostCommitVariables(provider, commitResult.hash);
+  await exportPostCommitVariables(provider, commitResult.hash, patternContext);
   logger.debugStepFinish("Finished: Export post commit variables");
 
-  logger.stepStart("Starting: Execute post commit commands");
-  const postCommitResult = await runCommands(
-    runSettings.config.commandHooks,
+  ({ runSettings, patternContext } = await executeHookWithOverride(
+    provider,
     "postCommit",
-  );
-  if (postCommitResult) {
-    logger.stepFinish(
-      `Finished: Execute post commit commands. ${postCommitResult}`,
-    );
-  } else {
-    logger.stepSkip("Skipped: Execute post commit commands (empty)");
-  }
+    runSettings.config.commandHooks,
+    runSettings,
+    patternContext,
+    {
+      nextVersion: firstWsVersionData?.nextVersion,
+      currentVersion: firstWsVersionData?.currentVersion,
+    },
+  ));
 
-  logger.stepStart(
-    "Starting: Resolve runtime config override (post commit commands)",
-  );
-  const _postCommitRuntimeConfigResult = await resolveRuntimeConfigOverride(
-    runSettings.rawConfig,
-    runSettings.config,
-    runSettings.inputs.workspacePath,
-  );
-  if (_postCommitRuntimeConfigResult) {
-    runSettings = {
-      ...runSettings,
-      rawConfig: _postCommitRuntimeConfigResult.rawResolvedRuntime,
-      config: _postCommitRuntimeConfigResult.resolvedRuntime,
-    };
-    await synchronizeRuntimeStateAfterOverride({
-      provider,
-      config: runSettings.config,
-      rawConfig: runSettings.rawConfig,
-      triggerBranchName: runSettings.inputs.triggerBranchName,
-      nextVersion,
-      currentVersion,
-    });
-    logger.stepFinish(
-      "Finished: Resolve runtime config override (post commit commands)",
-    );
-  } else {
-    logger.stepSkip(
-      "Skipped: Resolve runtime config override (post commit commands)",
-    );
-  }
+  // ═══════════════════════════════════════════════════════════════════
+  // Proposal management (single proposal for all workspaces)
+  // ═══════════════════════════════════════════════════════════════════
 
-  // Create/Update Proposal
   logger.stepStart("Starting: Create or update proposal");
   const proposal = await createOrUpdateProposal(
     provider,
@@ -367,6 +387,7 @@ export async function executeReviewPreparePhase(
     },
     runSettings.inputs,
     runSettings.config,
+    patternContext,
   );
   logger.stepFinish("Finished: Create or update proposal");
 
@@ -400,58 +421,27 @@ export async function executeReviewPreparePhase(
     logger.stepFinish("Finished: Add reviewers to proposal");
   }
 
-  // postProposal hook
-  // Proposal is created/updated.
+  // postProposal hook (global, root config)
   logger.debugStepStart("Starting: Export post proposal variables");
   await exportPostProposalVariables(
     provider,
     proposal.id,
+    undefined,
+    patternContext,
   );
   logger.debugStepFinish("Finished: Export post proposal variables");
 
-  logger.stepStart("Starting: Execute post proposal commands");
-  const postProposalResult = await runCommands(
-    runSettings.config.commandHooks,
+  ({ runSettings, patternContext } = await executeHookWithOverride(
+    provider,
     "postProposal",
-  );
-  if (postProposalResult) {
-    logger.stepFinish(
-      `Finished: Execute post proposal commands. ${postProposalResult}`,
-    );
-  } else {
-    logger.stepSkip("Skipped: Execute post proposal commands (empty)");
-  }
-
-  logger.stepStart(
-    "Starting: Resolve runtime config override (post proposal commands)",
-  );
-  const _postProposalRuntimeConfigResult = await resolveRuntimeConfigOverride(
-    runSettings.rawConfig,
-    runSettings.config,
-    runSettings.inputs.workspacePath,
-  );
-  if (_postProposalRuntimeConfigResult) {
-    runSettings = {
-      ...runSettings,
-      rawConfig: _postProposalRuntimeConfigResult.rawResolvedRuntime,
-      config: _postProposalRuntimeConfigResult.resolvedRuntime,
-    };
-    await synchronizeRuntimeStateAfterOverride({
-      provider,
-      config: runSettings.config,
-      rawConfig: runSettings.rawConfig,
-      triggerBranchName: runSettings.inputs.triggerBranchName,
-      nextVersion,
-      currentVersion,
-    });
-    logger.stepFinish(
-      "Finished: Resolve runtime config override (post proposal commands)",
-    );
-  } else {
-    logger.stepSkip(
-      "Skipped: Resolve runtime config override (post proposal commands)",
-    );
-  }
+    runSettings.config.commandHooks,
+    runSettings,
+    patternContext,
+    {
+      nextVersion: firstWsVersionData?.nextVersion,
+      currentVersion: firstWsVersionData?.currentVersion,
+    },
+  ));
 
   return runSettings;
 }

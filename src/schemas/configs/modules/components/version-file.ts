@@ -9,6 +9,7 @@ export const VersionFileSchema = v.object({
     trimNonEmptyStringSchema,
     v.metadata({
       description: "Path to the version file, relative to the project root.\n" +
+        "In monorepo mode, this path is relative to the workspace directory (auto-prepended with the workspace path key).\n" +
         `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
     }),
   ),

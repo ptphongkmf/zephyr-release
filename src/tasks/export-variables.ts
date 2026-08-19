@@ -11,10 +11,17 @@ import type {
   PreCommitVariables,
   PreReleaseVariables,
   PreTagVariables,
+  WorkspaceSummaryVariables,
+  WorkspaceVariableData,
 } from "../types/operation-variables.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import type { ProviderProposal } from "../types/providers/proposal.ts";
-import { toEnvKey, toOutputKey } from "../utils/transformers/case.ts";
+import {
+  toEnvKey,
+  toOutputKey,
+  toWorkspaceEnvKey,
+  toWorkspaceOutputKey,
+} from "../utils/transformers/case.ts";
 import { jsonValueNormalizer } from "../utils/transformers/json.ts";
 import { format, type SemVer } from "@std/semver";
 import type { WorkingBranchResult } from "./branch.ts";
@@ -30,7 +37,7 @@ import {
 import type { ProviderInputs } from "../types/providers/inputs.ts";
 import type { ConfigOutput } from "../schemas/configs/config.ts";
 import type { InputsOutput } from "../schemas/inputs/inputs.ts";
-import { stringifyCurrentPatternContext } from "./string-templates-and-patterns/pattern-context.ts";
+import { stringifyPatternContext, type StringPatternContext } from "./string-templates-and-patterns/pattern-context.ts";
 
 export async function exportBaseOperationVariables(
   provider: PlatformProvider,
@@ -43,6 +50,7 @@ export async function exportBaseOperationVariables(
     inputs: InputsOutput;
     rawConfig: object;
     config: ConfigOutput;
+    patternContext: StringPatternContext;
   },
 ) {
   const {
@@ -131,7 +139,7 @@ export async function exportBaseOperationVariables(
     proposalId: operationKind === "propose"
       ? proposalFromBranch?.id
       : proposalForCommit?.id,
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(options.patternContext),
   } satisfies BaseOperationVariables & DynamicOperationVariables;
 
   taskLogger.debugWrap((dLogger) => {
@@ -151,11 +159,12 @@ export async function exportBaseOperationVariables(
 export async function exportPreCalculateVersionVariables(
   provider: PlatformProvider,
   resolvedCommitEntries: ResolvedCommit[],
+  patternContext: StringPatternContext,
 ) {
   const exportObject = {
     resolvedCommitEntries: JSON.stringify(resolvedCommitEntries),
 
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   } satisfies
     & PreCalculateVersionVariables
     & Pick<DynamicOperationVariables, "patternContext">;
@@ -178,12 +187,13 @@ export async function exportPostCalculateVersionVariables(
   provider: PlatformProvider,
   currentVersion: SemVer | undefined,
   nextVersion: SemVer,
+  patternContext: StringPatternContext,
 ) {
   const exportObject = {
     currentVersion: currentVersion ? format(currentVersion) : "",
     nextVersion: format(nextVersion),
 
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   } satisfies
     & PostCalculateVersionVariables
     & Pick<DynamicOperationVariables, "patternContext">;
@@ -205,11 +215,12 @@ export async function exportPostCalculateVersionVariables(
 export async function exportPreCommitVariables(
   provider: PlatformProvider,
   changesData: Map<string, string | null>,
+  patternContext: StringPatternContext,
 ) {
   const exportObject = {
     committedFilePaths: JSON.stringify([...changesData.keys()]),
 
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   } satisfies
     & PreCommitVariables
     & Pick<DynamicOperationVariables, "patternContext">;
@@ -231,11 +242,12 @@ export async function exportPreCommitVariables(
 export async function exportPostCommitVariables(
   provider: PlatformProvider,
   commitHash: string,
+  patternContext: StringPatternContext,
 ) {
   const exportObject = {
     commitHash,
 
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   } satisfies
     & PostCommitVariables
     & Pick<DynamicOperationVariables, "patternContext">;
@@ -260,6 +272,7 @@ export async function exportPostProposalVariables(
   releaseFlowRelatedData?: {
     config?: ConfigOutput;
   },
+  patternContext?: StringPatternContext,
 ) {
   const { config } = releaseFlowRelatedData ?? {};
 
@@ -280,7 +293,7 @@ export async function exportPostProposalVariables(
     proposalId: proposalId,
     jobs: JSON.stringify(operationJobs),
 
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: patternContext ? await stringifyPatternContext(patternContext) : "",
   } satisfies
     & PostProposalVariables
     & Pick<DynamicOperationVariables, "proposalId" | "patternContext">;
@@ -302,13 +315,14 @@ export async function exportPostProposalVariables(
 export async function exportPreTagVariables(
   provider: PlatformProvider,
   nextVersion: SemVer,
+  patternContext: StringPatternContext,
   proposalId?: string,
 ) {
   const exportObject = {
     nextVersion: format(nextVersion),
 
     proposalId: proposalId,
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   } satisfies
     & PreTagVariables
     & Pick<DynamicOperationVariables, "patternContext" | "proposalId">;
@@ -330,11 +344,12 @@ export async function exportPreTagVariables(
 export async function exportPreReleaseVariables(
   provider: PlatformProvider,
   tagHash: string,
+  patternContext: StringPatternContext,
 ) {
   const exportObject = {
     tagHash,
 
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   } satisfies
     & PreReleaseVariables
     & Pick<DynamicOperationVariables, "patternContext">;
@@ -355,6 +370,7 @@ export async function exportPreReleaseVariables(
 
 export async function exportPostReleaseVariables(
   provider: PlatformProvider,
+  patternContext: StringPatternContext,
   releaseId?: string | number,
   releaseUploadUrl?: string,
 ) {
@@ -362,7 +378,7 @@ export async function exportPostReleaseVariables(
     releaseId,
     releaseUploadUrl,
 
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   } satisfies
     & PostReleaseVariables
     & Pick<DynamicOperationVariables, "patternContext">;
@@ -384,11 +400,12 @@ export async function exportPostReleaseVariables(
 export async function exportFinalOperationVariables(
   provider: PlatformProvider,
   outcome: OperationOutcome,
+  patternContext: StringPatternContext,
 ) {
   const prepareExportObject = {
     outcome,
 
-    patternContext: await stringifyCurrentPatternContext(),
+    patternContext: await stringifyPatternContext(patternContext),
   } satisfies
     & FinalOperationVariables
     & Pick<DynamicOperationVariables, "patternContext">;
@@ -401,5 +418,64 @@ export async function exportFinalOperationVariables(
   Object.entries(prepareExportObject).forEach(([k, v]) => {
     provider.setOutput(toOutputKey(k), v);
     provider.setEnv(toEnvKey(k), v);
+  });
+}
+
+/**
+ * Export workspace-namespaced variables and a global workspace summary.
+ * In monorepo mode, exports:
+ * - Per-workspace: `ZR__<name>__NEXT_VERSION`, `ZR__<name>__TAG_NAME`, `ZR__<name>__PATH`
+ * - Summary: `ZR_IS_MONOREPO`, `ZR_WORKSPACES` (JSON), `ZR_AFFECTED_WORKSPACES` (JSON)
+ * - Current workspace shortcut: `ZR_NAME`
+ *
+ * In single-repo mode, exports only `ZR_IS_MONOREPO=false`.
+ */
+export function exportWorkspaceSummaryVariables(
+  provider: PlatformProvider,
+  isMonorepoMode: boolean,
+  currentWorkspaceName: string | undefined,
+  allWorkspaceData: WorkspaceVariableData[],
+  affectedWorkspaceNames: string[],
+) {
+  const exportObject = {
+    isMonorepo: isMonorepoMode ? "true" : "false",
+    name: currentWorkspaceName ?? "",
+    workspaces: JSON.stringify(allWorkspaceData),
+    affectedWorkspaces: JSON.stringify(affectedWorkspaceNames),
+  } satisfies WorkspaceSummaryVariables;
+
+  // Global summary variables
+  Object.entries(exportObject).forEach(([k, v]) => {
+    provider.setOutput(toOutputKey(k), v);
+    provider.setEnv(toEnvKey(k), v);
+  });
+
+  if (!isMonorepoMode) return;
+
+  // Per-workspace namespaced variables
+  for (const ws of allWorkspaceData) {
+    const wsVars = {
+      nextVersion: ws.nextVersion,
+      tagName: ws.tagName,
+      path: ws.path,
+    };
+
+    Object.entries(wsVars).forEach(([varName, value]) => {
+      provider.setEnv(toWorkspaceEnvKey(ws.name, varName), value);
+      provider.setOutput(toWorkspaceOutputKey(ws.name, varName), value);
+    });
+  }
+
+  taskLogger.debugWrap((dLogger) => {
+    dLogger.startGroup(
+      "Workspace summary variables to export (internal key name):",
+    );
+    dLogger.info(JSON.stringify(exportObject, null, 2));
+    for (const ws of allWorkspaceData) {
+      dLogger.info(
+        `  ${ws.name}: nextVersion=${ws.nextVersion}, tagName=${ws.tagName}, path=${ws.path}`,
+      );
+    }
+    dLogger.endGroup();
   });
 }

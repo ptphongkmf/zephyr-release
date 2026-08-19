@@ -24,6 +24,7 @@ Some example [config files](./examples/).
   - [release-flow (Optional)](#release-flow-optional)
   - [review (Optional)](#review-optional)
     - [review \> draft (Optional)](#review--draft-optional)
+    - [review \> group-proposals (Optional)](#review--group-proposals-optional)
     - [review \> working-branch-name-template (Optional)](#review--working-branch-name-template-optional)
     - [review \> title-template (Optional)](#review--title-template-optional)
     - [review \> title-template-path (Optional)](#review--title-template-path-optional)
@@ -131,6 +132,7 @@ Some example [config files](./examples/).
   - [tag (Optional)](#tag-optional)
     - [tag \> create-tag (Optional)](#tag--create-tag-optional)
     - [tag \> name-template (Optional)](#tag--name-template-optional)
+    - [tag \> match-patterns (Optional)](#tag--match-patterns-optional)
     - [tag \> type (Optional)](#tag--type-optional)
     - [tag \> message-template (Optional)](#tag--message-template-optional)
     - [tag \> message-template-path (Optional)](#tag--message-template-path-optional)
@@ -155,10 +157,12 @@ Some example [config files](./examples/).
   - [command-hooks (Optional)](#command-hooks-optional)
     - [command-hooks \> timeout (Optional)](#command-hooks--timeout-optional)
     - [command-hooks \> continue-on-error (Optional)](#command-hooks--continue-on-error-optional)
+    - [command-hooks \> stdout-override-format (Optional)](#command-hooks--stdout-override-format-optional)
     - [command-hooks \> pre-run (Optional)](#command-hooks--pre-run-optional)
       - [\> pre-run \> cmd (Required)](#-pre-run--cmd-required)
       - [\> pre-run \> timeout (Optional)](#-pre-run--timeout-optional)
       - [\> pre-run \> continue-on-error (Optional)](#-pre-run--continue-on-error-optional)
+      - [\> pre-run \> stdout-override-format (Optional)](#-pre-run--stdout-override-format-optional)
     - [command-hooks \> pre-calculate-version (Optional)](#command-hooks--pre-calculate-version-optional)
       - [\> pre-calculate-version \> same properties as command-hooks \> pre-run](#-pre-calculate-version--same-properties-as-command-hooks--pre-run)
     - [command-hooks \> post-calculate-version (Optional)](#command-hooks--post-calculate-version-optional)
@@ -177,9 +181,7 @@ Some example [config files](./examples/).
       - [\> post-release \> same properties as command-hooks \> pre-run](#-post-release--same-properties-as-command-hooks--pre-run)
     - [command-hooks \> post-run (Optional)](#command-hooks--post-run-optional)
       - [\> post-run \> same properties as command-hooks \> pre-run](#-post-run--same-properties-as-command-hooks--pre-run)
-  - [runtime-config-override (Optional)](#runtime-config-override-optional)
-    - [runtime-config-override \> path (Required)](#runtime-config-override--path-required)
-    - [runtime-config-override \> format (Optional)](#runtime-config-override--format-optional)
+  - [workspace (Optional)](#workspace-optional)
 - [Type Definitions](#type-definitions)
   - [AutoStrategy](#autostrategy)
   - [SemverExtension](#semverextension)
@@ -247,6 +249,19 @@ If enabled, the proposal will be created as draft.
 
 [⬆ Back to top](#table-of-content)
 
+#### review > group-proposals (Optional)
+
+Type: `boolean`\
+Default: `true`
+
+When `true` (default), all workspace changes are grouped into a single release proposal in monorepo mode. All workspace version bumps, changelogs, and file changes are committed together and presented in one PR/MR.
+
+When `false`, each workspace would get its own proposal with its own working branch. *(Note: `false` is not yet supported and will throw an error.)*
+
+This option only has effect in monorepo mode (when [`workspace`](#workspace-optional) is defined). In single-repo mode, it is ignored.
+
+[⬆ Back to top](#table-of-content)
+
 #### review > working-branch-name-template (Optional)
 
 Type: `string`\
@@ -255,7 +270,7 @@ Default: [`DEFAULT_WORKING_BRANCH_NAME_TEMPLATE`](../src/constants/defaults/stri
 String template for branch name that Zephyr Release will use.\
 Allowed patterns to use are: fixed base string patterns.
 
-**Note on Immutability:** This property is considered a core structural configuration and is **immutable at runtime**. It cannot be overridden by a [`runtime-config-override`](#runtime-config-override-optional) file. This ensures that the branch naming strategy remains consistent throughout the entire release process, preventing potential conflicts or unexpected branch creations during dynamic configuration updates.
+**Note on Immutability:** This property is considered a core structural configuration and is **immutable at runtime**. It cannot be overridden by a stdout config override. This ensures that the branch naming strategy remains consistent throughout the entire release process, preventing potential conflicts or unexpected branch creations during dynamic configuration updates.
 
 [⬆ Back to top](#table-of-content)
 
@@ -264,8 +279,8 @@ Allowed patterns to use are: fixed base string patterns.
 Type: `string`\
 Default: [`DEFAULT_PROPOSAL_TITLE_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for proposal title, using with string patterns like {{ nextVersion }}.\
-Allowed patterns to use are: all fixed and dynamic string patterns.
+String template for proposal title, using with string patterns like `{{ releases | format_releases }}`.\
+Allowed patterns to use are: [all fixed and dynamic string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
 
@@ -603,10 +618,9 @@ Type: `string`
 
 Forces the tool to keep resolving commits until it reaches this specific hash, completely bypassing the standard resolve behavior.
 
-By default, Zephyr Release automatically finds your last release by querying the platform's Release API, or falls back to semantic version numbers from your Git tags. However, sometimes automatic detection is impossible:
+By default, Zephyr Release automatically finds your last release by matching Git tags against your `tag.nameTemplate` (and any additional `tag.matchPatterns`). However, sometimes automatic detection is impossible:
 
-- **No Platform Releases:** You are running locally, on a host without a formal Release API, or you just dont use the Release feature ([`create-release`](#release--create-release-optional) is false).
-- **Noisy/Custom Tags:** You tag non-release commits (e.g., `test-deploy`) and do not use Semantic Versioning in tag name, causing the tag fallback to fail.
+- **Noisy/Custom Tags:** You use completely unpredictable tag names that don't match your template or any fallback patterns you provided.
 - **Custom Boundaries:** You need to forcefully generate a changelog from a highly specific point in time.
 
 In those cases, `resolve-until-commit-hash` acts as your explicit manual override, telling the tool exactly which commit hash to anchor to.
@@ -1213,7 +1227,7 @@ To include all changes, you can use a glob pattern such as `"**/*"`.
 Type: `string`\
 Default: [`DEFAULT_COMMIT_HEADER_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for commit header, using with string patterns like `{{ nextVersion }}`. You can optionally include a CI skip token here (or body/footer) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` for GitHub, GitLab, and Bitbucket).\
+String template for commit header, using with string patterns like `{{ releases | format_releases }}`. You can optionally include a CI skip token here (or body/footer) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` for GitHub, GitLab, and Bitbucket).\
 Allowed patterns to use are: [all fixed and dynamic string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
@@ -1269,7 +1283,7 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 ### tag (Optional)
 
 Type: `object`\
-**Properties:** [`create-tag`](#tag--create-tag-optional), [`name-template`](#tag--name-template-optional), [`type`](#tag--type-optional), [`message-template`](#tag--message-template-optional), [`message-template-path`](#tag--message-template-path-optional), [`tagger`](#tag--tagger-optional)
+**Properties:** [`create-tag`](#tag--create-tag-optional), [`name-template`](#tag--name-template-optional), [`match-patterns`](#tag--match-patterns-optional), [`type`](#tag--type-optional), [`message-template`](#tag--message-template-optional), [`message-template-path`](#tag--message-template-path-optional), [`tagger`](#tag--tagger-optional)
 
 Configuration specific to tags.
 
@@ -1293,6 +1307,18 @@ String template for tag name, using with string patterns like `{{ nextVersion }}
 Allowed patterns to use in template are: [all string patterns](./string-templates-and-patterns.md#available-string-patterns) (except `{{ tagName }}` itself).
 
 [⬆ Back to top](#table-of-content)
+
+#### tag > match-patterns (Optional)
+
+Type: `string | string[]`
+
+Additional glob pattern(s) to match existing tags when searching for the last release. 
+Zephyr Release automatically derives a match pattern from your `name-template` (e.g. `{{ name }}-v{{ nextVersion }}` becomes `*-v*`), so you usually don't need to configure this.
+
+Use `match-patterns` only if you are migrating from a different tag naming convention and need Zephyr Release to also recognize your old tags as release boundaries.
+
+Example: `["v*", "release-*"]`
+
 
 #### tag > type (Optional)
 
@@ -1506,7 +1532,7 @@ List of local asset path(s) to attach to the release. Accepts a single string or
 ### command-hooks (Optional)
 
 Type: `object`\
-**Properties:** [`timeout`](#command-hooks--timeout-optional), [`continue-on-error`](#command-hooks--continue-on-error-optional), [`pre-run`](#command-hooks--pre-run-optional), [`pre-calculate-version`](#command-hooks--pre-calculate-version-optional), [`post-calculate-version`](#command-hooks--post-calculate-version-optional), [`pre-commit`](#command-hooks--pre-commit-optional), [`post-commit`](#command-hooks--post-commit-optional), [`post-proposal`](#command-hooks--post-proposal-optional), [`pre-tag`](#command-hooks--pre-tag-optional), [`pre-release`](#command-hooks--pre-release-optional), [`post-release`](#command-hooks--post-release-optional), [`post-run`](#command-hooks--post-run-optional)
+**Properties:** [`timeout`](#command-hooks--timeout-optional), [`continue-on-error`](#command-hooks--continue-on-error-optional), [`stdout-override-format`](#command-hooks--stdout-override-format-optional), [`pre-run`](#command-hooks--pre-run-optional), [`pre-calculate-version`](#command-hooks--pre-calculate-version-optional), [`post-calculate-version`](#command-hooks--post-calculate-version-optional), [`pre-commit`](#command-hooks--pre-commit-optional), [`post-commit`](#command-hooks--post-commit-optional), [`post-proposal`](#command-hooks--post-proposal-optional), [`pre-tag`](#command-hooks--pre-tag-optional), [`pre-release`](#command-hooks--pre-release-optional), [`post-release`](#command-hooks--post-release-optional), [`post-run`](#command-hooks--post-run-optional)
 
 Command hooks to run at different phases of the operation. Each command runs from the repository root.
 
@@ -1530,12 +1556,22 @@ Default behavior for all command hooks on error, can be overridden per command.
 
 [⬆ Back to top](#table-of-content)
 
+#### command-hooks > stdout-override-format (Optional)
+
+Type: `string`\
+Default: `"auto"`
+
+Default format for parsing stdout config override content. Can be overridden per command via the per-command [`stdout-override-format`](#-pre-run--stdout-override-format-optional) property. When overridden per command, only that command's stdout is checked for override markers.\
+Supported formats: `json`, `jsonc`, `json5`, `yaml`, `toml`, `auto` (best-effort detection).
+
+[⬆ Back to top](#table-of-content)
+
 #### command-hooks > pre-run (Optional)
 
 Type: `string | object | (string | object)[]`
 
 Commands to run at the very start of the operation, before any actions are taken. Each command runs from the repository root.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1566,13 +1602,24 @@ Continue or stop the process on commands error.
 
 [⬆ Back to top](#table-of-content)
 
+##### > pre-run > stdout-override-format (Optional)
+
+Type: `string`
+
+Format to parse stdout config override content for this specific command. Overrides the root [`stdout-override-format`](#command-hooks--stdout-override-format-optional) value.\
+If set, only the stdout from this command (not the combined output) is checked for override markers.\
+Supported formats: `json`, `jsonc`, `json5`, `yaml`, `toml`, `auto`.\
+Default: Base default stdout-override-format
+
+[⬆ Back to top](#table-of-content)
+
 #### command-hooks > pre-calculate-version (Optional)
 
 Type: `string | object | (string | object)[]`
 
 Commands to run after commits are parsed but before version calculation. Each command runs from the repository root.\
-Useful for injecting `runtime-config-override` to manipulate bump logic based on commit data.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Useful for printing a stdout config override to manipulate bump logic based on commit data.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1593,7 +1640,7 @@ Type: `string | object | (string | object)[]`
 
 Commands to run after version is calculated but before files are modified. Each command runs from the repository root.\
 Useful for syncing external metadata using the newly resolved `nextVersion`.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1614,7 +1661,7 @@ Type: `string | object | (string | object)[]`
 
 Commands to run after changelog and version files are written to disk, but before `git commit`. Each command runs from the repository root.\
 Useful for running formatters, linters, or custom replacements on the generated files before they enter git history.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1634,7 +1681,7 @@ Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 Type: `string | object | (string | object)[]`
 
 Commands to run after changes are committed and pushed. Each command runs from the repository root.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1655,7 +1702,7 @@ Type: `string | object | (string | object)[]`
 
 Commands to run after the Release Proposal (PR, MR, ...) is created or updated. Each command runs from the repository root.\
 Useful for triggering downstream CI jobs or proposal review notifications.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1676,7 +1723,7 @@ Type: `string | object | (string | object)[]`
 
 Commands to run before the Git tag is created. Each command runs from the repository root.\
 Useful for final guardrails or external API sanity checks before cutting the permanent tag.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1697,7 +1744,7 @@ Type: `string | object | (string | object)[]`
 
 Commands to run after the Git tag is created but before the platform release (GitHub Release, etc.). Each command runs from the repository root.\
 Useful for building/compiling binaries so they can be atomically attached during the release creation step.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1718,7 +1765,7 @@ Type: `string | object | (string | object)[]`
 
 Commands to run after the platform release is fully live and assets are attached. Each command runs from the repository root.\
 Useful for announcements, webhooks, and publishing packages to external registries.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1739,7 +1786,7 @@ Type: `string | object | (string | object)[]`
 
 Commands to run after the main operation. Each command runs from the repository root.\
 These commands will always run regardless of operation outcome (success, skipped or failure). It is recommended to check the outcome export variable if your script should only run under specific conditions.\
-Can be specified as a single command string, a configuration object (to configure `timeout` and `continue-on-error`), or an array of these.\
+Can be specified as a single command string, a configuration object (to configure `timeout`, `continue-on-error`, and `stdout-override-format`), or an array of these.\
 Available variables that cmds can use: see [Export operation variables](./export-variables.md).
 
 [⬆ Back to top](#table-of-content)
@@ -1753,38 +1800,6 @@ Same as [`command-hooks > pre-run`](#command-hooks--pre-run-optional).
 - [`continue-on-error`](#-pre-run--continue-on-error-optional)
 
 [⬆ Back to top](#table-of-content)
-
-### runtime-config-override (Optional)
-
-Type: `object`\
-**Properties:** [`path`](#runtime-config-override--path-required), [`format`](#runtime-config-override--format-optional)
-
-A dynamic configuration file to deep-merge over the resolved config at runtime, typically generated by a [`command-hooks`](#command-hooks-optional) script.
-
-This file is always read from the local filesystem. If the file does not exist or is empty, it is safely ignored. However, if the file exists but the merged result fails schema validation, the operation will throw an error.
-
-**Immutable Fields:** For security and structural consistency, certain core fields are protected and cannot be overridden at runtime. Any values provided for these fields in the override file will be ignored, and the original configuration values will be preserved.
-
-Currently protected fields:
-
-- [`review > working-branch-name-template`](#review--working-branch-name-template-optional)
-
-[⬆ Back to top](#table-of-content)
-
-#### runtime-config-override > path (Required)
-
-Type: `string`
-
-Path to the runtime override config file, read from the local filesystem.
-
-[⬆ Back to top](#table-of-content)
-
-#### runtime-config-override > format (Optional)
-
-Type: `string`\
-Default: `"auto"`
-
-Config file format. Allowed values: `auto`, `json`, `jsonc`, `json5`, `yaml`, `toml`.
 
 [⬆ Back to top](#table-of-content)
 
@@ -1845,5 +1860,41 @@ A discriminated union based on the `type` field. Specifies the type of pre-relea
 - `type` (Required): `"date"`
 - `format` (Optional): The date format. `"YYYYMMDD"` or `"YYYY-MM-DD"`. Default: `"YYYYMMDD"`
 - `time-zone` (Optional): The timezone to use for the date. If not specified, falls back to base [`time-zone`](#time-zone-optional).
+
+[⬆ Back to top](#table-of-content)
+
+### workspace (Optional)
+
+Type: `object` (key-value map)\
+Default: not set (single-repo mode)
+
+Defines workspace members for monorepo support. When this property is present, the tool operates in **monorepo mode**.
+
+Each key is the **relative path** from the repository root to the workspace directory. Each value is a workspace member configuration object.
+
+For the full workspace member configuration reference, see [workspace-config-options.md](./workspace-config-options.md).
+
+**Example:**
+
+```json
+{
+  "workspace": {
+    "packages/core": {
+      "name": "core",
+      "version-files": [{ "path": "package.json", "selector": "$.version" }],
+      "tag": {
+        "name-template": "core-v{{nextVersion}}"
+      }
+    },
+    "packages/cli": {
+      "name": "cli",
+      "version-files": [{ "path": "package.json", "selector": "$.version" }]
+    }
+  }
+}
+```
+
+> [!IMPORTANT]
+> Workspace names must be unique across all members. Version file paths within a workspace config are **relative to the workspace directory**, not the repository root.
 
 [⬆ Back to top](#table-of-content)

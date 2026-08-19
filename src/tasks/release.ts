@@ -9,6 +9,7 @@ import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import { getTextFile } from "./file.ts";
 import { taskLogger } from "./logger.ts";
 import { resolveStringTemplate } from "./string-templates-and-patterns/resolve-template.ts";
+import type { StringPatternContext } from "./string-templates-and-patterns/pattern-context.ts";
 import { failedNonCriticalTasks } from "../main.ts";
 import { basename } from "@std/path";
 import { consumeAsyncIterable } from "../utils/async.ts";
@@ -42,6 +43,7 @@ export async function createRelease(
   provider: PlatformProvider,
   inputs: CreateReleaseInputsParams,
   config: CreateReleaseConfigParams,
+  patternContext: StringPatternContext,
 ) {
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
   const { tag } = config;
@@ -66,9 +68,9 @@ export async function createRelease(
       titleTemplatePath,
       { provider, workspacePath, ref: triggerCommitHash },
     );
-    releaseNoteTitle = await resolveStringTemplate(releaseTitleTemplate);
+    releaseNoteTitle = await resolveStringTemplate(releaseTitleTemplate, patternContext);
   } else {
-    releaseNoteTitle = await resolveStringTemplate(titleTemplate);
+    releaseNoteTitle = await resolveStringTemplate(titleTemplate, patternContext);
   }
 
   let releaseNoteHeader: string | undefined;
@@ -78,9 +80,9 @@ export async function createRelease(
       headerTemplatePath,
       { provider, workspacePath, ref: triggerCommitHash },
     );
-    releaseNoteHeader = await resolveStringTemplate(releaseHeaderTemplate);
+    releaseNoteHeader = await resolveStringTemplate(releaseHeaderTemplate, patternContext);
   } else if (headerTemplate !== undefined) {
-    releaseNoteHeader = await resolveStringTemplate(headerTemplate);
+    releaseNoteHeader = await resolveStringTemplate(headerTemplate, patternContext);
   }
 
   let releaseNoteBody: string | undefined;
@@ -90,9 +92,9 @@ export async function createRelease(
       bodyTemplatePath,
       { provider, workspacePath, ref: triggerCommitHash },
     );
-    releaseNoteBody = await resolveStringTemplate(releaseBodyTemplate);
+    releaseNoteBody = await resolveStringTemplate(releaseBodyTemplate, patternContext);
   } else {
-    releaseNoteBody = await resolveStringTemplate(bodyTemplate);
+    releaseNoteBody = await resolveStringTemplate(bodyTemplate, patternContext);
   }
 
   let releaseNoteFooter: string | undefined;
@@ -102,17 +104,21 @@ export async function createRelease(
       footerTemplatePath,
       { provider, workspacePath, ref: triggerCommitHash },
     );
-    releaseNoteFooter = await resolveStringTemplate(releaseFooterTemplate);
+    releaseNoteFooter = await resolveStringTemplate(releaseFooterTemplate, patternContext);
   } else if (footerTemplate !== undefined) {
-    releaseNoteFooter = await resolveStringTemplate(footerTemplate);
+    releaseNoteFooter = await resolveStringTemplate(footerTemplate, patternContext);
   }
 
-  const fullReleaseBody = [releaseNoteHeader, releaseNoteBody, releaseNoteFooter]
+  const fullReleaseBody = [
+    releaseNoteHeader,
+    releaseNoteBody,
+    releaseNoteFooter,
+  ]
     .filter(Boolean)
     .join("\n\n");
 
   const createdRelease = await provider.createRelease(
-    await resolveStringTemplate(tag.nameTemplate),
+    await resolveStringTemplate(tag.nameTemplate, patternContext),
     releaseNoteTitle,
     fullReleaseBody,
     { prerelease, draft, setLatest },

@@ -22,6 +22,7 @@ import { prepareChangelogFileToCommit } from "./changelog.ts";
 import { execSync } from "node:child_process";
 import { getTextFile } from "./file.ts";
 import { resolveStringTemplate } from "./string-templates-and-patterns/resolve-template.ts";
+import type { StringPatternContext } from "./string-templates-and-patterns/pattern-context.ts";
 import type { CommitConfigOutput } from "../schemas/configs/modules/commit-config.ts";
 import { BranchOutOfDateError } from "../errors/providers/branch.ts";
 import { SafeExit } from "../errors/safe-exit.ts";
@@ -29,16 +30,21 @@ import { VERSION } from "../version.ts";
 import { breakingChangeKeywords } from "../constants/conventional-commit-parser-options.ts";
 import { NoCommitFoundError } from "../errors/providers/commit.ts";
 import { format, type SemVer } from "@std/semver";
+import { buildMatchPatterns } from "./string-templates-and-patterns/match-patterns.ts";
 
 type ResolveCommitsInputsParams = Pick<
   InputsOutput,
   "triggerCommitHash"
 >;
 
-type ResolveCommitsConfigParams = Pick<
-  ConfigOutput,
-  "commitTypes" | "maxCommitsToResolve" | "resolveUntilCommitHash"
->;
+type ResolveCommitsConfigParams =
+  & Pick<
+    ConfigOutput,
+    "commitTypes" | "maxCommitsToResolve" | "resolveUntilCommitHash"
+  >
+  & {
+    tag: Pick<ConfigOutput["tag"], "nameTemplate" | "matchPatterns">;
+  };
 
 /**
  * Parsed and resolved commit object with additional fields.
@@ -149,14 +155,27 @@ export async function resolveCommitsFromTriggerToLastRelease(
   provider: PlatformProvider,
   inputs: ResolveCommitsInputsParams,
   config: ResolveCommitsConfigParams,
+  stopHashOverride?: string,
+  pathFilter?: string,
 ): Promise<ResolvedCommitsResult> {
   const { triggerCommitHash } = inputs;
   const { commitTypes, maxCommitsToResolve, resolveUntilCommitHash } = config;
 
-  const rawCommits = await provider.listCommitsFromGivenToLastRelease(
+  let stopHash = stopHashOverride ?? resolveUntilCommitHash;
+  if (!stopHash) {
+    const matchPatterns = buildMatchPatterns(
+      config.tag.nameTemplate,
+      config.tag.matchPatterns,
+    );
+    const lastRelease = await provider.findLastReleaseTag(matchPatterns);
+    stopHash = lastRelease?.hash;
+  }
+
+  const rawCommits = await provider.listCommitsInRange(
     triggerCommitHash,
+    stopHash,
+    pathFilter,
     maxCommitsToResolve,
-    resolveUntilCommitHash,
   ).catch((error) => {
     if (error instanceof NoCommitFoundError) {
       throw new SafeExit(error.message);
@@ -322,12 +341,27 @@ type PrepareChangesConfigParams = {
   commit: Pick<CommitConfigOutput, "localChangesToCommit">;
 };
 
+/**
+ * Resolve a file path relative to a workspace directory.
+ * In single-repo mode (workspaceRelativePath is "."), returns the path as-is.
+ * In monorepo mode, prepends the workspace path: e.g., "packages/core" + "CHANGELOG.md" → "packages/core/CHANGELOG.md".
+ */
+export function resolveWorkspaceFilePath(
+  filePath: string,
+  workspaceRelativePath: string,
+): string {
+  if (workspaceRelativePath === ".") return filePath;
+  return `${workspaceRelativePath}/${filePath}`;
+}
+
 /** @throws */
 export async function prepareChangesToCommit(
   provider: PlatformProvider,
   inputs: PrepareChangesInputsParams,
   config: PrepareChangesConfigParams,
   nextVersion: SemVer,
+  patternContext: StringPatternContext,
+  workspaceRelativePath: string = ".",
 ): Promise<Map<string, string | null>> {
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
   const { versionFiles, changelog, commit } = config;
@@ -344,8 +378,10 @@ export async function prepareChangesToCommit(
       sourceMode,
       workspacePath,
       triggerCommitHash,
+      patternContext,
+      workspaceRelativePath,
     );
-    changesData.set(normalize(path), clContent);
+    changesData.set(normalize(resolveWorkspaceFilePath(path, workspaceRelativePath)), clContent);
   } else {
     taskLogger.info("Changelog config write to file is off. Skipping...");
   }
@@ -360,9 +396,10 @@ export async function prepareChangesToCommit(
     workspacePath,
     format(nextVersion),
     triggerCommitHash,
+    workspaceRelativePath,
   );
   for (const [vfPath, vfContent] of vfChangesData) {
-    changesData.set(normalize(vfPath), vfContent);
+    changesData.set(normalize(resolveWorkspaceFilePath(vfPath, workspaceRelativePath)), vfContent);
   }
 
   if (localChangesToCommit) {
@@ -483,6 +520,7 @@ export async function commitChangesToBranch(
     targetBranchName: string;
     force?: boolean;
   },
+  patternContext: StringPatternContext,
 ) {
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
   const { releaseFlow } = config;
@@ -508,9 +546,9 @@ export async function commitChangesToBranch(
       headerTemplatePath,
       { provider, workspacePath, ref: triggerCommitHash },
     );
-    commitHeader = await resolveStringTemplate(headerTemplateFromFile);
+    commitHeader = await resolveStringTemplate(headerTemplateFromFile, patternContext);
   } else {
-    commitHeader = await resolveStringTemplate(headerTemplate);
+    commitHeader = await resolveStringTemplate(headerTemplate, patternContext);
   }
 
   let commitBody: string | undefined;
@@ -520,9 +558,9 @@ export async function commitChangesToBranch(
       bodyTemplatePath,
       { provider, workspacePath, ref: triggerCommitHash },
     );
-    commitBody = await resolveStringTemplate(bodyTemplateFromFile);
+    commitBody = await resolveStringTemplate(bodyTemplateFromFile, patternContext);
   } else if (bodyTemplate) {
-    commitBody = await resolveStringTemplate(bodyTemplate);
+    commitBody = await resolveStringTemplate(bodyTemplate, patternContext);
   }
 
   let commitFooter: string | undefined;
@@ -532,9 +570,9 @@ export async function commitChangesToBranch(
       footerTemplatePath,
       { provider, workspacePath, ref: triggerCommitHash },
     );
-    commitFooter = await resolveStringTemplate(footerTemplateFromFile);
+    commitFooter = await resolveStringTemplate(footerTemplateFromFile, patternContext);
   } else if (footerTemplate) {
-    commitFooter = await resolveStringTemplate(footerTemplate);
+    commitFooter = await resolveStringTemplate(footerTemplate, patternContext);
   }
 
   const zephyrReleaseSign = `${ZEPHYR_RELEASE_COMMIT_SIGN}: ${VERSION}`;
@@ -567,4 +605,40 @@ export async function commitChangesToBranch(
   });
 
   return createdCommit;
+}
+
+export interface ParsedReleaseAs {
+  global?: string;
+  workspaces: Map<string, string>;
+}
+
+/**
+ * Parse Release-As footer for monorepo support.
+ *   Release-As: 2.0.0                    → global
+ *   Release-As: core@2.0.0               → workspace-specific
+ *   Release-As: core@2.0.0, cli@3.0.0    → multiple workspace-specific
+ *   Release-As: @scope/pkg@1.0.0         → scoped (uses lastIndexOf("@"))
+ */
+export function parseReleaseAsFooter(
+  value: string,
+): ParsedReleaseAs {
+  const result: ParsedReleaseAs = {
+    global: undefined,
+    workspaces: new Map<string, string>(),
+  };
+  const parts = value.split(",").map((s) => s.trim()).filter(Boolean);
+
+  for (const part of parts) {
+    const lastAtIndex = part.lastIndexOf("@");
+    // No "@" at all → global, or "@" only at position 0 (scoped package without version separator) → global
+    if (lastAtIndex === -1 || lastAtIndex === 0) {
+      result.global = part;
+    } else {
+      const name = part.substring(0, lastAtIndex);
+      const version = part.substring(lastAtIndex + 1);
+      result.workspaces.set(name, version);
+    }
+  }
+
+  return result;
 }

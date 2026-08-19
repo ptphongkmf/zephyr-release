@@ -32,6 +32,7 @@ export async function executeReviewReleaseFlow(
       provider,
       runSettings,
       bootstrapData.associatedProposalForCommit,
+      bootstrapData.patternContext,
     );
   } else {
     logger.subHeader(

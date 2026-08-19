@@ -12,11 +12,9 @@ import { executeReviewReleaseFlow } from "./workflows/review.ts";
 import type { OperationRunSettings } from "./types/operation-context.ts";
 import { executeAutoReleaseFlow } from "./workflows/auto.ts";
 import { SafeExit } from "./errors/safe-exit.ts";
-import { bootstrapOperation } from "./workflows/bootstrap.ts";
-import {
-  resolveRuntimeConfigOverride,
-  synchronizeRuntimeStateAfterOverride,
-} from "./tasks/runtime-override.ts";
+import { bootstrapOperation, type BootstrapResult } from "./workflows/bootstrap.ts";
+import { executeHookWithOverride } from "./workflows/hook-runner.ts";
+import { resolveWorkspaces } from "./tasks/workspace-resolver.ts";
 
 export async function run(provider: PlatformProvider) {
   logger.stepStart("Starting: Get operation inputs");
@@ -34,17 +32,32 @@ export async function run(provider: PlatformProvider) {
   );
   logger.stepFinish("Finished: Resolve config from file and override");
 
+  // Resolve workspaces //
+  const workspaces = resolveWorkspaces(configResult.config);
+  const isMonorepoMode = configResult.config.workspace !== undefined;
+
+  if (isMonorepoMode && !configResult.config.review.groupProposals) {
+    throw new Error(
+      "Ungrouped proposals (review.groupProposals: false) are not yet supported in monorepo mode. " +
+      "Please set review.groupProposals to true or omit it (default is true).",
+    );
+  }
+
   // Init Run Settings //
   let runSettings: OperationRunSettings = {
     rawInputs: inputsResult.rawInputs,
     inputs: inputsResult.inputs,
     rawConfig: configResult.rawConfig,
     config: configResult.config,
+    isMonorepoMode,
+    workspaces,
   };
+
+  let bootstrapData: BootstrapResult | undefined;
 
   try {
     logger.header("Start Bootstrap Operation");
-    const bootstrapData = await bootstrapOperation(
+    bootstrapData = await bootstrapOperation(
       provider,
       runSettings.config,
       runSettings.inputs,
@@ -60,47 +73,20 @@ export async function run(provider: PlatformProvider) {
       inputs: runSettings.inputs,
       rawConfig: runSettings.rawConfig,
       config: runSettings.config,
+      patternContext: bootstrapData.patternContext,
     });
     logger.debugStepFinish("Finished: Export base operation variables");
 
-    logger.stepStart("Starting: Execute base pre commands");
-    const preResult = await runCommands(
-      runSettings.config.commandHooks,
-      "preRun",
-    );
-    if (preResult) {
-      logger.stepFinish(`Finished: Execute base pre commands. ${preResult}`);
-    } else {
-      logger.stepSkip("Skipped: Execute base pre commands (empty)");
-    }
-
-    logger.stepStart(
-      "Starting: Resolve runtime config override (base pre commands)",
-    );
-    const _basePreRuntimeConfigResult = await resolveRuntimeConfigOverride(
-      runSettings.rawConfig,
-      runSettings.config,
-      runSettings.inputs.workspacePath,
-    );
-    if (_basePreRuntimeConfigResult) {
-      runSettings = {
-        ...runSettings,
-        rawConfig: _basePreRuntimeConfigResult.rawResolvedRuntime,
-        config: _basePreRuntimeConfigResult.resolvedRuntime,
-      };
-      await synchronizeRuntimeStateAfterOverride({
+    {
+      const hookResult = await executeHookWithOverride(
         provider,
-        config: runSettings.config,
-        rawConfig: runSettings.rawConfig,
-        triggerBranchName: runSettings.inputs.triggerBranchName,
-      });
-      logger.stepFinish(
-        "Finished: Resolve runtime config override (base pre commands)",
+        "preRun",
+        runSettings.config.commandHooks,
+        runSettings,
+        bootstrapData.patternContext,
       );
-    } else {
-      logger.stepSkip(
-        "Skipped: Resolve runtime config override (base pre commands)",
-      );
+      runSettings = hookResult.runSettings;
+      bootstrapData.patternContext = hookResult.patternContext;
     }
 
     // Main operation workflow //
@@ -121,12 +107,12 @@ export async function run(provider: PlatformProvider) {
         break;
     }
 
-    await exportFinalOperationVariables(provider, "success");
+    await exportFinalOperationVariables(provider, "success", bootstrapData!.patternContext);
   } catch (error) {
     if (error instanceof SafeExit) {
-      await exportFinalOperationVariables(provider, "skipped");
+      await exportFinalOperationVariables(provider, "skipped", bootstrapData?.patternContext ?? {});
     } else {
-      await exportFinalOperationVariables(provider, "failure");
+      await exportFinalOperationVariables(provider, "failure", bootstrapData?.patternContext ?? {});
     }
 
     throw error;
@@ -136,8 +122,8 @@ export async function run(provider: PlatformProvider) {
       runSettings.config.commandHooks,
       "postRun",
     );
-    if (postResult) {
-      logger.stepFinish(`Finished: Execute base post commands. ${postResult}`);
+    if (postResult.summary) {
+      logger.stepFinish(`Finished: Execute base post commands. ${postResult.summary}`);
     } else {
       logger.stepSkip("Skipped: Execute base post commands (empty)");
     }

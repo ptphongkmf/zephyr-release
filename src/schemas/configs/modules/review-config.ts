@@ -20,6 +20,17 @@ export const ReviewConfigSchema = v.pipe(
       }),
     ),
 
+    groupProposals: v.pipe(
+      v.optional(v.boolean(), true),
+      v.metadata({
+        description:
+          "When true (default), all workspace changes are grouped into a single proposal.\n" +
+          "When false, each workspace gets its own proposal with its own working branch.\n" +
+          "Only meaningful in monorepo mode.\n" +
+          "Default: true",
+      }),
+    ),
+
     workingBranchNameTemplate: v.pipe(
       v.optional(
         trimNonEmptyStringSchema,
@@ -29,7 +40,7 @@ export const ReviewConfigSchema = v.pipe(
         description:
           "String template for branch name that Zephyr Release will use.\n" +
           "Allowed patterns to use are: fixed base string patterns.\n" +
-          "Note: This value is immutable at runtime and cannot be changed via `runtimeConfigOverride`.\n" +
+          "Note: This value is immutable at runtime and cannot be changed via stdout config override.\n" +
           `Default: ${JSON.stringify(DEFAULT_WORKING_BRANCH_NAME_TEMPLATE)}`,
       }),
     ),
@@ -48,7 +59,8 @@ export const ReviewConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing proposal title template. Overrides `titleTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     headerTemplate: v.pipe(
@@ -65,7 +77,8 @@ export const ReviewConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing proposal header template. Overrides `headerTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     bodyTemplate: v.pipe(
@@ -82,7 +95,8 @@ export const ReviewConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing proposal body template. Overrides `bodyTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
     footerTemplate: v.pipe(
@@ -99,7 +113,8 @@ export const ReviewConfigSchema = v.pipe(
       v.metadata({
         description:
           "Path to text file containing proposal footer template. Overrides `footerTemplate` when both are provided.\n" +
-          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional`,
+          `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+          "This path is always relative to the repository root, even in monorepo mode.",
       }),
     ),
 
