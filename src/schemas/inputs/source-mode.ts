@@ -7,6 +7,7 @@ export const SourceModeSchema = v.object({
 
   overrides: v.optional(
     v.record(trimNonEmptyStringSchema, v.enum(SourceModeOptions)),
+    {},
   ),
 });
 

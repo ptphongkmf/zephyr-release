@@ -542,7 +542,7 @@ export async function commitChangesToBranch(
   let commitHeader: string;
   if (headerTemplatePath) {
     const headerTemplateFromFile = await getTextFile(
-      sourceMode.overrides?.[headerTemplatePath] ?? sourceMode.mode,
+      sourceMode.overrides[headerTemplatePath] ?? sourceMode.mode,
       headerTemplatePath,
       { provider, workspacePath, ref: triggerCommitHash },
     );
@@ -554,7 +554,7 @@ export async function commitChangesToBranch(
   let commitBody: string | undefined;
   if (bodyTemplatePath) {
     const bodyTemplateFromFile = await getTextFile(
-      sourceMode.overrides?.[bodyTemplatePath] ?? sourceMode.mode,
+      sourceMode.overrides[bodyTemplatePath] ?? sourceMode.mode,
       bodyTemplatePath,
       { provider, workspacePath, ref: triggerCommitHash },
     );
@@ -566,7 +566,7 @@ export async function commitChangesToBranch(
   let commitFooter: string | undefined;
   if (footerTemplatePath) {
     const footerTemplateFromFile = await getTextFile(
-      sourceMode.overrides?.[footerTemplatePath] ?? sourceMode.mode,
+      sourceMode.overrides[footerTemplatePath] ?? sourceMode.mode,
       footerTemplatePath,
       { provider, workspacePath, ref: triggerCommitHash },
     );

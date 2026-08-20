@@ -90,7 +90,7 @@ export async function createProposalContent(
   let proposalHeader: string;
   if (headerTemplatePath) {
     const proposalHeaderTemplate = await getTextFile(
-      sourceMode.overrides?.[headerTemplatePath] ?? sourceMode.mode,
+      sourceMode.overrides[headerTemplatePath] ?? sourceMode.mode,
       headerTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );
@@ -102,7 +102,7 @@ export async function createProposalContent(
   let proposalBody: string;
   if (bodyTemplatePath) {
     const proposalBodyTemplate = await getTextFile(
-      sourceMode.overrides?.[bodyTemplatePath] ?? sourceMode.mode,
+      sourceMode.overrides[bodyTemplatePath] ?? sourceMode.mode,
       bodyTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );
@@ -120,7 +120,7 @@ export async function createProposalContent(
   let proposalFooter: string;
   if (footerTemplatePath) {
     const proposalFooterTemplate = await getTextFile(
-      sourceMode.overrides?.[footerTemplatePath] ?? sourceMode.mode,
+      sourceMode.overrides[footerTemplatePath] ?? sourceMode.mode,
       footerTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );

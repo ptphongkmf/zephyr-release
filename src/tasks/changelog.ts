@@ -177,7 +177,7 @@ async function resolveReleaseHeader(
   let baseTemplate: string;
   if (releaseHeaderTemplatePath) {
     baseTemplate = await getTextFile(
-      sourceMode.overrides?.[releaseHeaderTemplatePath] ?? sourceMode.mode,
+      sourceMode.overrides[releaseHeaderTemplatePath] ?? sourceMode.mode,
       releaseHeaderTemplatePath,
       getTextOpts,
     );
@@ -197,7 +197,7 @@ async function resolveReleaseHeader(
     altTemplate = baseTemplate;
   } else if (resolvedAltPath) {
     altTemplate = await getTextFile(
-      sourceMode.overrides?.[resolvedAltPath] ?? sourceMode.mode,
+      sourceMode.overrides[resolvedAltPath] ?? sourceMode.mode,
       resolvedAltPath,
       getTextOpts,
     );
@@ -238,7 +238,7 @@ async function resolveReleaseBody(
   let baseTemplateOverride: string | undefined;
   if (releaseBodyOverridePath) {
     baseTemplateOverride = await getTextFile(
-      sourceMode.overrides?.[releaseBodyOverridePath] ?? sourceMode.mode,
+      sourceMode.overrides[releaseBodyOverridePath] ?? sourceMode.mode,
       releaseBodyOverridePath,
       getTextOpts,
     );
@@ -257,7 +257,7 @@ async function resolveReleaseBody(
     altTemplateOverride = baseTemplateOverride;
   } else if (resolvedAltPath) {
     altTemplateOverride = await getTextFile(
-      sourceMode.overrides?.[resolvedAltPath] ?? sourceMode.mode,
+      sourceMode.overrides[resolvedAltPath] ?? sourceMode.mode,
       resolvedAltPath,
       getTextOpts,
     );
@@ -308,7 +308,7 @@ async function resolveReleaseFooter(
   let baseTemplate: string | undefined;
   if (releaseFooterTemplatePath) {
     baseTemplate = await getTextFile(
-      sourceMode.overrides?.[releaseFooterTemplatePath] ?? sourceMode.mode,
+      sourceMode.overrides[releaseFooterTemplatePath] ?? sourceMode.mode,
       releaseFooterTemplatePath,
       getTextOpts,
     );
@@ -328,7 +328,7 @@ async function resolveReleaseFooter(
     altTemplate = baseTemplate;
   } else if (resolvedAltPath) {
     altTemplate = await getTextFile(
-      sourceMode.overrides?.[resolvedAltPath] ?? sourceMode.mode,
+      sourceMode.overrides[resolvedAltPath] ?? sourceMode.mode,
       resolvedAltPath,
       getTextOpts,
     );
@@ -449,7 +449,7 @@ async function generateReleaseBodyBasedOnCommits(
   let sectionHeadingTemplateBase: string;
   if (releaseSectionHeadingTemplatePath) {
     sectionHeadingTemplateBase = await getTextFile(
-      sourceMode.overrides?.[releaseSectionHeadingTemplatePath] ??
+      sourceMode.overrides[releaseSectionHeadingTemplatePath] ??
         sourceMode.mode,
       releaseSectionHeadingTemplatePath,
       getTextOpts,
@@ -470,7 +470,7 @@ async function generateReleaseBodyBasedOnCommits(
     sectionHeadingTemplateAlt = sectionHeadingTemplateBase;
   } else if (resolvedSectionHeadingAltPath) {
     sectionHeadingTemplateAlt = await getTextFile(
-      sourceMode.overrides?.[resolvedSectionHeadingAltPath] ?? sourceMode.mode,
+      sourceMode.overrides[resolvedSectionHeadingAltPath] ?? sourceMode.mode,
       resolvedSectionHeadingAltPath,
       getTextOpts,
     );
@@ -481,7 +481,7 @@ async function generateReleaseBodyBasedOnCommits(
   let sectionEntryTemplateBase: string;
   if (releaseSectionEntryTemplatePath) {
     sectionEntryTemplateBase = await getTextFile(
-      sourceMode.overrides?.[releaseSectionEntryTemplatePath] ??
+      sourceMode.overrides[releaseSectionEntryTemplatePath] ??
         sourceMode.mode,
       releaseSectionEntryTemplatePath,
       getTextOpts,
@@ -503,7 +503,7 @@ async function generateReleaseBodyBasedOnCommits(
     sectionEntryTemplateAlt = sectionEntryTemplateBase;
   } else if (resolvedSectionEntryAltPath) {
     sectionEntryTemplateAlt = await getTextFile(
-      sourceMode.overrides?.[resolvedSectionEntryAltPath] ?? sourceMode.mode,
+      sourceMode.overrides[resolvedSectionEntryAltPath] ?? sourceMode.mode,
       resolvedSectionEntryAltPath,
       getTextOpts,
     );
@@ -514,7 +514,7 @@ async function generateReleaseBodyBasedOnCommits(
   let breakingEntryTemplateBase: string;
   if (releaseBreakingSectionEntryTemplatePath) {
     breakingEntryTemplateBase = await getTextFile(
-      sourceMode.overrides?.[releaseBreakingSectionEntryTemplatePath] ??
+      sourceMode.overrides[releaseBreakingSectionEntryTemplatePath] ??
         sourceMode.mode,
       releaseBreakingSectionEntryTemplatePath,
       getTextOpts,
@@ -538,7 +538,7 @@ async function generateReleaseBodyBasedOnCommits(
     breakingEntryTemplateAlt = breakingEntryTemplateBase;
   } else if (resolvedBreakingEntryAltPath) {
     breakingEntryTemplateAlt = await getTextFile(
-      sourceMode.overrides?.[resolvedBreakingEntryAltPath] ?? sourceMode.mode,
+      sourceMode.overrides[resolvedBreakingEntryAltPath] ?? sourceMode.mode,
       resolvedBreakingEntryAltPath,
       getTextOpts,
     );
@@ -748,7 +748,7 @@ export async function prepareChangelogFileToCommit(
     ? path
     : `${workspaceRelativePath}/${path}`;
 
-  const changelogSourceMode = sourceMode.overrides?.[path] ?? sourceMode.mode;
+  const changelogSourceMode = sourceMode.overrides[path] ?? sourceMode.mode;
 
   // If current changelog file not exist, we auto create a brand new one
   const currentFileContent = await getTextFile(
@@ -766,7 +766,7 @@ export async function prepareChangelogFileToCommit(
   let header: string;
   if (fileHeaderTemplatePath) {
     const headerTemplate = await getTextFile(
-      sourceMode.overrides?.[fileHeaderTemplatePath] ?? sourceMode.mode,
+      sourceMode.overrides[fileHeaderTemplatePath] ?? sourceMode.mode,
       fileHeaderTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );
@@ -776,7 +776,7 @@ export async function prepareChangelogFileToCommit(
   let releaseContentBlock: string;
   if (fileReleaseTemplatePath) {
     const releaseTemplate = await getTextFile(
-      sourceMode.overrides?.[fileReleaseTemplatePath] ?? sourceMode.mode,
+      sourceMode.overrides[fileReleaseTemplatePath] ?? sourceMode.mode,
       fileReleaseTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );
@@ -788,7 +788,7 @@ export async function prepareChangelogFileToCommit(
   let footer: string | undefined;
   if (fileFooterTemplatePath) {
     const footerTemplate = await getTextFile(
-      sourceMode.overrides?.[fileFooterTemplatePath] ?? sourceMode.mode,
+      sourceMode.overrides[fileFooterTemplatePath] ?? sourceMode.mode,
       fileFooterTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );

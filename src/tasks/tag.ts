@@ -43,7 +43,7 @@ export async function createTag(
   let tagMessage: string | undefined;
   if (messageTemplatePath) {
     const msgTemplate = await getTextFile(
-      sourceMode.overrides?.[messageTemplatePath] ?? sourceMode.mode,
+      sourceMode.overrides[messageTemplatePath] ?? sourceMode.mode,
       messageTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );

@@ -55,7 +55,7 @@ export const ReviewLabelsSchema = v.object({
             "to remove all labels added in `onCreate`.",
         }),
       ),
-    })),
+    }), {}),
     v.metadata({
       description:
         "Labels to attach and remove from proposals when merged. Can be a string, a label object, " +

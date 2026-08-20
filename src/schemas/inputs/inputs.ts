@@ -32,7 +32,7 @@ export const InputsSchema = v.pipe(
     sourceMode: v.pipe(
       v.union([v.enum(SourceModeOptions), SourceModeSchema]),
       v.transform((input) =>
-        typeof input === "string" ? { mode: input } : input
+        typeof input === "string" ? { mode: input, overrides: {} } : input
       ),
     ),
   }),

@@ -29,24 +29,24 @@ export const WorkspaceMemberConfigSchema = v.pipe(
       }),
     ),
 
+    // Per-workspace review overrides
+    // postCommit and postProposal hooks are ignored when groupProposals: true
+    review: v.optional(ReviewConfigSchema, {}),
+    auto: v.optional(AutoConfigSchema, {}),
+
     // Per-workspace overrides (all optional, inherit from root via deepMerge)
     initialVersion: BaseCoreConfigSchema.entries.initialVersion,
     versionFiles: BaseCoreConfigSchema.entries.versionFiles,
+
     commitTypes: BaseCoreConfigSchema.entries.commitTypes,
     allowedReleaseAsCommitTypes:
       BaseCoreConfigSchema.entries.allowedReleaseAsCommitTypes,
 
-    bumpStrategy: v.optional(BumpStrategyConfigSchema),
-    changelog: v.optional(ChangelogConfigSchema),
-    commit: v.optional(CommitConfigSchema),
-    tag: v.optional(TagConfigSchema),
-    release: v.optional(ReleaseConfigSchema),
-
-    // Per-workspace review overrides
-    // postCommit and postProposal hooks are ignored when groupProposals: true
-    review: v.optional(ReviewConfigSchema),
-
-    auto: v.optional(AutoConfigSchema),
+    bumpStrategy: v.optional(BumpStrategyConfigSchema, {}),
+    changelog: v.optional(ChangelogConfigSchema, {}),
+    commit: v.optional(CommitConfigSchema, {}),
+    tag: v.optional(TagConfigSchema, {}),
+    release: v.optional(ReleaseConfigSchema, {}),
 
     // Per-workspace command hooks (merged with root via deepMerge — field-level inheritance)
     // Hooks that fire per-workspace: preCalculateVersion, postCalculateVersion,
@@ -54,7 +54,7 @@ export const WorkspaceMemberConfigSchema = v.pipe(
     // Hooks that fire globally only (ignored here): preRun, postRun
     // Hooks that fire globally in grouped mode (with desc note): preCommit, postCommit, postProposal
     commandHooks: v.pipe(
-      v.optional(CommandHooksSchema),
+      v.optional(CommandHooksSchema, {}),
       v.metadata({
         description:
           "Per-workspace command hook overrides. Merged with root command-hooks via field-level inheritance.\n" +

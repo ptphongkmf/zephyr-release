@@ -119,7 +119,7 @@ export const ReviewConfigSchema = v.pipe(
     ),
 
     labels: v.pipe(
-      v.optional(ReviewLabelsSchema),
+      v.optional(ReviewLabelsSchema, {}),
       v.metadata({
         description:
           "Labels to attach and remove from proposals on different stages.",

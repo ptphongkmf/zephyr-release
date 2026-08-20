@@ -48,7 +48,7 @@ export async function getVersionSemVerFromVersionFile(
     : `${workspaceRelativePath}/${versionFile.path}`;
 
   const fileContent = await getTextFile(
-    sourceMode.overrides?.[versionFile.path] ?? sourceMode.mode,
+    sourceMode.overrides[versionFile.path] ?? sourceMode.mode,
     resolvedFilePath,
     { workspacePath: workspacePath, provider, ref: triggerCommitHash },
   );
@@ -101,7 +101,7 @@ export async function prepareVersionFilesToCommit(
       : `${workspaceRelativePath}/${vf.path}`;
 
     const fileContent = await getTextFile(
-      sourceMode.overrides?.[vf.path] ?? sourceMode.mode,
+      sourceMode.overrides[vf.path] ?? sourceMode.mode,
       resolvedFilePath,
       {
         provider,

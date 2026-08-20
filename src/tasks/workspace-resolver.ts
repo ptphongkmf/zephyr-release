@@ -1,6 +1,6 @@
 import { deepMerge } from "@std/collections";
 import * as v from "@valibot/valibot";
-import { ConfigSchema, type ConfigOutput } from "../schemas/configs/config.ts";
+import { type ConfigOutput, ConfigSchema } from "../schemas/configs/config.ts";
 import type { WorkspaceMemberConfigOutput } from "../schemas/configs/modules/workspace-member-config.ts";
 import type { ResolvedWorkspace } from "../types/workspace-context.ts";
 import { formatValibotIssues } from "../utils/formatters/valibot.ts";

@@ -391,7 +391,7 @@ export async function executeReviewPreparePhase(
   );
   logger.stepFinish("Finished: Create or update proposal");
 
-  if (runSettings.config.review.labels?.onCreate) {
+  if (runSettings.config.review.labels.onCreate) {
     logger.stepStart("Starting: Add labels to proposal");
     await addLabelsToProposalOnCreate(
       provider,
