@@ -17,8 +17,9 @@ export interface CoreLogger {
 export interface Logger {
   info: (message: string) => void;
 
-  header: (message: string) => void;
-  subHeader: (message: string) => void;
+  title: (message: string) => void;
+  heading: (message: string) => void;
+  subHeading: (message: string) => void;
 
   step: (message: string) => void;
   stepStart: (message: string) => void;

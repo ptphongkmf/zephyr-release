@@ -95,10 +95,12 @@ activeCoreLogger = defaultCoreLogger;
 export const logger: Logger = {
   info: (message: string) => activeCoreLogger.info(message),
 
-  header: (message: string) =>
+  title: (message: string) =>
     activeCoreLogger.info(formatHeaderMessage(message, { padChar: "=" })),
-  subHeader: (message: string) =>
+  heading: (message: string) =>
     activeCoreLogger.info(formatHeaderMessage(message, { padChar: "-" })),
+  subHeading: (message: string) =>
+    activeCoreLogger.info(formatHeaderMessage(message, { padChar: "~" })),
 
   step: (message: string) => activeCoreLogger.info(formatStepMessage(message)),
   stepStart: (message: string) =>

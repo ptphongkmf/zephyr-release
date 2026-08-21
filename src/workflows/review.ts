@@ -16,7 +16,7 @@ export async function executeReviewReleaseFlow(
   let runSettings: OperationRunSettings = currentRunSettings;
 
   if (!bootstrapData.associatedProposalForCommit) {
-    logger.header(
+    logger.title(
       "Review release flow (prepare): Creating/Updating release proposal",
     );
     runSettings = await executeReviewPreparePhase(
@@ -25,7 +25,7 @@ export async function executeReviewReleaseFlow(
       bootstrapData,
     );
   } else if (runSettings.config.tag.createTag) {
-    logger.header(
+    logger.title(
       "Review release flow (publish): Creating tag and release",
     );
     runSettings = await executeReviewPublishPhase(
@@ -35,7 +35,7 @@ export async function executeReviewReleaseFlow(
       bootstrapData.patternContext,
     );
   } else {
-    logger.subHeader(
+    logger.subHeading(
       "Review release flow (publish): Skip create tag and release (disabled in config)",
     );
   }

@@ -72,7 +72,7 @@ export async function executeReviewPreparePhase(
   // Phase 1: Per-workspace version/changelog/files
   // ═══════════════════════════════════════════════════════════════════
 
-  logger.header(
+  logger.heading(
     "Review release flow (prepare): Creating commit and proposal...",
   );
 
@@ -106,12 +106,10 @@ export async function executeReviewPreparePhase(
 
   for (const ws of affectedWorkspaces) {
     const wsConfig = ws.config;
-    const wsLabel = runSettings.isMonorepoMode
-      ? `[${wsConfig.name}] `
-      : "";
+    const wsLabel = runSettings.isMonorepoMode ? `[${wsConfig.name}] ` : "";
 
     if (runSettings.isMonorepoMode) {
-      logger.subHeader(`Workspace: ${wsConfig.name}`);
+      logger.subHeading(`Workspace: ${wsConfig.name}`);
       provider.setEnv("ZR_NAME", wsConfig.name ?? "");
     }
 
@@ -129,14 +127,13 @@ export async function executeReviewPreparePhase(
     logger.stepStart(
       `${wsLabel}Starting: Resolve commits from trigger to last release`,
     );
-    const resolvedCommitsResult =
-      await resolveCommitsFromTriggerToLastRelease(
-        provider,
-        runSettings.inputs,
-        wsConfig,
-        ws.lastReleaseHash,
-        ws.path === "." ? undefined : ws.path,
-      );
+    const resolvedCommitsResult = await resolveCommitsFromTriggerToLastRelease(
+      provider,
+      runSettings.inputs,
+      wsConfig,
+      ws.lastReleaseHash,
+      ws.path === "." ? undefined : ws.path,
+    );
     logger.stepFinish(
       `${wsLabel}Finished: Resolve commits from trigger to last release`,
     );
@@ -242,14 +239,13 @@ export async function executeReviewPreparePhase(
     logger.stepStart(
       `${wsLabel}Starting: Generate changelog release content`,
     );
-    const changelogReleaseResult =
-      await generatePrepareChangelogReleaseContent(
-        provider,
-        resolvedCommitsResult.entries,
-        runSettings.inputs,
-        wsConfig,
-        wsPatternContext,
-      );
+    const changelogReleaseResult = await generatePrepareChangelogReleaseContent(
+      provider,
+      resolvedCommitsResult.entries,
+      runSettings.inputs,
+      wsConfig,
+      wsPatternContext,
+    );
     logger.stepFinish(
       `${wsLabel}Finished: Generate changelog release content`,
     );

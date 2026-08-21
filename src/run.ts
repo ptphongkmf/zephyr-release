@@ -12,7 +12,10 @@ import { executeReviewReleaseFlow } from "./workflows/review.ts";
 import type { OperationRunSettings } from "./types/operation-context.ts";
 import { executeAutoReleaseFlow } from "./workflows/auto.ts";
 import { SafeExit } from "./errors/safe-exit.ts";
-import { bootstrapOperation, type BootstrapResult } from "./workflows/bootstrap.ts";
+import {
+  bootstrapOperation,
+  type BootstrapResult,
+} from "./workflows/bootstrap.ts";
 import { executeHookWithOverride } from "./workflows/hook-runner.ts";
 import { resolveWorkspaces } from "./tasks/workspace-resolver.ts";
 
@@ -39,7 +42,7 @@ export async function run(provider: PlatformProvider) {
   if (isMonorepoMode && !configResult.config.review.groupProposals) {
     throw new Error(
       "Ungrouped proposals (review.groupProposals: false) are not yet supported in monorepo mode. " +
-      "Please set review.groupProposals to true or omit it (default is true).",
+        "Please set review.groupProposals to true or omit it (default is true).",
     );
   }
 
@@ -56,7 +59,7 @@ export async function run(provider: PlatformProvider) {
   let bootstrapData: BootstrapResult | undefined;
 
   try {
-    logger.header("Start Bootstrap Operation");
+    logger.title("Start Bootstrap Operation");
     bootstrapData = await bootstrapOperation(
       provider,
       runSettings.config,
@@ -107,12 +110,24 @@ export async function run(provider: PlatformProvider) {
         break;
     }
 
-    await exportFinalOperationVariables(provider, "success", bootstrapData!.patternContext);
+    await exportFinalOperationVariables(
+      provider,
+      "success",
+      bootstrapData!.patternContext,
+    );
   } catch (error) {
     if (error instanceof SafeExit) {
-      await exportFinalOperationVariables(provider, "skipped", bootstrapData?.patternContext ?? {});
+      await exportFinalOperationVariables(
+        provider,
+        "skipped",
+        bootstrapData?.patternContext ?? {},
+      );
     } else {
-      await exportFinalOperationVariables(provider, "failure", bootstrapData?.patternContext ?? {});
+      await exportFinalOperationVariables(
+        provider,
+        "failure",
+        bootstrapData?.patternContext ?? {},
+      );
     }
 
     throw error;
@@ -123,7 +138,9 @@ export async function run(provider: PlatformProvider) {
       "postRun",
     );
     if (postResult.summary) {
-      logger.stepFinish(`Finished: Execute base post commands. ${postResult.summary}`);
+      logger.stepFinish(
+        `Finished: Execute base post commands. ${postResult.summary}`,
+      );
     } else {
       logger.stepSkip("Skipped: Execute base post commands (empty)");
     }

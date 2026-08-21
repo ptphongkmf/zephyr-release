@@ -90,7 +90,7 @@ export async function executeAutoReleaseFlow(
   // Phase 1: Per-workspace version/changelog/files
   // ═══════════════════════════════════════════════════════════════════
 
-  logger.header("Auto release flow (prepare): Creating commit...");
+  logger.title("Auto release flow (prepare): Creating commit...");
 
   // Detect affected workspaces
   const affectedWorkspaces: AffectedWorkspace[] = runSettings.isMonorepoMode
@@ -122,7 +122,7 @@ export async function executeAutoReleaseFlow(
     const wsLabel = runSettings.isMonorepoMode ? `[${wsConfig.name}] ` : "";
 
     if (runSettings.isMonorepoMode) {
-      logger.subHeader(`Workspace: ${wsConfig.name}`);
+      logger.subHeading(`Workspace: ${wsConfig.name}`);
       provider.setEnv("ZR_NAME", wsConfig.name ?? "");
     }
 
@@ -415,7 +415,7 @@ export async function executeAutoReleaseFlow(
   // ═══════════════════════════════════════════════════════════════════
 
   if (runSettings.config.tag.createTag) {
-    logger.header(
+    logger.title(
       "Auto release flow (publish): Creating tag and release...",
     );
 
@@ -428,7 +428,7 @@ export async function executeAutoReleaseFlow(
       wsPatternCtx = addReleasesPatternContext(wsPatternCtx, releaseEntries);
 
       if (runSettings.isMonorepoMode) {
-        logger.subHeader(`Workspace: ${wsConfig.name}`);
+        logger.subHeading(`Workspace: ${wsConfig.name}`);
         provider.setEnv("ZR_NAME", wsConfig.name ?? "");
       }
 
@@ -557,7 +557,7 @@ export async function executeAutoReleaseFlow(
       patternContext = wsPatternCtx;
     }
   } else {
-    logger.header(
+    logger.title(
       "Auto release flow (publish): Skip create tag and release (disabled in config)",
     );
   }

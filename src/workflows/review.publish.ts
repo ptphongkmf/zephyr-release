@@ -66,12 +66,10 @@ export async function executeReviewPublishPhase(
 
   for (const ws of workspaces) {
     const wsConfig = ws.config;
-    const wsLabel = runSettings.isMonorepoMode
-      ? `[${wsConfig.name}] `
-      : "";
+    const wsLabel = runSettings.isMonorepoMode ? `[${wsConfig.name}] ` : "";
 
     if (runSettings.isMonorepoMode) {
-      logger.subHeader(`Workspace: ${wsConfig.name}`);
+      logger.subHeading(`Workspace: ${wsConfig.name}`);
       provider.setEnv("ZR_NAME", wsConfig.name ?? "");
     }
 
@@ -98,14 +96,13 @@ export async function executeReviewPublishPhase(
     );
 
     // Build per-workspace changelog
-    const changelogReleaseResult =
-      await generatePublishChangelogReleaseContent(
-        provider,
-        proposalChangelogRelease ?? "",
-        runSettings.inputs,
-        wsConfig,
-        patternContext,
-      );
+    const changelogReleaseResult = await generatePublishChangelogReleaseContent(
+      provider,
+      proposalChangelogRelease ?? "",
+      runSettings.inputs,
+      wsConfig,
+      patternContext,
+    );
 
     // Build per-workspace pattern context
     logger.debugStepStart(
@@ -163,22 +160,20 @@ export async function executeReviewPublishPhase(
   // ═══════════════════════════════════════════════════════════════════
 
   if (runSettings.config.tag.createTag) {
-    logger.header(
+    logger.heading(
       "Review release flow (publish): Creating tag and release...",
     );
 
     for (const wsData of workspacePublishDataList) {
       const { wsConfig } = wsData;
-      const wsLabel = runSettings.isMonorepoMode
-        ? `[${wsConfig.name}] `
-        : "";
+      const wsLabel = runSettings.isMonorepoMode ? `[${wsConfig.name}] ` : "";
       let wsPatternCtx = wsData.wsPatternContext;
 
       // Apply releases context
       wsPatternCtx = addReleasesPatternContext(wsPatternCtx, releaseEntries);
 
       if (runSettings.isMonorepoMode) {
-        logger.subHeader(`Workspace: ${wsConfig.name}`);
+        logger.subHeading(`Workspace: ${wsConfig.name}`);
         provider.setEnv("ZR_NAME", wsConfig.name ?? "");
       }
 
@@ -319,7 +314,7 @@ export async function executeReviewPublishPhase(
       patternContext = wsPatternCtx;
     }
   } else {
-    logger.header(
+    logger.heading(
       "Review release flow (publish): Skip create tag and release (disabled in config)",
     );
   }
