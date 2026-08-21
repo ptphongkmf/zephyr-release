@@ -12,6 +12,7 @@ import type { PlatformProvider } from "../../types/providers/platform-provider.t
 import { formatValibotIssues } from "../../utils/formatters/valibot.ts";
 import { parseConfig } from "./config-parser.ts";
 import { transformObjKeyToCamelCase } from "../../utils/transformers/object.ts";
+import { CONFIG_PRESERVE_KEYS_AT_PATH } from "../../schemas/configs/config-preserve-keys.ts";
 
 type ResolveConfigInputsParams = Pick<
   InputsOutput,
@@ -62,7 +63,9 @@ export async function resolveConfig(
     );
 
     rawParsedConfigFile = parsedResult.parsedConfig;
-    parsedConfigFile = transformObjKeyToCamelCase(parsedResult.parsedConfig);
+    parsedConfigFile = transformObjKeyToCamelCase(parsedResult.parsedConfig, {
+      preserveKeysAtPaths: CONFIG_PRESERVE_KEYS_AT_PATH,
+    });
 
     taskLogger.info(
       `Config file parsed successfully (${parsedResult.resolvedFormatResult})`,
@@ -86,6 +89,7 @@ export async function resolveConfig(
     rawParsedConfigOverride = parsedResult.parsedConfig;
     parsedConfigOverride = transformObjKeyToCamelCase(
       parsedResult.parsedConfig,
+      { preserveKeysAtPaths: CONFIG_PRESERVE_KEYS_AT_PATH },
     );
 
     taskLogger.info(

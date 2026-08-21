@@ -4,6 +4,7 @@ import { type InputsOutput, InputsSchema } from "../schemas/inputs/inputs.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import { formatValibotIssues } from "../utils/formatters/valibot.ts";
 import { transformObjKeyToCamelCase } from "../utils/transformers/object.ts";
+import { INPUTS_PRESERVE_KEYS_AT_PATH } from "../schemas/inputs/inputs-preserve-keys.ts";
 import type { ProviderInputs } from "../types/providers/inputs.ts";
 import { SourceModeOptions } from "../constants/source-mode-options.ts";
 
@@ -26,11 +27,13 @@ export function getInputs(provider: PlatformProvider): GetInputsResult {
   ) {
     processedRawInputs = {
       ...rawInputs,
-      sourceMode: transformObjKeyToCamelCase(
-        JSON.parse(rawInputs.sourceMode),
-      ),
+      sourceMode: JSON.parse(rawInputs.sourceMode),
     };
   }
+
+  processedRawInputs = transformObjKeyToCamelCase(processedRawInputs, {
+    preserveKeysAtPaths: INPUTS_PRESERVE_KEYS_AT_PATH,
+  });
 
   const parsedInputsResult = v.safeParse(InputsSchema, processedRawInputs);
   if (!parsedInputsResult.success) {

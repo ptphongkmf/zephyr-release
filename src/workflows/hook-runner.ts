@@ -17,6 +17,7 @@ import { deepMerge } from "@std/collections";
 import * as v from "@valibot/valibot";
 import { ConfigSchema } from "../schemas/configs/config.ts";
 import { transformObjKeyToCamelCase } from "../utils/transformers/object.ts";
+import { CONFIG_PRESERVE_KEYS_AT_PATH } from "../schemas/configs/config-preserve-keys.ts";
 import { formatValibotIssues } from "../utils/formatters/valibot.ts";
 import { jsonValueNormalizer } from "../utils/transformers/json.ts";
 import type { ConfigFileFormatWithAuto } from "../constants/file-formats.ts";
@@ -114,7 +115,9 @@ export async function executeHookWithOverride(
 
     const merged = deepMerge(
       runSettings.config,
-      transformObjKeyToCamelCase(parsedRaw.parsedConfig),
+      transformObjKeyToCamelCase(parsedRaw.parsedConfig, {
+        preserveKeysAtPaths: CONFIG_PRESERVE_KEYS_AT_PATH,
+      }),
       { arrays: "replace" },
     );
 

@@ -2,50 +2,65 @@ import { toCamelCase, toKebabCase } from "@std/text";
 import { map } from "obj-walker";
 import { isPlainObject, isPlainObjectOrArray } from "../validations/object.ts";
 
-export function transformObjKeyToKebabCase(
+export interface TransformObjKeyOptions {
+  mutate?: boolean;
+  /** Key names that are never transformed, wherever in the tree they appear. */
+  excludeKeys?: string[];
+  /** Dot-joined paths (from root) whose OWN keys are left untransformed. Descendants are still processed normally. */
+  preserveKeysAtPaths?: readonly string[];
+}
+
+function transformObjKeyCase(
   obj: unknown,
-  mutate: boolean = false,
+  caseFn: (key: string) => string,
+  options?: TransformObjKeyOptions,
 ): object {
   if (!isPlainObjectOrArray(obj)) {
     throw new Error(
-      `'${transformObjKeyToKebabCase.name}' error: expected a plain object or array input`,
+      "TransformObjKeyCase Error: expected a plain object or array input",
     );
   }
 
-  return map(obj, ({ val }) => {
-    if (isPlainObject(val)) {
+  const preservePaths = new Set(options?.preserveKeysAtPaths);
+
+  return map(
+    obj,
+    ({ val, path }) => {
+      if (!isPlainObject(val)) return val;
+      if (preservePaths.has(path.join("."))) return val;
+
       return Object.fromEntries(
-        Object.entries(val).map(([k, v]) => [toKebabCase(k), v]),
+        Object.entries(val).map(([k, v]) => [
+          options?.excludeKeys?.includes(k) ? k : caseFn(k),
+          v,
+        ]),
       );
-    } else {
-      return val;
-    }
-  }, {
-    postOrder: true,
-    modifyInPlace: mutate,
-  });
+    },
+    {
+      postOrder: true,
+      modifyInPlace: options?.mutate ?? false,
+    },
+  );
+}
+
+export function transformObjKeyToKebabCase(
+  obj: unknown,
+  options?: TransformObjKeyOptions,
+): object {
+  return transformObjKeyCase(
+    obj,
+    toKebabCase,
+    options,
+  );
 }
 
 export function transformObjKeyToCamelCase(
   obj: unknown,
-  mutate: boolean = false,
+  options?: TransformObjKeyOptions,
 ): object {
-  if (!isPlainObjectOrArray(obj)) {
-    throw new Error(
-      `'${transformObjKeyToCamelCase.name}' error: expected a plain object or array input`,
-    );
-  }
-
-  return map(obj, ({ val }) => {
-    if (isPlainObject(val)) {
-      return Object.fromEntries(
-        Object.entries(val).map(([k, v]) => [toCamelCase(k), v]),
-      );
-    } else {
-      return val;
-    }
-  }, {
-    postOrder: true,
-    modifyInPlace: mutate,
-  });
+  return transformObjKeyCase(
+    obj,
+    toCamelCase,
+    options,
+  );
 }

@@ -57,7 +57,8 @@ export async function detectAffectedWorkspaces(
         ws.lastReleaseHash,
         pathFilter,
         maxCommitsToResolve,
-      ).catch(() => []);
+      ).catch(() => // TODO: must log or do something on error, gracefully with empty array might not enough
+      []);
 
       if (commits.length > 0) {
         taskLogger.info(
