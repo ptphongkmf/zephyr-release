@@ -20,6 +20,14 @@ jobs:
         with:
           deno-version: latest
 
+      - name: Set canary version
+        run: |
+          today=$(date -u +%Y%m%d)
+          short_sha="${GITHUB_SHA:0:7}"
+          new_version="$(jq -r '.version' deno.json)-canary.${today}.${{ github.run_number }}+${short_sha}"
+          jq --arg v "$new_version" '.version = $v' deno.json > deno.json.tmp
+          mv deno.json.tmp deno.json
+
       - name: Run Build
         run: deno task build
 
@@ -45,3 +53,4 @@ jobs:
           files: |
             dist/**/*
             schemas/**/*
+            deno.json
