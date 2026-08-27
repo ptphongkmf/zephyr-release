@@ -1,0 +1,3245 @@
+{
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Workspace member name. Required. Used in tags, env vars, and outputs.\nFor env/output variable naming, characters invalid in shell identifiers are replaced with underscore (see export-variables docs for the exact rules)."
+    },
+    "review": {
+      "type": "object",
+      "properties": {
+        "draft": {
+          "type": "boolean",
+          "description": "If enabled, the proposal will be created as draft.\nDefault: inherit from root"
+        },
+        "groupProposals": {
+          "type": "boolean",
+          "description": "When true (default), all workspace changes are grouped into a single proposal.\nWhen false, each workspace gets its own proposal with its own working branch.\nOnly meaningful in monorepo mode.\nDefault: inherit from root"
+        },
+        "workingBranchNameTemplate": {
+          "type": "string",
+          "minLength": 1,
+          "description": "String template for branch name that Zephyr Release will use.\nAllowed patterns to use are: fixed base string patterns.\nNote: This value is immutable at runtime and cannot be changed via stdout config override.\nDefault: zephyr-release/{{ name }}/{{ triggerBranchName }}"
+        },
+        "titleTemplate": {
+          "type": "string",
+          "minLength": 1,
+          "description": "String template for proposal title, using with string patterns like {{ nextVersion }}.\nAllowed patterns to use are: all fixed and dynamic string patterns.\nDefault: inherit from root"
+        },
+        "titleTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "headerTemplate": {
+          "type": "string",
+          "description": "String template for proposal header, using with string patterns like {{ nextVersion }}.\nAllowed patterns to use are: all fixed and dynamic string patterns.\nDefault: inherit from root"
+        },
+        "headerTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bodyTemplate": {
+          "type": "string",
+          "description": "String template for proposal body, using with string patterns like {{ changelogRelease }}.\nAllowed patterns to use are: all fixed and dynamic string patterns.\nDefault: inherit from root"
+        },
+        "bodyTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "footerTemplate": {
+          "type": "string",
+          "description": "String template for proposal footer, using with string patterns.\nAllowed patterns to use are: all fixed and dynamic string patterns.\nDefault: inherit from root"
+        },
+        "footerTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "labels": {
+          "type": "object",
+          "properties": {
+            "onCreate": {
+              "anyOf": [
+                {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "color": {
+                          "type": "string",
+                          "minLength": 1,
+                          "pattern": "^#(?:[\\da-fA-F]{3,4}|[\\da-fA-F]{6}|[\\da-fA-F]{8})$",
+                          "default": "#ededed",
+                          "description": "The hexadecimal color code for the label, in standard format with the leading #.\nDefault: \"#ededed\""
+                        },
+                        "createIfMissing": {
+                          "type": "boolean",
+                          "default": false
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "color": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "^#(?:[\\da-fA-F]{3,4}|[\\da-fA-F]{6}|[\\da-fA-F]{8})$",
+                            "default": "#ededed",
+                            "description": "The hexadecimal color code for the label, in standard format with the leading #.\nDefault: \"#ededed\""
+                          },
+                          "createIfMissing": {
+                            "type": "boolean",
+                            "default": false
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      }
+                    ]
+                  },
+                  "minItems": 1
+                }
+              ]
+            },
+            "onMerge": {
+              "type": "object",
+              "properties": {
+                "add": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "description": {
+                              "type": "string"
+                            },
+                            "color": {
+                              "type": "string",
+                              "minLength": 1,
+                              "pattern": "^#(?:[\\da-fA-F]{3,4}|[\\da-fA-F]{6}|[\\da-fA-F]{8})$",
+                              "default": "#ededed",
+                              "description": "The hexadecimal color code for the label, in standard format with the leading #.\nDefault: \"#ededed\""
+                            },
+                            "createIfMissing": {
+                              "type": "boolean",
+                              "default": false
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "color": {
+                                "type": "string",
+                                "minLength": 1,
+                                "pattern": "^#(?:[\\da-fA-F]{3,4}|[\\da-fA-F]{6}|[\\da-fA-F]{8})$",
+                                "default": "#ededed",
+                                "description": "The hexadecimal color code for the label, in standard format with the leading #.\nDefault: \"#ededed\""
+                              },
+                              "createIfMissing": {
+                                "type": "boolean",
+                                "default": false
+                              }
+                            },
+                            "required": [
+                              "name"
+                            ]
+                          }
+                        ]
+                      },
+                      "minItems": 1
+                    }
+                  ]
+                },
+                "remove": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "description": {
+                              "type": "string"
+                            },
+                            "color": {
+                              "type": "string",
+                              "minLength": 1,
+                              "pattern": "^#(?:[\\da-fA-F]{3,4}|[\\da-fA-F]{6}|[\\da-fA-F]{8})$",
+                              "default": "#ededed",
+                              "description": "The hexadecimal color code for the label, in standard format with the leading #.\nDefault: \"#ededed\""
+                            },
+                            "createIfMissing": {
+                              "type": "boolean",
+                              "default": false
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "color": {
+                                "type": "string",
+                                "minLength": 1,
+                                "pattern": "^#(?:[\\da-fA-F]{3,4}|[\\da-fA-F]{6}|[\\da-fA-F]{8})$",
+                                "default": "#ededed",
+                                "description": "The hexadecimal color code for the label, in standard format with the leading #.\nDefault: \"#ededed\""
+                              },
+                              "createIfMissing": {
+                                "type": "boolean",
+                                "default": false
+                              }
+                            },
+                            "required": [
+                              "name"
+                            ]
+                          }
+                        ]
+                      },
+                      "minItems": 1
+                    }
+                  ]
+                }
+              },
+              "required": [],
+              "description": "Labels to attach and remove from proposals when merged. Can be a string, a label object, or an array containing either.\nFor remove, you can use \"<ALL_ON_CREATE>\" to remove all labels added in `onCreate`."
+            }
+          },
+          "required": []
+        },
+        "assignees": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "reviewers": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            }
+          ]
+        }
+      },
+      "required": [],
+      "description": "Configuration specific to the \"review\" release flow. Defines how release proposals (such as PRs, MRs, ...) are generated, formatted, and tracked."
+    },
+    "auto": {
+      "type": "object",
+      "properties": {
+        "triggerStrategy": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "commit-types",
+                  "description": "Triggers a release automatically when the pushed commits contain specific allowed types."
+                },
+                "allowedTypes": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "minItems": 1
+                    }
+                  ]
+                },
+                "minCommitCount": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "additionalProperties": {
+                        "type": "number"
+                      }
+                    }
+                  ],
+                  "default": 1,
+                  "description": "The minimum number of unreleased matching commits required to trigger a release. Accepts a single number for a global count, or an object mapping specific commit types to their own minimum counts.\nWhen using object, thresholds are evaluated using OR logic, the release triggers if ANY of the specified counts are met.\nDefault: 1",
+                  "examples": [
+                    5,
+                    {
+                      "feat": 1,
+                      "fix": 5
+                    }
+                  ]
+                },
+                "requireBreaking": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "If set to true, an auto-release will ONLY trigger if at least one of the matching commits contains a breaking change.\nDefault: false"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "commit-footer",
+                  "description": "Triggers a release automatically when a specific token is found in the commit footers."
+                },
+                "token": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The conventional commit footer token to look for (e.g., \"Autorelease\")."
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The specific value the footer token must have (e.g., \"true\"). If omitted, only the token presence is required."
+                }
+              },
+              "required": [
+                "type",
+                "token"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "flag",
+                  "description": "Triggers a release based on a strict boolean flag. Ideal for dynamic configuration overrides and custom script evaluations.\nThe strategy will be evaluated after the cmd hooks `preRun` and `prePrepare` run."
+                },
+                "value": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "A hardcoded boolean flag to explicitly force or skip the release trigger."
+                }
+              },
+              "required": [
+                "type"
+              ]
+            }
+          ],
+          "description": "Defines the strategy that determines whether an automated release should be triggered. Used when `releaseFlow` is set to \"auto\".\nDefault: inherit from root"
+        }
+      },
+      "required": [],
+      "description": "Configuration specific to the \"auto\" release flow. Defines the conditions and strategies for bypassing proposals and committing releases directly."
+    },
+    "initialVersion": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "description": "Initial SemVer version used when no existing version is found or the existing one is `0.0.0`.\nYou can still set this to `0.0.0` if you want it as the starting value; looping problems are handled automatically under the hood.\nDefault: inherit from root"
+    },
+    "versionFiles": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Path to the version file, relative to the project root.\nIn monorepo mode, this path is relative to the workspace directory (auto-prepended with the workspace path key).\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/ptphongkmf/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+            },
+            "format": {
+              "enum": [
+                "json",
+                "jsonc",
+                "json5",
+                "yaml",
+                "toml",
+                "txt",
+                "auto"
+              ],
+              "default": "auto",
+              "description": "Defines the file format. Allowed values: \"auto\", \"json\", \"jsonc\", \"json5\", \"yaml\", \"toml\", \"txt\".\nDefault: \"auto\""
+            },
+            "extractor": {
+              "enum": [
+                "json-path",
+                "regex",
+                "auto"
+              ],
+              "default": "auto",
+              "description": "Defines how to extract the version from the parsed file.\nDefault: \"auto\""
+            },
+            "selector": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Defines how to locate the version field, depends on `extractor`."
+            },
+            "primary": {
+              "type": "boolean",
+              "default": false,
+              "description": "Marks this file as the primary source of truth for the current version."
+            }
+          },
+          "required": [
+            "path",
+            "selector"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Path to the version file, relative to the project root.\nIn monorepo mode, this path is relative to the workspace directory (auto-prepended with the workspace path key).\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/ptphongkmf/zephyr-release/blob/main/docs/input-options.md#source-mode-optional"
+              },
+              "format": {
+                "enum": [
+                  "json",
+                  "jsonc",
+                  "json5",
+                  "yaml",
+                  "toml",
+                  "txt",
+                  "auto"
+                ],
+                "default": "auto",
+                "description": "Defines the file format. Allowed values: \"auto\", \"json\", \"jsonc\", \"json5\", \"yaml\", \"toml\", \"txt\".\nDefault: \"auto\""
+              },
+              "extractor": {
+                "enum": [
+                  "json-path",
+                  "regex",
+                  "auto"
+                ],
+                "default": "auto",
+                "description": "Defines how to extract the version from the parsed file.\nDefault: \"auto\""
+              },
+              "selector": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Defines how to locate the version field, depends on `extractor`."
+              },
+              "primary": {
+                "type": "boolean",
+                "default": false,
+                "description": "Marks this file as the primary source of truth for the current version."
+              }
+            },
+            "required": [
+              "path",
+              "selector"
+            ]
+          },
+          "minItems": 1
+        }
+      ]
+    },
+    "commitTypes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Commit type name."
+          },
+          "section": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Changelog section heading for this commit type. When not provided, `type` value is used.\n"
+          },
+          "sectionAlt": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Changelog alternative section heading for this commit type. When not provided, `section` value is used.\n"
+          },
+          "hidden": {
+            "type": "boolean",
+            "default": false,
+            "description": "Exclude this commit type from changelog generation (does not affect version bump calculation).\nDefault: false"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "minItems": 1,
+      "description": "List of commit types used for version calculation and changelog generation.\nDefault: inherit from root"
+    },
+    "allowedReleaseAsCommitTypes": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        }
+      ],
+      "description": "List of commit type(s) allowed to trigger 'release-as'. Accepts single or array of strings.\nUse \"<ALL>\" to accept any commit type; use \"<COMMIT_TYPES>\" to use the list defined in `commitTypes`. You can combine \"<COMMIT_TYPES>\" with other types (for example: [\"<COMMIT_TYPES>\",\"docs\"]).\nAbout 'release-as': https://github.com/ptphongkmf/zephyr-release/blob/main?tab=readme-ov-file#force-a-specific-version \nDefault: inherit from root",
+      "examples": [
+        "<COMMIT_TYPES>",
+        [
+          "<COMMIT_TYPES>",
+          "chore",
+          "ci",
+          "cd"
+        ]
+      ]
+    },
+    "bumpStrategy": {
+      "type": "object",
+      "properties": {
+        "treatMajorAsMinorPreStable": {
+          "type": "boolean",
+          "description": "Treats major changes as minor version bumps in pre-1.0 (0.x.x) releases.\nDefault: inherit from root"
+        },
+        "treatMinorAsPatchPreStable": {
+          "type": "boolean",
+          "description": "Treats minor changes as patch version bumps in pre-1.0 (0.x.x) releases.\nDefault: inherit from root"
+        },
+        "major": {
+          "type": "object",
+          "properties": {
+            "types": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "description": "Commit types that count toward version bumping, must be picked from the base `commitTypes` list."
+            },
+            "countBreakingAs": {
+              "enum": [
+                "none",
+                "commit",
+                "bump"
+              ],
+              "description": "Count a breaking change as none, or one commit, or one bump directly regardless of current chosen `types`, as long as the commit type exists in base `commitTypes` list.\nDefault: inherit from root"
+            },
+            "commitsPerBump": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 1
+                },
+                {
+                  "const": null
+                },
+                {
+                  "const": "Infinity"
+                },
+                {
+                  "const": "infinity"
+                }
+              ],
+              "description": "Number of commits required for additional version bump after the first. Use Infinity to always bump once, unless `countBreakingAs` is set to \"bump\".\nDefault: inherit from root"
+            }
+          },
+          "required": [],
+          "description": "Strategy for bumping major version (x.2.3).\nDefault: inherit from root"
+        },
+        "minor": {
+          "type": "object",
+          "properties": {
+            "types": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "description": "Commit types that count toward version bumping, must be picked from the base `commitTypes` list."
+            },
+            "countBreakingAs": {
+              "enum": [
+                "none",
+                "commit",
+                "bump"
+              ],
+              "description": "Count a breaking change as none, or one commit, or one bump directly regardless of current chosen `types`, as long as the commit type exists in base `commitTypes` list.\nDefault: inherit from root"
+            },
+            "commitsPerBump": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 1
+                },
+                {
+                  "const": null
+                },
+                {
+                  "const": "Infinity"
+                },
+                {
+                  "const": "infinity"
+                }
+              ],
+              "description": "Number of commits required for additional version bump after the first. Use Infinity to always bump once, unless `countBreakingAs` is set to \"bump\".\nDefault: inherit from root"
+            }
+          },
+          "required": [],
+          "description": "Strategy for bumping minor version (1.x.3).\nDefault: inherit from root"
+        },
+        "patch": {
+          "type": "object",
+          "properties": {
+            "types": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "description": "Commit types that count toward version bumping, must be picked from the base `commitTypes` list."
+            },
+            "countBreakingAs": {
+              "enum": [
+                "none",
+                "commit",
+                "bump"
+              ],
+              "description": "Count a breaking change as none, or one commit, or one bump directly regardless of current chosen `types`, as long as the commit type exists in base `commitTypes` list.\nDefault: inherit from root"
+            },
+            "commitsPerBump": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 1
+                },
+                {
+                  "const": null
+                },
+                {
+                  "const": "Infinity"
+                },
+                {
+                  "const": "infinity"
+                }
+              ],
+              "description": "Number of commits required for additional version bump after the first. Use Infinity to always bump once, unless `countBreakingAs` is set to \"bump\".\nDefault: inherit from root"
+            }
+          },
+          "required": [],
+          "description": "Strategy for bumping patch version (1.2.x).\nDefault: inherit from root"
+        },
+        "prerelease": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable/disable handling of SemVer extensions (pre-release identifiers / build metadata).\nDefault: false"
+            },
+            "override": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "minItems": 1
+            },
+            "treatOverrideAsSignificant": {
+              "type": "boolean",
+              "default": false,
+              "description": "If set to `true`, the presence of an `override` is strictly treated as a structural change.\nThis immediately triggers resets on any dependent version components (e.g., resetting the Build number)\nIf `false`, overrides are treated as volatile/dynamic and ignored by reset logic.\nDefault: false"
+            },
+            "extensions": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "static",
+                        "description": "A stable label that should not change often. Examples: \"alpha\", \"beta\", \"rc\"."
+                      },
+                      "value": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "The static string value to use.",
+                        "examples": [
+                          "pre",
+                          "alpha",
+                          "beta",
+                          "rc"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "value"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "dynamic",
+                        "description": "A label value that often changes per build or commit, usually sourced externally (e.g., git hash, branch name)."
+                      },
+                      "value": {
+                        "type": "string",
+                        "description": "The string value to use, should be set dynamically."
+                      },
+                      "fallbackValue": {
+                        "type": "string",
+                        "description": "The fallback string value used when `value` is empty. If this is also empty, the identifier/metadata will be omitted from the array."
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "incremental",
+                        "description": "Integer value that auto-increments by 1."
+                      },
+                      "initialValue": {
+                        "type": "number",
+                        "default": 0,
+                        "description": "Initial integer number value, will auto-increment by 1 on each bump.\nDefault: 0"
+                      },
+                      "resetOn": {
+                        "anyOf": [
+                          {
+                            "enum": [
+                              "major",
+                              "minor",
+                              "patch",
+                              "prerelease",
+                              "build",
+                              "none"
+                            ]
+                          },
+                          {
+                            "type": "array",
+                            "items": {
+                              "enum": [
+                                "major",
+                                "minor",
+                                "patch",
+                                "prerelease",
+                                "build",
+                                "none"
+                              ]
+                            },
+                            "minItems": 1
+                          }
+                        ],
+                        "default": "none"
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "timestamp",
+                        "description": "Integer value that changes over time, representing a specific point in time since January 1, 1970 (UTC)."
+                      },
+                      "unit": {
+                        "enum": [
+                          "s",
+                          "ms"
+                        ],
+                        "default": "ms",
+                        "description": "The time unit. \"ms\" (13 digits) or \"s\" (10 digits).\nDefault: \"ms\""
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "date",
+                        "description": "A date string that changes over time."
+                      },
+                      "format": {
+                        "enum": [
+                          "YYYYMMDD",
+                          "YYYY-MM-DD"
+                        ],
+                        "default": "YYYYMMDD",
+                        "description": "The date format. \"YYYYMMDD\" or \"YYYY-MM-DD\".\nDefault: \"YYYYMMDD\""
+                      },
+                      "timeZone": {
+                        "$ref": "#/$defs/timeZone",
+                        "description": "The timezone to use for the date. If not specified, falls back to base `timeZone`."
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ]
+                  }
+                ]
+              },
+              "minItems": 1,
+              "description": "Specifies the items to use for SemVer extensions."
+            }
+          },
+          "required": []
+        },
+        "build": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable/disable handling of SemVer extensions (pre-release identifiers / build metadata).\nDefault: false"
+            },
+            "override": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "minItems": 1
+            },
+            "treatOverrideAsSignificant": {
+              "type": "boolean",
+              "default": false,
+              "description": "If set to `true`, the presence of an `override` is strictly treated as a structural change.\nThis immediately triggers resets on any dependent version components (e.g., resetting the Build number)\nIf `false`, overrides are treated as volatile/dynamic and ignored by reset logic.\nDefault: false"
+            },
+            "extensions": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "static",
+                        "description": "A stable label that should not change often. Examples: \"alpha\", \"beta\", \"rc\"."
+                      },
+                      "value": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "The static string value to use.",
+                        "examples": [
+                          "pre",
+                          "alpha",
+                          "beta",
+                          "rc"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "value"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "dynamic",
+                        "description": "A label value that often changes per build or commit, usually sourced externally (e.g., git hash, branch name)."
+                      },
+                      "value": {
+                        "type": "string",
+                        "description": "The string value to use, should be set dynamically."
+                      },
+                      "fallbackValue": {
+                        "type": "string",
+                        "description": "The fallback string value used when `value` is empty. If this is also empty, the identifier/metadata will be omitted from the array."
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "incremental",
+                        "description": "Integer value that auto-increments by 1."
+                      },
+                      "initialValue": {
+                        "type": "number",
+                        "default": 0,
+                        "description": "Initial integer number value, will auto-increment by 1 on each bump.\nDefault: 0"
+                      },
+                      "resetOn": {
+                        "anyOf": [
+                          {
+                            "enum": [
+                              "major",
+                              "minor",
+                              "patch",
+                              "prerelease",
+                              "build",
+                              "none"
+                            ]
+                          },
+                          {
+                            "type": "array",
+                            "items": {
+                              "enum": [
+                                "major",
+                                "minor",
+                                "patch",
+                                "prerelease",
+                                "build",
+                                "none"
+                              ]
+                            },
+                            "minItems": 1
+                          }
+                        ],
+                        "default": "none"
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "timestamp",
+                        "description": "Integer value that changes over time, representing a specific point in time since January 1, 1970 (UTC)."
+                      },
+                      "unit": {
+                        "enum": [
+                          "s",
+                          "ms"
+                        ],
+                        "default": "ms",
+                        "description": "The time unit. \"ms\" (13 digits) or \"s\" (10 digits).\nDefault: \"ms\""
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "date",
+                        "description": "A date string that changes over time."
+                      },
+                      "format": {
+                        "enum": [
+                          "YYYYMMDD",
+                          "YYYY-MM-DD"
+                        ],
+                        "default": "YYYYMMDD",
+                        "description": "The date format. \"YYYYMMDD\" or \"YYYY-MM-DD\".\nDefault: \"YYYYMMDD\""
+                      },
+                      "timeZone": {
+                        "$ref": "#/$defs/timeZone",
+                        "description": "The timezone to use for the date. If not specified, falls back to base `timeZone`."
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ]
+                  }
+                ]
+              },
+              "minItems": 1,
+              "description": "Specifies the items to use for SemVer extensions."
+            }
+          },
+          "required": []
+        }
+      },
+      "required": [],
+      "description": "Configuration options to calculate the next version number."
+    },
+    "changelog": {
+      "type": "object",
+      "properties": {
+        "writeToFile": {
+          "type": "boolean",
+          "description": "Enable/disable writing changelog to file. When disabled, changelogs are still generated for proposals, releases and string templates.\nDefault: inherit from root"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path to the file where the generated changelog will be written to, relative to the project root.\nIn monorepo mode, this path is relative to the workspace directory (auto-prepended with the workspace path key).\nTo customize whether this file is fetched locally or remotely, see source mode: https://github.com/ptphongkmf/zephyr-release/blob/main/docs/input-options.md#source-mode-optional \nDefault: inherit from root"
+        },
+        "commitGroupMode": {
+          "enum": [
+            "none",
+            "scope-first",
+            "scope-last"
+          ],
+          "description": "Defines how commits are sub-grouped within their respective changelog sections (Features, Fixes, etc.).\n- \"none\": Commits are rendered as a single flat list.\n- \"scope-first\": Commits are grouped by their scope. Scoped groups appear at the top, and unscoped commits fall to the bottom.\n- \"scope-last\": Commits are grouped by their scope. Unscoped commits sit at the top, and scoped groups follow below.\nDefault: inherit from root"
+        },
+        "commitSortOrder": {
+          "enum": [
+            "alphabetical",
+            "newest-first",
+            "oldest-first"
+          ],
+          "description": "Defines the sorting algorithm used to order the commits (and their groups, if a grouping mode is used).\n- \"alphabetical\": Sorts alphabetically from A to Z.\n- \"newest-first\": Sorts by commit timestamp, placing the newest commits at the top.\n- \"oldest-first\": Sorts by commit timestamp, placing the oldest commits at the top.\nDefault: inherit from root"
+        },
+        "fileHeaderTemplate": {
+          "type": "string",
+          "description": "String template for changelog file header, using with string patterns like {{ nextVersion }}. Placed above any changelog content.\nAllowed patterns to use are: all fixed and dynamic string patterns.\nDefault: inherit from root"
+        },
+        "fileHeaderTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fileReleaseTemplate": {
+          "type": "string",
+          "description": "String template for the individual release block inserted into the changelog file.\nTo use your alternative configuration, set this to \"{{ changelogReleaseAlt }}\".\nDefault: inherit from root"
+        },
+        "fileReleaseTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fileFooterTemplate": {
+          "type": "string"
+        },
+        "fileFooterTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseHeaderTemplate": {
+          "type": "string",
+          "minLength": 1,
+          "description": "String template for header of a changelog release, using with string patterns like {{ nextVersion }}.\nAllowed patterns to use are: all fixed and dynamic string patterns.\nDefault: inherit from root"
+        },
+        "releaseHeaderTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseSectionHeadingTemplate": {
+          "type": "string",
+          "minLength": 1,
+          "description": "String template for heading of a changelog release section, using with string patterns like {{ section }}.\nAllowed patterns to use are: all fixed and dynamic string patterns.\nAdditionally, you can use special dynamic patterns like: {{ section }}, {{ sectionAlt }}.\nDefault: inherit from root"
+        },
+        "releaseSectionHeadingTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseSectionEntryTemplate": {
+          "type": "string",
+          "minLength": 1,
+          "description": "String template for each entries in the changelog release sections. Allowed patterns to use are: all fixed and dynamic string patterns.\nAdditionally, you can use a special set of dynamic patterns which are:\n{{ hash }}, {{ type }}, {{ scope }}, {{ desc }}, {{ body }}, {{ footer }}, {{ breakingDesc }}, {{ isBreaking }}, {{ authorName }}, {{ authorEmail }}, {{ authorDate }}, {{ committerName }}, {{ committerEmail }}, {{ committerDate }}.\nAbout special patterns: https://github.com/ptphongkmf/zephyr-release/blob/main/docs/config-options.md#changelog--release-section-entry-template-optional\nDefault: inherit from root"
+        },
+        "releaseSectionEntryTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseBreakingSectionHeading": {
+          "type": "string",
+          "description": "Heading of a changelog release BREAKING section.\nDefault: inherit from root"
+        },
+        "releaseBreakingSectionEntryTemplate": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Basically the same as `releaseSectionEntryTemplate`, but for breaking changes specifically. If not provided, falls back to `releaseSectionEntryTemplate`.\nAllowed patterns to use are: all fixed and dynamic string patterns.\nDefault: inherit from root"
+        },
+        "releaseBreakingSectionEntryTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseBodyOverride": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseBodyOverridePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseFooterTemplate": {
+          "type": "string"
+        },
+        "releaseFooterTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseHeaderTemplateAlt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseHeaderTemplateAltPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseSectionHeadingTemplateAlt": {
+          "type": "string",
+          "minLength": 1,
+          "description": "String template for alternative heading of a changelog release section. Allowed string patterns and special dynamic patterns are the same as `releaseSectionHeadingTemplate`.\nDefault: inherit from root"
+        },
+        "releaseSectionHeadingTemplateAltPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseSectionEntryTemplateAlt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseSectionEntryTemplateAltPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseBreakingSectionHeadingAlt": {
+          "type": "string"
+        },
+        "releaseBreakingSectionEntryTemplateAlt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseBreakingSectionEntryTemplateAltPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseBodyOverrideAlt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseBodyOverrideAltPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseFooterTemplateAlt": {
+          "type": "string"
+        },
+        "releaseFooterTemplateAltPath": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [],
+      "description": "Configuration specific to changelogs. All generated changelog content are available in string templates as {{ changelogRelease }} (release header + body) or {{ changelogReleaseHeader }} and {{ changelogReleaseBody }}."
+    },
+    "commit": {
+      "type": "object",
+      "properties": {
+        "localChangesToCommit": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "headerTemplate": {
+          "type": "string",
+          "minLength": 1,
+          "description": "String template for commit header, using with string patterns like {{ nextVersion }}. You can optionally include a CI skip token here (or body/footer) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` for GitHub, GitLab, and Bitbucket).\nAllowed patterns to use are: all fixed and dynamic string patterns.\nDefault: inherit from root"
+        },
+        "headerTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bodyTemplate": {
+          "type": "string"
+        },
+        "bodyTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "footerTemplate": {
+          "type": "string"
+        },
+        "footerTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [],
+      "description": "Configuration specific to commits."
+    },
+    "tag": {
+      "type": "object",
+      "properties": {
+        "createTag": {
+          "type": "boolean",
+          "description": "Enable/disable tag creation. If disabled, create release note will also be skipped.\nDefault: inherit from root"
+        },
+        "nameTemplate": {
+          "type": "string",
+          "minLength": 1,
+          "description": "String template for tag name, using with string patterns like {{ nextVersion }}. Available in string templates as {{ tagName }}. Also used to auto-derive a match pattern for finding existing release tags.\nAllowed patterns to use are: all fixed and dynamic string patterns (except {{ tagName }} itself).\nDefault: {{ name }}-v{{ nextVersion }}"
+        },
+        "matchPatterns": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "type": {
+          "enum": [
+            "lightweight",
+            "annotated",
+            "signed"
+          ],
+          "description": "The type of Git tag to create, either lightweight, annotated or signed.\n- If annotated or signed, a tag message is required.\n- If signed, you must pre-configure the CI runner environment with GPG/SSH keys yourself (Zephyr Release does not manage keys for security reasons).\nDefault: inherit from root"
+        },
+        "messageTemplate": {
+          "type": "string",
+          "description": "String template for the Git annotated or signed tag message.\nAllowed patterns to use are: all fixed and dynamic string patterns.\nDefault: inherit from root"
+        },
+        "messageTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tagger": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The name of the tag creator."
+            },
+            "email": {
+              "type": "string",
+              "minLength": 1,
+              "format": "email",
+              "description": "The email of the tag creator."
+            },
+            "date": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Override the Git tag timestamp.\nCan be one of these options:\n- 'now': The moment the operation creates the tag.\n- 'commit-date': The Git committer date.\n- 'author-date': The Git author date.\n- Or a specific ISO 8601 date string.\nIf omitted, defaults to the platform native behavior (recommended).",
+              "examples": [
+                "2025-10-01T17:00:49Z",
+                "now",
+                "commit-date",
+                "author-date"
+              ]
+            }
+          },
+          "required": [
+            "name",
+            "email"
+          ]
+        }
+      },
+      "required": [],
+      "description": "Configuration specific to tags."
+    },
+    "release": {
+      "type": "object",
+      "properties": {
+        "createRelease": {
+          "type": "boolean",
+          "description": "Enable/disable release creation.\nDefault: inherit from root"
+        },
+        "prerelease": {
+          "type": "boolean",
+          "description": "If enabled, the release will be marked as prerelease.\nDefault: inherit from root"
+        },
+        "draft": {
+          "type": "boolean",
+          "description": "If enabled, the release will be created as draft.\nDefault: inherit from root"
+        },
+        "setLatest": {
+          "type": "boolean",
+          "description": "If enabled, the release will be set as the latest release.\nDefault: inherit from root"
+        },
+        "titleTemplate": {
+          "type": "string",
+          "description": "String template for release note title, using with string patterns like {{ tagName }}.\nAllowed patterns to use are: all fixed and dynamic string patterns.\nDefault: inherit from root"
+        },
+        "titleTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "headerTemplate": {
+          "type": "string"
+        },
+        "headerTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bodyTemplate": {
+          "type": "string",
+          "description": "String template for release note body, using with string patterns like {{ changelogRelease }}.\nAllowed patterns to use are: all fixed and dynamic string patterns.\nDefault: inherit from root"
+        },
+        "bodyTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "footerTemplate": {
+          "type": "string"
+        },
+        "footerTemplatePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assets": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            }
+          ]
+        }
+      },
+      "required": [],
+      "description": "Configuration specific to releases."
+    },
+    "commandHooks": {
+      "type": "object",
+      "properties": {
+        "timeout": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 1
+            },
+            {
+              "const": null
+            },
+            {
+              "const": "Infinity"
+            },
+            {
+              "const": "infinity"
+            }
+          ],
+          "description": "Default timeout (ms) for all command hooks, can be overridden per command.\nUse Infinity to never timeout (not recommended).\nDefault: inherit from root"
+        },
+        "continueOnError": {
+          "type": "boolean",
+          "description": "Default behavior for all command hooks on error, can be overridden per command.\nDefault: inherit from root"
+        },
+        "stdoutOverrideFormat": {
+          "enum": [
+            "json",
+            "jsonc",
+            "json5",
+            "yaml",
+            "toml",
+            "auto"
+          ],
+          "description": "Default format for parsing stdout config override content.\nSupported formats: json, jsonc, json5, yaml, toml, auto (best-effort detection).\nCan be overridden per command. When overridden per command, only that command's stdout is checked for override markers.\nDefault: inherit from root"
+        },
+        "preRun": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "cmd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "timeout": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 1
+                        },
+                        {
+                          "const": null
+                        },
+                        {
+                          "const": "Infinity"
+                        },
+                        {
+                          "const": "infinity"
+                        }
+                      ],
+                      "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                    },
+                    "continueOnError": {
+                      "type": "boolean",
+                      "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                    },
+                    "stdoutOverrideFormat": {
+                      "enum": [
+                        "json",
+                        "jsonc",
+                        "json5",
+                        "yaml",
+                        "toml",
+                        "auto"
+                      ],
+                      "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                    }
+                  },
+                  "required": [
+                    "cmd"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "cmd": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "timeout": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 1
+                          },
+                          {
+                            "const": null
+                          },
+                          {
+                            "const": "Infinity"
+                          },
+                          {
+                            "const": "infinity"
+                          }
+                        ],
+                        "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                      },
+                      "continueOnError": {
+                        "type": "boolean",
+                        "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                      },
+                      "stdoutOverrideFormat": {
+                        "enum": [
+                          "json",
+                          "jsonc",
+                          "json5",
+                          "yaml",
+                          "toml",
+                          "auto"
+                        ],
+                        "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                      }
+                    },
+                    "required": [
+                      "cmd"
+                    ]
+                  }
+                ]
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "preCalculateVersion": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "cmd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "timeout": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 1
+                        },
+                        {
+                          "const": null
+                        },
+                        {
+                          "const": "Infinity"
+                        },
+                        {
+                          "const": "infinity"
+                        }
+                      ],
+                      "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                    },
+                    "continueOnError": {
+                      "type": "boolean",
+                      "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                    },
+                    "stdoutOverrideFormat": {
+                      "enum": [
+                        "json",
+                        "jsonc",
+                        "json5",
+                        "yaml",
+                        "toml",
+                        "auto"
+                      ],
+                      "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                    }
+                  },
+                  "required": [
+                    "cmd"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "cmd": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "timeout": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 1
+                          },
+                          {
+                            "const": null
+                          },
+                          {
+                            "const": "Infinity"
+                          },
+                          {
+                            "const": "infinity"
+                          }
+                        ],
+                        "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                      },
+                      "continueOnError": {
+                        "type": "boolean",
+                        "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                      },
+                      "stdoutOverrideFormat": {
+                        "enum": [
+                          "json",
+                          "jsonc",
+                          "json5",
+                          "yaml",
+                          "toml",
+                          "auto"
+                        ],
+                        "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                      }
+                    },
+                    "required": [
+                      "cmd"
+                    ]
+                  }
+                ]
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "postCalculateVersion": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "cmd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "timeout": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 1
+                        },
+                        {
+                          "const": null
+                        },
+                        {
+                          "const": "Infinity"
+                        },
+                        {
+                          "const": "infinity"
+                        }
+                      ],
+                      "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                    },
+                    "continueOnError": {
+                      "type": "boolean",
+                      "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                    },
+                    "stdoutOverrideFormat": {
+                      "enum": [
+                        "json",
+                        "jsonc",
+                        "json5",
+                        "yaml",
+                        "toml",
+                        "auto"
+                      ],
+                      "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                    }
+                  },
+                  "required": [
+                    "cmd"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "cmd": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "timeout": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 1
+                          },
+                          {
+                            "const": null
+                          },
+                          {
+                            "const": "Infinity"
+                          },
+                          {
+                            "const": "infinity"
+                          }
+                        ],
+                        "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                      },
+                      "continueOnError": {
+                        "type": "boolean",
+                        "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                      },
+                      "stdoutOverrideFormat": {
+                        "enum": [
+                          "json",
+                          "jsonc",
+                          "json5",
+                          "yaml",
+                          "toml",
+                          "auto"
+                        ],
+                        "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                      }
+                    },
+                    "required": [
+                      "cmd"
+                    ]
+                  }
+                ]
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "preCommit": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "cmd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "timeout": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 1
+                        },
+                        {
+                          "const": null
+                        },
+                        {
+                          "const": "Infinity"
+                        },
+                        {
+                          "const": "infinity"
+                        }
+                      ],
+                      "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                    },
+                    "continueOnError": {
+                      "type": "boolean",
+                      "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                    },
+                    "stdoutOverrideFormat": {
+                      "enum": [
+                        "json",
+                        "jsonc",
+                        "json5",
+                        "yaml",
+                        "toml",
+                        "auto"
+                      ],
+                      "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                    }
+                  },
+                  "required": [
+                    "cmd"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "cmd": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "timeout": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 1
+                          },
+                          {
+                            "const": null
+                          },
+                          {
+                            "const": "Infinity"
+                          },
+                          {
+                            "const": "infinity"
+                          }
+                        ],
+                        "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                      },
+                      "continueOnError": {
+                        "type": "boolean",
+                        "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                      },
+                      "stdoutOverrideFormat": {
+                        "enum": [
+                          "json",
+                          "jsonc",
+                          "json5",
+                          "yaml",
+                          "toml",
+                          "auto"
+                        ],
+                        "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                      }
+                    },
+                    "required": [
+                      "cmd"
+                    ]
+                  }
+                ]
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "postCommit": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "cmd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "timeout": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 1
+                        },
+                        {
+                          "const": null
+                        },
+                        {
+                          "const": "Infinity"
+                        },
+                        {
+                          "const": "infinity"
+                        }
+                      ],
+                      "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                    },
+                    "continueOnError": {
+                      "type": "boolean",
+                      "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                    },
+                    "stdoutOverrideFormat": {
+                      "enum": [
+                        "json",
+                        "jsonc",
+                        "json5",
+                        "yaml",
+                        "toml",
+                        "auto"
+                      ],
+                      "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                    }
+                  },
+                  "required": [
+                    "cmd"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "cmd": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "timeout": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 1
+                          },
+                          {
+                            "const": null
+                          },
+                          {
+                            "const": "Infinity"
+                          },
+                          {
+                            "const": "infinity"
+                          }
+                        ],
+                        "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                      },
+                      "continueOnError": {
+                        "type": "boolean",
+                        "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                      },
+                      "stdoutOverrideFormat": {
+                        "enum": [
+                          "json",
+                          "jsonc",
+                          "json5",
+                          "yaml",
+                          "toml",
+                          "auto"
+                        ],
+                        "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                      }
+                    },
+                    "required": [
+                      "cmd"
+                    ]
+                  }
+                ]
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "postProposal": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "cmd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "timeout": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 1
+                        },
+                        {
+                          "const": null
+                        },
+                        {
+                          "const": "Infinity"
+                        },
+                        {
+                          "const": "infinity"
+                        }
+                      ],
+                      "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                    },
+                    "continueOnError": {
+                      "type": "boolean",
+                      "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                    },
+                    "stdoutOverrideFormat": {
+                      "enum": [
+                        "json",
+                        "jsonc",
+                        "json5",
+                        "yaml",
+                        "toml",
+                        "auto"
+                      ],
+                      "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                    }
+                  },
+                  "required": [
+                    "cmd"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "cmd": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "timeout": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 1
+                          },
+                          {
+                            "const": null
+                          },
+                          {
+                            "const": "Infinity"
+                          },
+                          {
+                            "const": "infinity"
+                          }
+                        ],
+                        "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                      },
+                      "continueOnError": {
+                        "type": "boolean",
+                        "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                      },
+                      "stdoutOverrideFormat": {
+                        "enum": [
+                          "json",
+                          "jsonc",
+                          "json5",
+                          "yaml",
+                          "toml",
+                          "auto"
+                        ],
+                        "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                      }
+                    },
+                    "required": [
+                      "cmd"
+                    ]
+                  }
+                ]
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "preTag": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "cmd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "timeout": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 1
+                        },
+                        {
+                          "const": null
+                        },
+                        {
+                          "const": "Infinity"
+                        },
+                        {
+                          "const": "infinity"
+                        }
+                      ],
+                      "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                    },
+                    "continueOnError": {
+                      "type": "boolean",
+                      "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                    },
+                    "stdoutOverrideFormat": {
+                      "enum": [
+                        "json",
+                        "jsonc",
+                        "json5",
+                        "yaml",
+                        "toml",
+                        "auto"
+                      ],
+                      "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                    }
+                  },
+                  "required": [
+                    "cmd"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "cmd": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "timeout": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 1
+                          },
+                          {
+                            "const": null
+                          },
+                          {
+                            "const": "Infinity"
+                          },
+                          {
+                            "const": "infinity"
+                          }
+                        ],
+                        "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                      },
+                      "continueOnError": {
+                        "type": "boolean",
+                        "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                      },
+                      "stdoutOverrideFormat": {
+                        "enum": [
+                          "json",
+                          "jsonc",
+                          "json5",
+                          "yaml",
+                          "toml",
+                          "auto"
+                        ],
+                        "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                      }
+                    },
+                    "required": [
+                      "cmd"
+                    ]
+                  }
+                ]
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "preRelease": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "cmd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "timeout": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 1
+                        },
+                        {
+                          "const": null
+                        },
+                        {
+                          "const": "Infinity"
+                        },
+                        {
+                          "const": "infinity"
+                        }
+                      ],
+                      "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                    },
+                    "continueOnError": {
+                      "type": "boolean",
+                      "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                    },
+                    "stdoutOverrideFormat": {
+                      "enum": [
+                        "json",
+                        "jsonc",
+                        "json5",
+                        "yaml",
+                        "toml",
+                        "auto"
+                      ],
+                      "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                    }
+                  },
+                  "required": [
+                    "cmd"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "cmd": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "timeout": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 1
+                          },
+                          {
+                            "const": null
+                          },
+                          {
+                            "const": "Infinity"
+                          },
+                          {
+                            "const": "infinity"
+                          }
+                        ],
+                        "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                      },
+                      "continueOnError": {
+                        "type": "boolean",
+                        "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                      },
+                      "stdoutOverrideFormat": {
+                        "enum": [
+                          "json",
+                          "jsonc",
+                          "json5",
+                          "yaml",
+                          "toml",
+                          "auto"
+                        ],
+                        "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                      }
+                    },
+                    "required": [
+                      "cmd"
+                    ]
+                  }
+                ]
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "postRelease": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "cmd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "timeout": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 1
+                        },
+                        {
+                          "const": null
+                        },
+                        {
+                          "const": "Infinity"
+                        },
+                        {
+                          "const": "infinity"
+                        }
+                      ],
+                      "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                    },
+                    "continueOnError": {
+                      "type": "boolean",
+                      "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                    },
+                    "stdoutOverrideFormat": {
+                      "enum": [
+                        "json",
+                        "jsonc",
+                        "json5",
+                        "yaml",
+                        "toml",
+                        "auto"
+                      ],
+                      "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                    }
+                  },
+                  "required": [
+                    "cmd"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "cmd": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "timeout": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 1
+                          },
+                          {
+                            "const": null
+                          },
+                          {
+                            "const": "Infinity"
+                          },
+                          {
+                            "const": "infinity"
+                          }
+                        ],
+                        "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                      },
+                      "continueOnError": {
+                        "type": "boolean",
+                        "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                      },
+                      "stdoutOverrideFormat": {
+                        "enum": [
+                          "json",
+                          "jsonc",
+                          "json5",
+                          "yaml",
+                          "toml",
+                          "auto"
+                        ],
+                        "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                      }
+                    },
+                    "required": [
+                      "cmd"
+                    ]
+                  }
+                ]
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "postRun": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "cmd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "timeout": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 1
+                        },
+                        {
+                          "const": null
+                        },
+                        {
+                          "const": "Infinity"
+                        },
+                        {
+                          "const": "infinity"
+                        }
+                      ],
+                      "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                    },
+                    "continueOnError": {
+                      "type": "boolean",
+                      "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                    },
+                    "stdoutOverrideFormat": {
+                      "enum": [
+                        "json",
+                        "jsonc",
+                        "json5",
+                        "yaml",
+                        "toml",
+                        "auto"
+                      ],
+                      "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                    }
+                  },
+                  "required": [
+                    "cmd"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "cmd": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "timeout": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 1
+                          },
+                          {
+                            "const": null
+                          },
+                          {
+                            "const": "Infinity"
+                          },
+                          {
+                            "const": "infinity"
+                          }
+                        ],
+                        "description": "Timeout in milliseconds, use Infinity to never timeout (not recommended).\nDefaults to `commandHooks` root `timeout` value"
+                      },
+                      "continueOnError": {
+                        "type": "boolean",
+                        "description": "Continue or stop the process on commands error.\nDefaults to `commandHooks` root `continueOnError` value"
+                      },
+                      "stdoutOverrideFormat": {
+                        "enum": [
+                          "json",
+                          "jsonc",
+                          "json5",
+                          "yaml",
+                          "toml",
+                          "auto"
+                        ],
+                        "description": "Format to parse stdout config override content for this specific command.\nOverrides the `commandHooks` root `stdoutOverrideFormat` value.\nIf set, only the stdout from this command (not the combined output) is checked for override markers.\nDefaults to `commandHooks` root `stdoutOverrideFormat` value"
+                      }
+                    },
+                    "required": [
+                      "cmd"
+                    ]
+                  }
+                ]
+              },
+              "minItems": 1
+            }
+          ]
+        }
+      },
+      "required": [],
+      "description": "Per-workspace command hook overrides. Merged with root command-hooks via field-level inheritance.\nOnly per-workspace hooks are used (preCalculateVersion, postCalculateVersion, preTag, preRelease, postRelease).\npreRun and postRun always use root hooks.\npreCommit, postCommit, and postProposal are ignored when review.groupProposals is true."
+    }
+  },
+  "required": [
+    "name",
+    "versionFiles"
+  ],
+  "title": "Zephyr Release workspace member configuration",
+  "description": "Configuration for an individual workspace member in a monorepo.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$defs": {
+    "timeZone": {
+      "enum": [
+        "Africa/Abidjan",
+        "Africa/Nairobi",
+        "Africa/Algiers",
+        "Africa/Lagos",
+        "Africa/Bissau",
+        "Africa/Maputo",
+        "Africa/Cairo",
+        "Africa/Casablanca",
+        "Africa/Ceuta",
+        "Africa/El_Aaiun",
+        "Africa/Johannesburg",
+        "Africa/Juba",
+        "Africa/Khartoum",
+        "Africa/Monrovia",
+        "Africa/Ndjamena",
+        "Africa/Sao_Tome",
+        "Africa/Tripoli",
+        "Africa/Tunis",
+        "Africa/Windhoek",
+        "America/Adak",
+        "America/Anchorage",
+        "America/Puerto_Rico",
+        "America/Araguaina",
+        "America/Argentina/Buenos_Aires",
+        "America/Argentina/Catamarca",
+        "America/Argentina/Cordoba",
+        "America/Argentina/Jujuy",
+        "America/Argentina/La_Rioja",
+        "America/Argentina/Mendoza",
+        "America/Argentina/Rio_Gallegos",
+        "America/Argentina/Salta",
+        "America/Argentina/San_Juan",
+        "America/Argentina/San_Luis",
+        "America/Argentina/Tucuman",
+        "America/Argentina/Ushuaia",
+        "America/Asuncion",
+        "America/Panama",
+        "America/Bahia_Banderas",
+        "America/Bahia",
+        "America/Barbados",
+        "America/Belem",
+        "America/Belize",
+        "America/Boa_Vista",
+        "America/Bogota",
+        "America/Boise",
+        "America/Cambridge_Bay",
+        "America/Campo_Grande",
+        "America/Cancun",
+        "America/Caracas",
+        "America/Cayenne",
+        "America/Chicago",
+        "America/Chihuahua",
+        "America/Ciudad_Juarez",
+        "America/Costa_Rica",
+        "America/Coyhaique",
+        "America/Phoenix",
+        "America/Cuiaba",
+        "America/Danmarkshavn",
+        "America/Dawson_Creek",
+        "America/Dawson",
+        "America/Denver",
+        "America/Detroit",
+        "America/Edmonton",
+        "America/Eirunepe",
+        "America/El_Salvador",
+        "America/Tijuana",
+        "America/Fort_Nelson",
+        "America/Fort_Wayne",
+        "America/Fortaleza",
+        "America/Glace_Bay",
+        "America/Godthab",
+        "America/Goose_Bay",
+        "America/Grand_Turk",
+        "America/Guatemala",
+        "America/Guayaquil",
+        "America/Guyana",
+        "America/Halifax",
+        "America/Havana",
+        "America/Hermosillo",
+        "America/Indiana/Knox",
+        "America/Indiana/Marengo",
+        "America/Indiana/Petersburg",
+        "America/Indiana/Tell_City",
+        "America/Indiana/Vevay",
+        "America/Indiana/Vincennes",
+        "America/Indiana/Winamac",
+        "America/Inuvik",
+        "America/Iqaluit",
+        "America/Jamaica",
+        "America/Juneau",
+        "America/Kentucky/Louisville",
+        "America/Kentucky/Monticello",
+        "America/La_Paz",
+        "America/Lima",
+        "America/Los_Angeles",
+        "America/Maceio",
+        "America/Managua",
+        "America/Manaus",
+        "America/Martinique",
+        "America/Matamoros",
+        "America/Mazatlan",
+        "America/Menominee",
+        "America/Merida",
+        "America/Metlakatla",
+        "America/Mexico_City",
+        "America/Miquelon",
+        "America/Moncton",
+        "America/Monterrey",
+        "America/Montevideo",
+        "America/Toronto",
+        "America/New_York",
+        "America/Nome",
+        "America/Noronha",
+        "America/North_Dakota/Beulah",
+        "America/North_Dakota/Center",
+        "America/North_Dakota/New_Salem",
+        "America/Ojinaga",
+        "America/Paramaribo",
+        "America/Port-au-Prince",
+        "America/Rio_Branco",
+        "America/Porto_Velho",
+        "America/Punta_Arenas",
+        "America/Winnipeg",
+        "America/Rankin_Inlet",
+        "America/Recife",
+        "America/Regina",
+        "America/Resolute",
+        "America/Santarem",
+        "America/Santiago",
+        "America/Santo_Domingo",
+        "America/Sao_Paulo",
+        "America/Scoresbysund",
+        "America/Sitka",
+        "America/St_Johns",
+        "America/Swift_Current",
+        "America/Tegucigalpa",
+        "America/Thule",
+        "America/Vancouver",
+        "America/Whitehorse",
+        "America/Yakutat",
+        "Antarctica/Casey",
+        "Antarctica/Davis",
+        "Pacific/Port_Moresby",
+        "Antarctica/Macquarie",
+        "Antarctica/Mawson",
+        "Pacific/Auckland",
+        "Antarctica/Palmer",
+        "Antarctica/Rothera",
+        "Asia/Riyadh",
+        "Antarctica/Troll",
+        "Antarctica/Vostok",
+        "Europe/Berlin",
+        "Asia/Almaty",
+        "Asia/Amman",
+        "Asia/Anadyr",
+        "Asia/Aqtau",
+        "Asia/Aqtobe",
+        "Asia/Ashgabat",
+        "Asia/Atyrau",
+        "Asia/Baghdad",
+        "Asia/Qatar",
+        "Asia/Baku",
+        "Asia/Bangkok",
+        "Asia/Barnaul",
+        "Asia/Beirut",
+        "Asia/Bishkek",
+        "Asia/Brunei",
+        "Asia/Kolkata",
+        "Asia/Chita",
+        "Asia/Ulaanbaatar",
+        "Asia/Shanghai",
+        "Asia/Colombo",
+        "Asia/Dhaka",
+        "Asia/Damascus",
+        "Asia/Dili",
+        "Asia/Dubai",
+        "Asia/Dushanbe",
+        "Asia/Famagusta",
+        "Asia/Gaza",
+        "Asia/Hebron",
+        "Asia/Ho_Chi_Minh",
+        "Asia/Hong_Kong",
+        "Asia/Hovd",
+        "Asia/Irkutsk",
+        "Europe/Istanbul",
+        "Asia/Jakarta",
+        "Asia/Jayapura",
+        "Asia/Jerusalem",
+        "Asia/Kabul",
+        "Asia/Kamchatka",
+        "Asia/Karachi",
+        "Asia/Urumqi",
+        "Asia/Kathmandu",
+        "Asia/Khandyga",
+        "Asia/Krasnoyarsk",
+        "Asia/Kuala_Lumpur",
+        "Asia/Macau",
+        "Asia/Magadan",
+        "Asia/Makassar",
+        "Asia/Manila",
+        "Asia/Nicosia",
+        "Asia/Novokuznetsk",
+        "Asia/Novosibirsk",
+        "Asia/Omsk",
+        "Asia/Oral",
+        "Asia/Pontianak",
+        "Asia/Pyongyang",
+        "Asia/Qostanay",
+        "Asia/Qyzylorda",
+        "Asia/Rangoon",
+        "Asia/Sakhalin",
+        "Asia/Samarkand",
+        "Asia/Seoul",
+        "Asia/Srednekolymsk",
+        "Asia/Taipei",
+        "Asia/Tashkent",
+        "Asia/Tbilisi",
+        "Asia/Tehran",
+        "Asia/Thimphu",
+        "Asia/Tokyo",
+        "Asia/Tomsk",
+        "Asia/Ust-Nera",
+        "Asia/Vladivostok",
+        "Asia/Yakutsk",
+        "Asia/Yekaterinburg",
+        "Asia/Yerevan",
+        "Atlantic/Azores",
+        "Atlantic/Bermuda",
+        "Atlantic/Canary",
+        "Atlantic/Cape_Verde",
+        "Atlantic/Faroe",
+        "Atlantic/Madeira",
+        "Atlantic/South_Georgia",
+        "Atlantic/Stanley",
+        "Australia/Sydney",
+        "Australia/Adelaide",
+        "Australia/Brisbane",
+        "Australia/Broken_Hill",
+        "Australia/Hobart",
+        "Australia/Darwin",
+        "Australia/Eucla",
+        "Australia/Lord_Howe",
+        "Australia/Lindeman",
+        "Australia/Melbourne",
+        "Australia/Perth",
+        "Europe/Brussels",
+        "Pacific/Easter",
+        "Europe/Athens",
+        "Europe/Dublin",
+        "Etc/GMT-0",
+        "Etc/GMT-1",
+        "Etc/GMT-10",
+        "Etc/GMT-11",
+        "Etc/GMT-12",
+        "Etc/GMT-13",
+        "Etc/GMT-14",
+        "Etc/GMT-2",
+        "Etc/GMT-3",
+        "Etc/GMT-4",
+        "Etc/GMT-5",
+        "Etc/GMT-6",
+        "Etc/GMT-7",
+        "Etc/GMT-8",
+        "Etc/GMT-9",
+        "Etc/GMT+1",
+        "Etc/GMT+10",
+        "Etc/GMT+11",
+        "Etc/GMT+12",
+        "Etc/GMT+2",
+        "Etc/GMT+3",
+        "Etc/GMT+4",
+        "Etc/GMT+5",
+        "Etc/GMT+6",
+        "Etc/GMT+7",
+        "Etc/GMT+8",
+        "Etc/GMT+9",
+        "Etc/UCT",
+        "Europe/Andorra",
+        "Europe/Astrakhan",
+        "Europe/London",
+        "Europe/Belgrade",
+        "Europe/Prague",
+        "Europe/Bucharest",
+        "Europe/Budapest",
+        "Europe/Zurich",
+        "Europe/Chisinau",
+        "Europe/Gibraltar",
+        "Europe/Helsinki",
+        "Europe/Kaliningrad",
+        "Europe/Kiev",
+        "Europe/Kirov",
+        "Europe/Lisbon",
+        "Europe/Madrid",
+        "Europe/Malta",
+        "Europe/Minsk",
+        "Europe/Paris",
+        "Europe/Moscow",
+        "Europe/Riga",
+        "Europe/Rome",
+        "Europe/Samara",
+        "Europe/Saratov",
+        "Europe/Simferopol",
+        "Europe/Sofia",
+        "Europe/Tallinn",
+        "Europe/Tirane",
+        "Europe/Ulyanovsk",
+        "Europe/Vienna",
+        "Europe/Vilnius",
+        "Europe/Volgograd",
+        "Europe/Warsaw",
+        "Pacific/Honolulu",
+        "Indian/Chagos",
+        "Indian/Maldives",
+        "Indian/Mauritius",
+        "Pacific/Kwajalein",
+        "Pacific/Chatham",
+        "Pacific/Apia",
+        "Pacific/Bougainville",
+        "Pacific/Efate",
+        "Pacific/Enderbury",
+        "Pacific/Fakaofo",
+        "Pacific/Fiji",
+        "Pacific/Tarawa",
+        "Pacific/Galapagos",
+        "Pacific/Gambier",
+        "Pacific/Guadalcanal",
+        "Pacific/Guam",
+        "Pacific/Kiritimati",
+        "Pacific/Kosrae",
+        "Pacific/Marquesas",
+        "Pacific/Pago_Pago",
+        "Pacific/Nauru",
+        "Pacific/Niue",
+        "Pacific/Norfolk",
+        "Pacific/Noumea",
+        "Pacific/Palau",
+        "Pacific/Pitcairn",
+        "Pacific/Rarotonga",
+        "Pacific/Tahiti",
+        "Pacific/Tongatapu",
+        "Africa/Accra",
+        "Africa/Bamako",
+        "Africa/Banjul",
+        "Africa/Conakry",
+        "Africa/Dakar",
+        "Africa/Freetown",
+        "Africa/Lome",
+        "Africa/Nouakchott",
+        "Africa/Ouagadougou",
+        "Africa/Timbuktu",
+        "Atlantic/Reykjavik",
+        "Atlantic/St_Helena",
+        "Iceland",
+        "Egypt",
+        "Africa/Maseru",
+        "Africa/Mbabane",
+        "Africa/Bangui",
+        "Africa/Brazzaville",
+        "Africa/Douala",
+        "Africa/Kinshasa",
+        "Africa/Libreville",
+        "Africa/Luanda",
+        "Africa/Malabo",
+        "Africa/Niamey",
+        "Africa/Porto-Novo",
+        "Africa/Blantyre",
+        "Africa/Bujumbura",
+        "Africa/Gaborone",
+        "Africa/Harare",
+        "Africa/Kigali",
+        "Africa/Lubumbashi",
+        "Africa/Lusaka",
+        "Africa/Addis_Ababa",
+        "Africa/Asmara",
+        "Africa/Asmera",
+        "Africa/Dar_es_Salaam",
+        "Africa/Djibouti",
+        "Africa/Kampala",
+        "Africa/Mogadishu",
+        "Indian/Antananarivo",
+        "Indian/Comoro",
+        "Indian/Mayotte",
+        "Libya",
+        "America/Atka",
+        "US/Aleutian",
+        "US/Alaska",
+        "America/Buenos_Aires",
+        "America/Argentina/ComodRivadavia",
+        "America/Catamarca",
+        "America/Cordoba",
+        "America/Rosario",
+        "America/Jujuy",
+        "America/Mendoza",
+        "CST6CDT",
+        "US/Central",
+        "America/Shiprock",
+        "MST7MDT",
+        "Navajo",
+        "US/Mountain",
+        "US/Michigan",
+        "America/Yellowknife",
+        "Canada/Mountain",
+        "America/Indiana/Indianapolis",
+        "America/Indianapolis",
+        "US/East-Indiana",
+        "America/Nuuk",
+        "Canada/Atlantic",
+        "Cuba",
+        "America/Knox_IN",
+        "US/Indiana-Starke",
+        "America/Pangnirtung",
+        "Jamaica",
+        "America/Louisville",
+        "PST8PDT",
+        "US/Pacific",
+        "Brazil/West",
+        "Mexico/BajaSur",
+        "Mexico/General",
+        "EST5EDT",
+        "US/Eastern",
+        "Brazil/DeNoronha",
+        "America/Atikokan",
+        "America/Cayman",
+        "America/Coral_Harbour",
+        "EST",
+        "America/Creston",
+        "MST",
+        "US/Arizona",
+        "America/Anguilla",
+        "America/Antigua",
+        "America/Aruba",
+        "America/Blanc-Sablon",
+        "America/Curacao",
+        "America/Dominica",
+        "America/Grenada",
+        "America/Guadeloupe",
+        "America/Kralendijk",
+        "America/Lower_Princes",
+        "America/Marigot",
+        "America/Montserrat",
+        "America/Port_of_Spain",
+        "America/St_Barthelemy",
+        "America/St_Kitts",
+        "America/St_Lucia",
+        "America/St_Thomas",
+        "America/St_Vincent",
+        "America/Tortola",
+        "America/Virgin",
+        "Canada/Saskatchewan",
+        "America/Porto_Acre",
+        "Brazil/Acre",
+        "Chile/Continental",
+        "Brazil/East",
+        "Canada/Newfoundland",
+        "America/Ensenada",
+        "America/Santa_Isabel",
+        "Mexico/BajaNorte",
+        "America/Montreal",
+        "America/Nassau",
+        "America/Nipigon",
+        "America/Thunder_Bay",
+        "Canada/Eastern",
+        "Canada/Pacific",
+        "Canada/Yukon",
+        "America/Rainy_River",
+        "Canada/Central",
+        "Asia/Ashkhabad",
+        "Asia/Phnom_Penh",
+        "Asia/Vientiane",
+        "Indian/Christmas",
+        "Asia/Kuching",
+        "Asia/Dacca",
+        "Asia/Muscat",
+        "Indian/Mahe",
+        "Indian/Reunion",
+        "Asia/Saigon",
+        "Hongkong",
+        "Asia/Tel_Aviv",
+        "Israel",
+        "Asia/Katmandu",
+        "Asia/Calcutta",
+        "Asia/Singapore",
+        "Singapore",
+        "Asia/Macao",
+        "Asia/Ujung_Pandang",
+        "Europe/Nicosia",
+        "Asia/Bahrain",
+        "Asia/Yangon",
+        "Indian/Cocos",
+        "Antarctica/Syowa",
+        "Asia/Aden",
+        "Asia/Kuwait",
+        "ROK",
+        "Asia/Chongqing",
+        "Asia/Chungking",
+        "Asia/Harbin",
+        "PRC",
+        "ROC",
+        "Iran",
+        "Asia/Thimbu",
+        "Japan",
+        "Asia/Choibalsan",
+        "Asia/Ulan_Bator",
+        "Asia/Kashgar",
+        "Atlantic/Faeroe",
+        "Australia/South",
+        "Australia/Queensland",
+        "Australia/Yancowinna",
+        "Australia/North",
+        "Australia/Currie",
+        "Australia/Tasmania",
+        "Australia/LHI",
+        "Australia/Victoria",
+        "Australia/West",
+        "Australia/ACT",
+        "Australia/Canberra",
+        "Australia/NSW",
+        "Etc/GMT",
+        "Etc/GMT+0",
+        "Etc/GMT0",
+        "Etc/Greenwich",
+        "GMT",
+        "GMT+0",
+        "GMT-0",
+        "GMT0",
+        "Greenwich",
+        "Etc/UTC",
+        "Etc/Universal",
+        "Etc/Zulu",
+        "UCT",
+        "UTC",
+        "Universal",
+        "Zulu",
+        "EET",
+        "Europe/Ljubljana",
+        "Europe/Podgorica",
+        "Europe/Sarajevo",
+        "Europe/Skopje",
+        "Europe/Zagreb",
+        "Arctic/Longyearbyen",
+        "Atlantic/Jan_Mayen",
+        "Europe/Copenhagen",
+        "Europe/Oslo",
+        "Europe/Stockholm",
+        "CET",
+        "Europe/Amsterdam",
+        "Europe/Luxembourg",
+        "MET",
+        "Europe/Tiraspol",
+        "Eire",
+        "Europe/Mariehamn",
+        "Asia/Istanbul",
+        "Turkey",
+        "Europe/Kyiv",
+        "Europe/Uzhgorod",
+        "Europe/Zaporozhye",
+        "Portugal",
+        "WET",
+        "Europe/Belfast",
+        "Europe/Guernsey",
+        "Europe/Isle_of_Man",
+        "Europe/Jersey",
+        "GB",
+        "GB-Eire",
+        "W-SU",
+        "Europe/Monaco",
+        "Europe/Bratislava",
+        "Europe/San_Marino",
+        "Europe/Vatican",
+        "Poland",
+        "Europe/Busingen",
+        "Europe/Vaduz",
+        "Indian/Kerguelen",
+        "Antarctica/McMurdo",
+        "Antarctica/South_Pole",
+        "NZ",
+        "NZ-CHAT",
+        "Chile/EasterIsland",
+        "Pacific/Kanton",
+        "Pacific/Pohnpei",
+        "Pacific/Ponape",
+        "Pacific/Saipan",
+        "HST",
+        "Pacific/Johnston",
+        "US/Hawaii",
+        "Kwajalein",
+        "Pacific/Midway",
+        "Pacific/Samoa",
+        "US/Samoa",
+        "Antarctica/DumontDUrville",
+        "Pacific/Chuuk",
+        "Pacific/Truk",
+        "Pacific/Yap",
+        "Pacific/Funafuti",
+        "Pacific/Majuro",
+        "Pacific/Wake",
+        "Pacific/Wallis"
+      ]
+    }
+  }
+}
