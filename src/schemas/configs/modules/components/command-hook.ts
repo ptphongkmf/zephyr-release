@@ -3,7 +3,7 @@ import { DOCS_EXT_REF_TOKEN } from "../../../token.ts";
 import { CommandSchema } from "./command.ts";
 import { ConfigFileFormatsWithAuto } from "../../../../constants/file-formats.ts";
 
-export const commandHookCommandsSchema = v.pipe(
+const commandHookCommandsSchema = v.pipe(
   v.optional(
     v.union([CommandSchema, v.pipe(v.array(CommandSchema), v.nonEmpty())]),
   ),
@@ -18,42 +18,49 @@ type _CommandHookCommandsOutput = v.InferOutput<
   typeof commandHookCommandsSchema
 >;
 
+const commandHookTimeoutSchema = v.pipe(
+  v.union([
+    v.pipe(v.number(), v.minValue(1), v.safeInteger()),
+    v.literal(Infinity),
+    v.literal("Infinity"),
+    v.literal("infinity"),
+  ]),
+  v.transform((value) => typeof value === "string" ? Infinity : value),
+);
+const commandHookTimeoutDesc =
+  "Default timeout (ms) for all command hooks, can be overridden per command.\n" +
+  "Use Infinity to never timeout (not recommended).\n";
+
+const commandHookContinueOnErrorSchema = v.boolean();
+const commandHookContinueOnErrorDesc =
+  "Default behavior for all command hooks on error, can be overridden per command.\n";
+
+const commandHookStdoutOverrideFormatSchema = v.enum(ConfigFileFormatsWithAuto);
+const commandHookStdoutOverrideFormatDesc =
+  "Default format for parsing stdout config override content.\n" +
+  "Supported formats: json, jsonc, json5, yaml, toml, auto (best-effort detection).\n" +
+  "Can be overridden per command. When overridden per command, only that command's stdout is checked for override markers.\n";
+
+const commandHooksDesc =
+  "Command hook configuration. Defines commands to run at key lifecycle points of the release process.";
+
 export const CommandHooksSchema = v.object({
   timeout: v.pipe(
-    v.optional(
-      v.pipe(
-        v.union([
-          v.pipe(v.number(), v.minValue(1), v.safeInteger()),
-          v.literal(Infinity),
-          v.literal("Infinity"),
-          v.literal("infinity"),
-        ]),
-        v.transform((value) => typeof value === "string" ? Infinity : value),
-      ),
-      60 * 1000,
-    ),
+    v.optional(commandHookTimeoutSchema, 60 * 1000),
     v.metadata({
-      description:
-        "Default timeout (ms) for all command hooks, can be overridden per command.\n" +
-        "Use Infinity to never timeout (not recommended).\n" +
-        "Default: 60000 (1 min)",
+      description: commandHookTimeoutDesc + "Default: 60000 (1 min)",
     }),
   ),
   continueOnError: v.pipe(
-    v.optional(v.boolean(), false),
+    v.optional(commandHookContinueOnErrorSchema, false),
     v.metadata({
-      description:
-        "Default behavior for all command hooks on error, can be overridden per command.\n" +
-        "Default: false",
+      description: commandHookContinueOnErrorDesc + "Default: false",
     }),
   ),
   stdoutOverrideFormat: v.pipe(
-    v.optional(v.enum(ConfigFileFormatsWithAuto), "auto"),
+    v.optional(commandHookStdoutOverrideFormatSchema, "auto"),
     v.metadata({
-      description:
-        "Default format for parsing stdout config override content.\n" +
-        "Supported formats: json, jsonc, json5, yaml, toml, auto (best-effort detection).\n" +
-        "Can be overridden per command. When overridden per command, only that command's stdout is checked for override markers.\n" +
+      description: commandHookStdoutOverrideFormatDesc +
         'Default: "auto"',
     }),
   ),
@@ -165,6 +172,57 @@ export const CommandHooksSchema = v.object({
 
 type _CommandHooksInput = v.InferInput<typeof CommandHooksSchema>;
 export type CommandHooksOutput = v.InferOutput<typeof CommandHooksSchema>;
+
+export const CommandHooksPatchSchema = v.pipe(
+  v.object(
+    {
+      timeout: v.pipe(
+        v.optional(commandHookTimeoutSchema),
+        v.metadata({
+          description: commandHookTimeoutDesc + "Default: inherit from root",
+        }),
+      ),
+      continueOnError: v.pipe(
+        v.optional(commandHookContinueOnErrorSchema),
+        v.metadata({
+          description: commandHookContinueOnErrorDesc +
+            "Default: inherit from root",
+        }),
+      ),
+      stdoutOverrideFormat: v.pipe(
+        v.optional(commandHookStdoutOverrideFormatSchema),
+        v.metadata({
+          description: commandHookStdoutOverrideFormatDesc +
+            "Default: inherit from root",
+        }),
+      ),
+
+      preRun: v.optional(v.unwrap(CommandHooksSchema.entries.preRun)),
+
+      preCalculateVersion: v.optional(
+        v.unwrap(CommandHooksSchema.entries.preCalculateVersion),
+      ),
+      postCalculateVersion: v.optional(
+        v.unwrap(CommandHooksSchema.entries.postCalculateVersion),
+      ),
+
+      preCommit: v.optional(v.unwrap(CommandHooksSchema.entries.preCommit)),
+      postCommit: v.optional(v.unwrap(CommandHooksSchema.entries.postCommit)),
+      postProposal: v.optional(
+        v.unwrap(CommandHooksSchema.entries.postProposal),
+      ),
+
+      preTag: v.optional(v.unwrap(CommandHooksSchema.entries.preTag)),
+      preRelease: v.optional(v.unwrap(CommandHooksSchema.entries.preRelease)),
+      postRelease: v.optional(v.unwrap(CommandHooksSchema.entries.postRelease)),
+
+      postRun: v.optional(v.unwrap(CommandHooksSchema.entries.postRun)),
+    } satisfies Record<keyof CommandHooksOutput, unknown>,
+  ),
+  v.metadata({
+    description: commandHooksDesc,
+  }),
+);
 
 export type CommandHookKind = Exclude<
   keyof CommandHooksOutput,

@@ -5,6 +5,15 @@ import {
 } from "../../../constants/defaults/string-templates.ts";
 import { trimNonEmptyStringSchema } from "../../string.ts";
 
+const commitHeaderTemplateSchema = trimNonEmptyStringSchema;
+const commitHeaderTemplateDesc =
+  "String template for commit header, using with string patterns like {{ nextVersion }}. You can optionally include a " +
+  "CI skip token here (or body/footer) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` " +
+  "for GitHub, GitLab, and Bitbucket).\n" +
+  "Allowed patterns to use are: all fixed and dynamic string patterns.\n";
+
+const commitConfigDesc = "Configuration specific to commits.";
+
 export const CommitConfigSchema = v.pipe(
   v.object({
     localChangesToCommit: v.pipe(
@@ -29,13 +38,9 @@ export const CommitConfigSchema = v.pipe(
     ),
 
     headerTemplate: v.pipe(
-      v.optional(trimNonEmptyStringSchema, DEFAULT_COMMIT_HEADER_TEMPLATE),
+      v.optional(commitHeaderTemplateSchema, DEFAULT_COMMIT_HEADER_TEMPLATE),
       v.metadata({
-        description:
-          "String template for commit header, using with string patterns like {{ nextVersion }}. You can optionally include a " +
-          "CI skip token here (or body/footer) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` " +
-          "for GitHub, GitLab, and Bitbucket).\n" +
-          "Allowed patterns to use are: all fixed and dynamic string patterns.\n" +
+        description: commitHeaderTemplateDesc +
           `Default: ${JSON.stringify(DEFAULT_COMMIT_HEADER_TEMPLATE)}`,
       }),
     ),
@@ -90,9 +95,47 @@ export const CommitConfigSchema = v.pipe(
     ),
   }),
   v.metadata({
-    description: "Configuration specific to commits.",
+    description: commitConfigDesc,
   }),
 );
 
 type _CommitConfigInput = v.InferInput<typeof CommitConfigSchema>;
 export type CommitConfigOutput = v.InferOutput<typeof CommitConfigSchema>;
+
+export const CommitConfigPatchSchema = v.pipe(
+  v.object(
+    {
+      localChangesToCommit: v.optional(
+        v.unwrap(CommitConfigSchema.entries.localChangesToCommit),
+      ),
+
+      headerTemplate: v.pipe(
+        v.optional(commitHeaderTemplateSchema),
+        v.metadata({
+          description: commitHeaderTemplateDesc +
+            "Default: inherit from root",
+        }),
+      ),
+      headerTemplatePath: v.optional(
+        v.unwrap(CommitConfigSchema.entries.headerTemplatePath),
+      ),
+
+      bodyTemplate: v.optional(
+        v.unwrap(CommitConfigSchema.entries.bodyTemplate),
+      ),
+      bodyTemplatePath: v.optional(
+        v.unwrap(CommitConfigSchema.entries.bodyTemplatePath),
+      ),
+
+      footerTemplate: v.optional(
+        v.unwrap(CommitConfigSchema.entries.footerTemplate),
+      ),
+      footerTemplatePath: v.optional(
+        v.unwrap(CommitConfigSchema.entries.footerTemplatePath),
+      ),
+    } satisfies Record<keyof CommitConfigOutput, unknown>,
+  ),
+  v.metadata({
+    description: commitConfigDesc,
+  }),
+);

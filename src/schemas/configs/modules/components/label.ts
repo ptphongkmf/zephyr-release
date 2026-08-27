@@ -1,7 +1,7 @@
 import * as v from "@valibot/valibot";
 import { trimNonEmptyStringSchema } from "../../../string.ts";
 
-export const LabelSchema = v.object({
+const LabelSchema = v.object({
   name: trimNonEmptyStringSchema,
   description: v.optional(v.pipe(v.string(), v.trim())),
   color: v.pipe(

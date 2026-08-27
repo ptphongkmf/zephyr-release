@@ -2,13 +2,21 @@ import * as v from "@valibot/valibot";
 import { SemverExtensionSchema } from "./semver-extension.ts";
 import { trimNonEmptyStringSchema } from "../../../string.ts";
 
+const extensionEnabledSchema = v.boolean();
+const extensionEnabledDesc =
+  "Enable/disable handling of SemVer extensions (pre-release identifiers / build metadata).\n";
+
+const treatOverrideAsSignificantSchema = v.boolean();
+const treatOverrideAsSignificantDesc =
+  "If set to `true`, the presence of an `override` is strictly treated as a structural change.\n" +
+  "This immediately triggers resets on any dependent version components (e.g., resetting the Build number)\n" +
+  "If `false`, overrides are treated as volatile/dynamic and ignored by reset logic.\n";
+
 export const BumpRuleExtensionSchema = v.object({
   enabled: v.pipe(
-    v.optional(v.boolean(), false),
+    v.optional(extensionEnabledSchema, false),
     v.metadata({
-      description:
-        "Enable/disable handling of SemVer extensions (pre-release identifiers / build metadata).\n" +
-        "Default: false",
+      description: extensionEnabledDesc + "Default: false",
     }),
   ),
 
@@ -31,13 +39,9 @@ export const BumpRuleExtensionSchema = v.object({
     }),
   ),
   treatOverrideAsSignificant: v.pipe(
-    v.optional(v.boolean(), false),
+    v.optional(treatOverrideAsSignificantSchema, false),
     v.metadata({
-      description:
-        "If set to `true`, the presence of an `override` is strictly treated as a structural change.\n" +
-        "This immediately triggers resets on any dependent version components (e.g., resetting the Build number)\n" +
-        "If `false`, overrides are treated as volatile/dynamic and ignored by reset logic.\n" +
-        "Default: false",
+      description: treatOverrideAsSignificantDesc + "Default: false",
     }),
   ),
 
@@ -53,3 +57,25 @@ type _BumpRuleExtensionInput = v.InferInput<typeof BumpRuleExtensionSchema>;
 export type BumpRuleExtensionOutput = v.InferOutput<
   typeof BumpRuleExtensionSchema
 >;
+
+export const BumpRuleExtensionPatchSchema = v.object(
+  {
+    enabled: v.pipe(
+      v.optional(extensionEnabledSchema),
+      v.metadata({
+        description: extensionEnabledDesc + "Default: inherit from root",
+      }),
+    ),
+
+    override: BumpRuleExtensionSchema.entries.override,
+    treatOverrideAsSignificant: v.pipe(
+      v.optional(treatOverrideAsSignificantSchema),
+      v.metadata({
+        description: treatOverrideAsSignificantDesc +
+          "Default: inherit from root",
+      }),
+    ),
+
+    extensions: BumpRuleExtensionSchema.entries.extensions,
+  } satisfies Record<keyof BumpRuleExtensionOutput, unknown>,
+);

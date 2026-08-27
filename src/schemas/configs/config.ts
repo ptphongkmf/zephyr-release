@@ -2,13 +2,13 @@ import * as v from "@valibot/valibot";
 import {
   BaseCoreConfigSchema,
   BaseLifecycleConfigSchema,
-} from "./modules/base-config.ts";
+} from "./base-config.ts";
 import { BumpStrategyConfigSchema } from "./modules/bump-strategy-config.ts";
 import { ReleaseConfigSchema } from "./modules/release-config.ts";
 import { ChangelogConfigSchema } from "./modules/changelog-config.ts";
 import { CommitConfigSchema } from "./modules/commit-config.ts";
 import { TagConfigSchema } from "./modules/tag-config.ts";
-import { WorkspaceMemberConfigSchema } from "./modules/workspace-member-config.ts";
+import { WorkspaceMemberConfigSchema } from "./workspace-member-config.ts";
 import { trimNonEmptyStringSchema } from "../string.ts";
 
 export const ConfigSchema = v.pipe(

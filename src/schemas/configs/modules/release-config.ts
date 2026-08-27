@@ -6,44 +6,64 @@ import {
 } from "../../../constants/defaults/string-templates.ts";
 import { trimNonEmptyStringSchema } from "../../string.ts";
 
+const releaseCreateReleaseSchema = v.boolean();
+const releaseCreateReleaseDesc = "Enable/disable release creation.\n";
+
+const releasePrereleaseSchema = v.boolean();
+const releasePrereleaseDesc =
+  "If enabled, the release will be marked as prerelease.\n";
+
+const releaseDraftSchema = v.boolean();
+const releaseDraftDesc =
+  "If enabled, the release will be created as draft.\n";
+
+const releaseSetLatestSchema = v.boolean();
+const releaseSetLatestDesc =
+  "If enabled, the release will be set as the latest release.\n";
+
+const releaseTitleTemplateSchema = v.string();
+const releaseTitleTemplateDesc =
+  "String template for release note title, using with string patterns like {{ tagName }}.\n" +
+  "Allowed patterns to use are: all fixed and dynamic string patterns.\n";
+
+const releaseBodyTemplateSchema = v.string();
+const releaseBodyTemplateDesc =
+  "String template for release note body, using with string patterns like {{ changelogRelease }}.\n" +
+  "Allowed patterns to use are: all fixed and dynamic string patterns.\n";
+
+const releaseConfigDesc = "Configuration specific to releases.";
+
 export const ReleaseConfigSchema = v.pipe(
   v.object({
     createRelease: v.pipe(
-      v.optional(v.boolean(), true),
+      v.optional(releaseCreateReleaseSchema, true),
       v.metadata({
-        description: "Enable/disable release creation.\n" +
-          "Default: true",
+        description: releaseCreateReleaseDesc + "Default: true",
       }),
     ),
     prerelease: v.pipe(
-      v.optional(v.boolean(), false),
+      v.optional(releasePrereleaseSchema, false),
       v.metadata({
-        description: "If enabled, the release will be marked as prerelease.\n" +
-          "Default: false",
+        description: releasePrereleaseDesc + "Default: false",
       }),
     ),
     draft: v.pipe(
-      v.optional(v.boolean(), false),
+      v.optional(releaseDraftSchema, false),
       v.metadata({
-        description: "If enabled, the release will be created as draft.\n" +
-          "Default: false",
+        description: releaseDraftDesc + "Default: false",
       }),
     ),
     setLatest: v.pipe(
-      v.optional(v.boolean(), true),
+      v.optional(releaseSetLatestSchema, true),
       v.metadata({
-        description:
-          "If enabled, the release will be set as the latest release.\n" +
-          "Default: true",
+        description: releaseSetLatestDesc + "Default: true",
       }),
     ),
 
     titleTemplate: v.pipe(
-      v.optional(v.string(), DEFAULT_RELEASE_TITLE_TEMPLATE),
+      v.optional(releaseTitleTemplateSchema, DEFAULT_RELEASE_TITLE_TEMPLATE),
       v.metadata({
-        description:
-          "String template for release note title, using with string patterns like {{ tagName }}.\n" +
-          "Allowed patterns to use are: all fixed and dynamic string patterns.\n" +
+        description: releaseTitleTemplateDesc +
           `Default: ${JSON.stringify(DEFAULT_RELEASE_TITLE_TEMPLATE)}`,
       }),
     ),
@@ -74,11 +94,9 @@ export const ReleaseConfigSchema = v.pipe(
       }),
     ),
     bodyTemplate: v.pipe(
-      v.optional(v.string(), DEFAULT_RELEASE_BODY_TEMPLATE),
+      v.optional(releaseBodyTemplateSchema, DEFAULT_RELEASE_BODY_TEMPLATE),
       v.metadata({
-        description:
-          "String template for release note body, using with string patterns like {{ changelogRelease }}.\n" +
-          "Allowed patterns to use are: all fixed and dynamic string patterns.\n" +
+        description: releaseBodyTemplateDesc +
           `Default: ${JSON.stringify(DEFAULT_RELEASE_BODY_TEMPLATE)}`,
       }),
     ),
@@ -126,9 +144,80 @@ export const ReleaseConfigSchema = v.pipe(
     ),
   }),
   v.metadata({
-    description: "Configuration specific to releases.",
+    description: releaseConfigDesc,
   }),
 );
 
 type _ReleaseConfigInput = v.InferInput<typeof ReleaseConfigSchema>;
 export type ReleaseConfigOutput = v.InferOutput<typeof ReleaseConfigSchema>;
+
+export const ReleaseConfigPatchSchema = v.pipe(
+  v.object(
+    {
+      createRelease: v.pipe(
+        v.optional(releaseCreateReleaseSchema),
+        v.metadata({
+          description: releaseCreateReleaseDesc +
+            "Default: inherit from root",
+        }),
+      ),
+      prerelease: v.pipe(
+        v.optional(releasePrereleaseSchema),
+        v.metadata({
+          description: releasePrereleaseDesc + "Default: inherit from root",
+        }),
+      ),
+      draft: v.pipe(
+        v.optional(releaseDraftSchema),
+        v.metadata({
+          description: releaseDraftDesc + "Default: inherit from root",
+        }),
+      ),
+      setLatest: v.pipe(
+        v.optional(releaseSetLatestSchema),
+        v.metadata({
+          description: releaseSetLatestDesc + "Default: inherit from root",
+        }),
+      ),
+
+      titleTemplate: v.pipe(
+        v.optional(releaseTitleTemplateSchema),
+        v.metadata({
+          description: releaseTitleTemplateDesc +
+            "Default: inherit from root",
+        }),
+      ),
+      titleTemplatePath: v.optional(
+        v.unwrap(ReleaseConfigSchema.entries.titleTemplatePath),
+      ),
+      headerTemplate: v.optional(
+        v.unwrap(ReleaseConfigSchema.entries.headerTemplate),
+      ),
+      headerTemplatePath: v.optional(
+        v.unwrap(ReleaseConfigSchema.entries.headerTemplatePath),
+      ),
+      bodyTemplate: v.pipe(
+        v.optional(releaseBodyTemplateSchema),
+        v.metadata({
+          description: releaseBodyTemplateDesc + "Default: inherit from root",
+        }),
+      ),
+      bodyTemplatePath: v.optional(
+        v.unwrap(ReleaseConfigSchema.entries.bodyTemplatePath),
+      ),
+      footerTemplate: v.optional(
+        v.unwrap(ReleaseConfigSchema.entries.footerTemplate),
+      ),
+      footerTemplatePath: v.optional(
+        v.unwrap(ReleaseConfigSchema.entries.footerTemplatePath),
+      ),
+
+      assets: v.optional(
+        v.unwrap(ReleaseConfigSchema.entries.assets),
+      ),
+    } satisfies Record<keyof ReleaseConfigOutput, unknown>,
+  ),
+  v.metadata({
+    description: releaseConfigDesc,
+  }),
+);

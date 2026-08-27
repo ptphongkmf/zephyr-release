@@ -3,7 +3,7 @@ import { dirname, join } from "@std/path";
 import { toJsonSchema } from "@valibot/to-json-schema";
 import traverse from "@json-schema-tools/traverse";
 import { ConfigSchema } from "../src/schemas/configs/config.ts";
-import { WorkspaceMemberConfigSchema } from "../src/schemas/configs/modules/workspace-member-config.ts";
+import { WorkspaceMemberConfigSchema } from "../src/schemas/configs/workspace-member-config.ts";
 import { TimeZoneSchema } from "../src/schemas/configs/modules/components/timezone.ts";
 import { DOCS_EXT_REF_TOKEN } from "../src/schemas/token.ts";
 
@@ -166,8 +166,9 @@ function generateSchemas(
   for (const { outputFile, casingFn } of configs) {
     // Work on a fresh copy for each variant so mutations don't interfere
     const schema = structuredClone(sourceSchema);
-    const { transformKeys, transformDescriptions } =
-      createTransformers(casingFn);
+    const { transformKeys, transformDescriptions } = createTransformers(
+      casingFn,
+    );
 
     // Traverse and transform schema
     traverse.default(schema, transformKeys, { mutable: true });

@@ -4,13 +4,13 @@ Configuration reference for workspace members in a monorepo setup.
 
 Each workspace member is defined under the root `workspace` property as a key-value pair, where the **key** is the relative path from the repository root, and the **value** is the workspace member configuration object.
 
-## Inheritance
+## Inheritance <!-- omit from toc -->
 
 All properties (except `name`) are **optional**. When omitted, the root config value is used. When provided, it is **deeply merged** with the root config — field-level inheritance, not full replacement.
 
 For example, if the root config defines 5 commit types and a workspace defines 2, the workspace will use only its 2 commit types (array replacement, not merge). But for nested objects like `tag`, only the fields you specify will override (e.g., setting `tag.name-template` overrides just that field while keeping the root's `tag.create-tag` value).
 
-## Example
+## Example <!-- omit from toc -->
 
 ```json
 {
@@ -40,6 +40,26 @@ For example, if the root config defines 5 commit types and a workspace defines 2
 > [!NOTE]
 > Version file paths are **relative to the workspace root**. If `packages/core` has `"path": "package.json"`, the resolved path is `packages/core/package.json`.
 
+## Table of Content <!-- auto-generated, do not edit --> <!-- omit from toc -->
+
+- [Properties](#properties)
+  - [name (Required)](#name-required)
+  - [initial-version (Optional)](#initial-version-optional)
+  - [version-files (Required)](#version-files-required)
+  - [commit-types (Optional)](#commit-types-optional)
+  - [allowed-release-as-commit-types (Optional)](#allowed-release-as-commit-types-optional)
+  - [bump-strategy (Optional)](#bump-strategy-optional)
+  - [changelog (Optional)](#changelog-optional)
+  - [commit (Optional)](#commit-optional)
+  - [tag (Optional)](#tag-optional)
+    - [name-template](#name-template)
+  - [release (Optional)](#release-optional)
+  - [review (Optional)](#review-optional)
+    - [working-branch-name-template](#working-branch-name-template)
+  - [auto (Optional)](#auto-optional)
+  - [command-hooks (Optional)](#command-hooks-optional)
+
+
 ## Properties
 
 ### name (Required)
@@ -64,114 +84,129 @@ Original casing and structure are preserved ("least surprise" principle).
 | `core` | `ZR__core__NEXT_VERSION` | `zr--core--next-version` |
 | `@scope/pkg` | `ZR___scope_pkg__NEXT_VERSION` | `zr--@scope_pkg--next-version` |
 
+[⬆ Back to top](#table-of-content)
+
 ### initial-version (Optional)
 
-Type: `string`
-
-Default: inherits from root config.
+Type: `string`\
+Default: `inherit from root`
 
 The initial semver version for this workspace when no previous version is found.
 
-### version-files (Optional)
+[⬆ Back to top](#table-of-content)
 
-Type: array of version file objects
+### version-files (Required)
 
-Default: inherits from root config.
+Type: `object | object[]`
 
-Version files for this workspace. Paths are **relative to the workspace directory**. See [config-options.md > version-files](./config-options.md#version-files-required) for the full version file schema.
+Version file(s) for this workspace. Accepts a single file object or an array of file objects. Paths are **relative to the workspace directory**. See [config-options.md > version-files](./config-options.md#version-files-required) for the full version file schema.
+
+Note: Unlike other fields, version files DO NOT inherit from root, they are required per-workspace.
+
+[⬆ Back to top](#table-of-content)
 
 ### commit-types (Optional)
 
-Type: array of commit type objects
-
-Default: inherits from root config.
+Type: `array of objects`\
+Default: `inherit from root`
 
 Override the conventional commit types recognized for this workspace. See [config-options.md > commit-types](./config-options.md#commit-types-optional).
 
+[⬆ Back to top](#table-of-content)
+
 ### allowed-release-as-commit-types (Optional)
 
-Type: `string[]` or `"all"`
-
-Default: inherits from root config.
+Type: `string | string[]`\
+Default: `inherit from root`
 
 Override which commit types are allowed to trigger a "Release-As" version override for this workspace.
 
+[⬆ Back to top](#table-of-content)
+
 ### bump-strategy (Optional)
 
-Type: bump strategy object
-
-Default: inherits from root config (deeply merged).
+Type: `object`\
+Default: `inherit from root`
 
 Override version bumping behavior for this workspace. See [config-options.md > bump-strategy](./config-options.md#bump-strategy-optional).
 
+[⬆ Back to top](#table-of-content)
+
 ### changelog (Optional)
 
-Type: changelog object
-
-Default: inherits from root config (deeply merged).
+Type: `object`\
+Default: `inherit from root`
 
 Override changelog generation behavior for this workspace. See [config-options.md > changelog](./config-options.md#changelog-optional).
 
+[⬆ Back to top](#table-of-content)
+
 ### commit (Optional)
 
-Type: commit object
-
-Default: inherits from root config (deeply merged).
+Type: `object`\
+Default: `inherit from root`
 
 Override commit message templates for this workspace. See [config-options.md > commit](./config-options.md#commit-optional).
 
+[⬆ Back to top](#table-of-content)
+
 ### tag (Optional)
 
-Type: tag object
+Type: `object`\
+Default: `inherit from root`
 
-Default: inherits from root config (deeply merged).
+Override tag creation behavior for this workspace. See [config-options.md > tag](./config-options.md#tag-optional) for the full schema.
 
-Override tag creation behavior for this workspace. The `name-template` is commonly overridden to include the workspace name:
+#### name-template
 
-```json
-{
-  "tag": {
-    "name-template": "{{name}}-v{{nextVersion}}"
-  }
-}
-```
+Type: `string`\
+Default: `{{name}}-v{{nextVersion}}`
 
-When the root config has a `workspace` property, the **default** `tag.name-template` for all workspaces becomes `{{name}}-v{{nextVersion}}` (instead of `v{{nextVersion}}`).
+Override the tag name template for this workspace. See [config-options.md > tag > name-template](./config-options.md#tag--name-template-optional).
 
-See [config-options.md > tag](./config-options.md#tag-optional).
+[⬆ Back to top](#table-of-content)
 
 ### release (Optional)
 
-Type: release object
-
-Default: inherits from root config (deeply merged).
+Type: `object`\
+Default: `inherit from root`
 
 Override release creation behavior for this workspace. See [config-options.md > release](./config-options.md#release-optional).
 
+[⬆ Back to top](#table-of-content)
+
 ### review (Optional)
 
-Type: review object
+Type: `object`\
+Default: `inherit from root`
 
-Default: inherits from root config (deeply merged).
+Override review/proposal behavior for this workspace. See [config-options.md > review](./config-options.md#review-optional) for the full schema.
 
-Override review/proposal behavior for this workspace.
+#### working-branch-name-template
+
+Type: `string`\
+Default: `zephyr-release/{{ name }}/{{ triggerBranchName }}`
+
+Override the review working branch name template for this workspace. See [config-options.md > review > working-branch-name-template](./config-options.md#review--working-branch-name-template-optional).
 
 > [!NOTE]
 > When `review.groupProposals` is `true` (the default and currently the only supported mode in monorepo), `postCommit` and `postProposal` hooks defined here are **ignored** — only the root config's hooks fire for these global phases.
 
+[⬆ Back to top](#table-of-content)
+
 ### auto (Optional)
 
-Type: auto object
-
-Default: inherits from root config (deeply merged).
+Type: `object`\
+Default: `inherit from root`
 
 Override auto-release trigger strategy for this workspace. See [config-options.md > auto](./config-options.md#auto-optional).
 
+[⬆ Back to top](#table-of-content)
+
 ### command-hooks (Optional)
 
-Type: command hooks object
-
-Default: inherits from root config (deeply merged).
+Type: `object`\
+Default: `inherit from root`
 
 Per-workspace command hook overrides. Only per-workspace hooks are active from this config:
 

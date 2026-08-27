@@ -22,40 +22,42 @@ export const ReviewLabelsSchema = v.object({
   ),
 
   onMerge: v.pipe(
-    v.optional(v.object({
-      add: v.pipe(
-        v.optional(
-          v.union([
-            LabelItemSchema,
-            v.pipe(v.array(LabelItemSchema), v.nonEmpty()),
-          ]),
+    v.optional(
+      v.object({
+        add: v.pipe(
+          v.optional(
+            v.union([
+              LabelItemSchema,
+              v.pipe(v.array(LabelItemSchema), v.nonEmpty()),
+            ]),
+          ),
+          v.transform((input) => {
+            if (input !== undefined) {
+              return Array.isArray(input) ? input : [input];
+            }
+            return input;
+          }),
         ),
-        v.transform((input) => {
-          if (input !== undefined) {
-            return Array.isArray(input) ? input : [input];
-          }
-          return input;
-        }),
-      ),
-      remove: v.pipe(
-        v.optional(
-          v.union([
-            LabelItemSchema,
-            v.pipe(v.array(LabelItemSchema), v.nonEmpty()),
-          ]),
+        remove: v.pipe(
+          v.optional(
+            v.union([
+              LabelItemSchema,
+              v.pipe(v.array(LabelItemSchema), v.nonEmpty()),
+            ]),
+          ),
+          v.transform((input) => {
+            if (input !== undefined) {
+              return Array.isArray(input) ? input : [input];
+            }
+            return input;
+          }),
+          v.metadata({
+            description: `Use "${LabelOnMergeRemoveOptions.allOnCreate}" ` +
+              "to remove all labels added in `onCreate`.",
+          }),
         ),
-        v.transform((input) => {
-          if (input !== undefined) {
-            return Array.isArray(input) ? input : [input];
-          }
-          return input;
-        }),
-        v.metadata({
-          description: `Use "${LabelOnMergeRemoveOptions.allOnCreate}" ` +
-            "to remove all labels added in `onCreate`.",
-        }),
-      ),
-    }), {}),
+      }),
+    ),
     v.metadata({
       description:
         "Labels to attach and remove from proposals when merged. Can be a string, a label object, " +

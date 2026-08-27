@@ -1,7 +1,7 @@
 import { deepMerge } from "@std/collections";
 import * as v from "@valibot/valibot";
 import { type ConfigOutput, ConfigSchema } from "../schemas/configs/config.ts";
-import type { WorkspaceMemberConfigOutput } from "../schemas/configs/modules/workspace-member-config.ts";
+import type { WorkspaceMemberConfigOutput } from "../schemas/configs/workspace-member-config.ts";
 import type { ResolvedWorkspace } from "../types/workspace-context.ts";
 import { formatValibotIssues } from "../utils/formatters/valibot.ts";
 import {
@@ -54,7 +54,9 @@ function deepMergeWorkspaceConfig(
   member: WorkspaceMemberConfigOutput,
   workspacePath: string,
 ): ConfigOutput {
-  const merged = deepMerge(root, member, { arrays: "replace" });
+  const merged = structuredClone(
+    deepMerge(root, member, { arrays: "replace" }),
+  );
 
   // Apply monorepo tag/branch defaults if user didn't explicitly set them
   // (check against the member config, not the merged result)
