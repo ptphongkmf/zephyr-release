@@ -98,9 +98,9 @@ export const logger: Logger = {
   title: (message: string) =>
     activeCoreLogger.info(formatHeaderMessage(message, { padChar: "=" })),
   heading: (message: string) =>
-    activeCoreLogger.info(formatHeaderMessage(message, { padChar: "-" })),
-  subHeading: (message: string) =>
     activeCoreLogger.info(formatHeaderMessage(message, { padChar: "~" })),
+  subHeading: (message: string) =>
+    activeCoreLogger.info(formatHeaderMessage(message, { padChar: "-" })),
 
   step: (message: string) => activeCoreLogger.info(formatStepMessage(message)),
   stepStart: (message: string) =>

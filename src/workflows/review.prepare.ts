@@ -77,23 +77,37 @@ export async function executeReviewPreparePhase(
   );
 
   // Detect affected workspaces
-  const affectedWorkspaces: AffectedWorkspace[] = runSettings.isMonorepoMode
-    ? await detectAffectedWorkspaces(
+  let affectedWorkspaces: AffectedWorkspace[];
+  
+  if (runSettings.isMonorepoMode) {
+    logger.stepStart(
+      `Starting: Detect affected workspaces (Monorepo mode: ${runSettings.isMonorepoMode})`,
+    );
+    affectedWorkspaces = await detectAffectedWorkspaces(
       provider,
       runSettings.workspaces,
       runSettings.inputs.triggerCommitHash,
       runSettings.config.maxCommitsToResolve,
-    )
-    : runSettings.workspaces.map((ws: ResolvedWorkspace) => ({
+    );
+    
+    if (affectedWorkspaces.length === 0) {
+      logger.stepSkip(
+        "No affected workspaces detected — nothing to release",
+      );
+    } else {
+      logger.stepFinish(
+        `Finished: Detect affected workspaces (${affectedWorkspaces.length})`,
+      );
+    }
+  } else {
+    affectedWorkspaces = runSettings.workspaces.map((ws: ResolvedWorkspace) => ({
       ...ws,
       lastReleaseHash: undefined,
       lastReleaseTagName: undefined,
     }));
+  }
 
   if (affectedWorkspaces.length === 0) {
-    logger.stepSkip(
-      "No affected workspaces detected — nothing to release",
-    );
     return runSettings;
   }
 
