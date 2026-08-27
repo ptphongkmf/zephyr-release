@@ -3,6 +3,23 @@
 <br>
 
 <!-- CHANGELOG-BODY-START -->
+## [0.13.0](https://github.com/ptphongkmf/zephyr-release/compare/v0.12.1...v0.13.0) (2026-08-28) <!-- timezone: Asia/Ho_Chi_Minh -->
+
+### ⚠ BREAKING CHANGES
+
+- change inputs `config-path` default value to ".zephyr-release/config.json"
+
+### Features
+
+- change inputs `config-path` default value to ".zephyr-release/config.json" ([ae37f45](https://github.com/ptphongkmf/zephyr-release/commit/ae37f456ee9da2bac0629af6d61e05dced5dd182))
+- update logger heading styles ([405f9af](https://github.com/ptphongkmf/zephyr-release/commit/405f9af2228a327754ca712e0e9563afc45c8796))
+
+### Bug Fixes
+
+- preserve specific config and input keys during camelCase transformation ([cff0479](https://github.com/ptphongkmf/zephyr-release/commit/cff047934df84584fa9e32b08cab80a763e627e8))
+- prevent reference sharing mutations in merged configs ([b5c2f91](https://github.com/ptphongkmf/zephyr-release/commit/b5c2f9137145945cbd12f4b154c43efa5eef7f4f))
+- stop schema defaults from leaking into workspace overrides ([9a5e62c](https://github.com/ptphongkmf/zephyr-release/commit/9a5e62c1044850fd2533f49b65dd090e0f4e1781))
+
 ## [0.12.1](https://github.com/ptphongkmf/zephyr-release/compare/v0.12.0...v0.12.1) (2026-08-19) <!-- timezone: Asia/Ho_Chi_Minh -->
 
 ### Bug Fixes
