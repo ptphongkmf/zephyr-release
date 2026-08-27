@@ -24,7 +24,7 @@ Authentication token for Zephyr Release operations.
 ### config-path (Optional)
 
 Type: `string`\
-Default: `"zephyr-release-config.json"`
+Default: `".zephyr-release/config.json"`
 
 Path to the Zephyr Release config file, relative to the project root.
 

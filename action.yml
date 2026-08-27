@@ -14,7 +14,7 @@ inputs:
   config-path:
     description: Path to config file, relative to project root.
     required: false
-    default: "zephyr-release-config.json"
+    default: ".zephyr-release/config.json"
   config-format:
     description: The format of config file. Allowed formats are `auto`, `json/jsonc/json5`, `yaml`, `toml`.
     required: false
