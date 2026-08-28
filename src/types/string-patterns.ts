@@ -9,7 +9,9 @@ export type FixedBaseStringPattern =
   | "triggerBranchName"
   | "workingBranchName"
   // Configuration
-  | "timeZone";
+  | "timeZone"
+  // Run context
+  | "isMonorepo";
 
 export type FixedDatetimeStringPattern =
   | "timestamp"

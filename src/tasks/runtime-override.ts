@@ -83,6 +83,7 @@ export async function synchronizeRuntimeStateAfterOverride(
     provider,
     triggerBranchName,
     config,
+    currentPatternContext.isMonorepo as boolean,
   );
 
   const workingBranchName = await resolveStringTemplate(

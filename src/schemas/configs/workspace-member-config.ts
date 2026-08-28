@@ -63,7 +63,7 @@ export const WorkspaceMemberConfigSchema = v.pipe(
       ),
 
       // Per-workspace review overrides
-      // postCommit and postProposal hooks are ignored when groupProposals: true
+      // PRs are always grouped globally even in monorepo mode, so PR-level configs are root-only.
       review: v.optional(ReviewConfigPatchSchema),
       auto: v.optional(AutoConfigPatchSchema),
 
@@ -110,16 +110,14 @@ export const WorkspaceMemberConfigSchema = v.pipe(
       // Per-workspace command hooks (merged with root via deepMerge — field-level inheritance)
       // Hooks that fire per-workspace: preCalculateVersion, postCalculateVersion,
       // preTag, preRelease, postRelease
-      // Hooks that fire globally only (ignored here): preRun, postRun
-      // Hooks that fire globally in grouped mode (with desc note): preCommit, postCommit, postProposal
+      // Hooks that fire globally only (omitted here): preRun, preCommit, postCommit, postProposal, postRun
       commandHooks: v.pipe(
         v.optional(CommandHooksPatchSchema),
         v.metadata({
           description:
             "Per-workspace command hook overrides. Merged with root command-hooks via field-level inheritance.\n" +
             "Only per-workspace hooks are used (preCalculateVersion, postCalculateVersion, preTag, preRelease, postRelease).\n" +
-            "preRun and postRun always use root hooks.\n" +
-            "preCommit, postCommit, and postProposal are ignored when review.groupProposals is true.",
+            "Global hooks (preRun, preCommit, postCommit, postProposal, postRun) are strictly root-only.",
         }),
       ),
     } satisfies Record<keyof WorkspaceMemberFields, unknown>,

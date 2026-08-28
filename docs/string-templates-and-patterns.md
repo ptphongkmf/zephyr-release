@@ -29,10 +29,11 @@ These patterns let you inject dynamic values into your templates. Because Zephyr
 
 These patterns are available starting from the bootstrap phase, meaning they can be used across the entire release operation.
 
-- Custom Patterns
+- Custom Patterns that user defined from [`custom-string-patterns`](./config-options.md#custom-string-patterns-optional)
 - name, host, namespace, repository, commitPathPart, referencePathPart
 - triggerBranchName, workingBranchName
 - timeZone
+- isMonorepo
 - timestamp, YYYY, MM, DD, HH, mm, ss (Fixed)
 - nowTimestamp, nowYYYY, nowMM, nowDD, nowHH, nowmm, nowss (Dynamic)
 
@@ -93,6 +94,7 @@ These string patterns are resolved at runtime and remain fixed for the lifetime 
 <br>
 
 - `{{ timeZone }}`: IANA time zone (set via [`time-zone`](./config-options.md#time-zone-optional))
+- `{{ isMonorepo }}`: `true` if the run is in monorepo mode, `false` otherwise
 
 ##### Datetime
 
@@ -121,11 +123,10 @@ Only available in "auto" and "review" release flow propose operation. Can be und
 
 ##### Releases
 
-- `{{ releases }}`: Array of release objects. Currently contains a single release object for the repository. Each release object contains:
+- `{{ releases }}`: Array of release objects. In monorepo mode, contains one entry per workspace. In single-repo mode, contains a single entry. Each release object contains:
   - `name`: `string`; Project name
   - `nextVersion`: `string`; The next calculated semantic version
   - `tagName`: `string`; The tag name for this release
-  - `isWorkspace`: `boolean`; Whether this is a workspace release
 
 #### Dynamic String Patterns
 
@@ -239,4 +240,4 @@ Below are some commonly used built-in transformers:
 - `join(separator)`: join array items into a string\
   Usage: `{{ items | join: ", " }}`
 
-These built-in transformers cover many common needs. For the full list and syntax details, see: <https://liquidjs.com/filters/overview.html>.
+These built-in transformers cover many common needs. For the full list and syntax details, see: <https://liquidjs.com/filters/overview.html>

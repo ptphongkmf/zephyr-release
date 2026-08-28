@@ -57,7 +57,6 @@ export async function executeReviewPublishPhase(
   interface WorkspacePublishData {
     wsConfig: typeof workspaces[0]["config"];
     wsPath: string;
-    isWorkspace: boolean;
     wsPatternContext: StringPatternContext;
     nextVersionStr: string;
   }
@@ -123,7 +122,6 @@ export async function executeReviewPublishPhase(
       name: wsConfig.name ?? "root",
       nextVersion: format(nextVersion),
       tagName,
-      isWorkspace: ws.isWorkspace,
     });
 
     logger.debugStepFinish(
@@ -147,7 +145,6 @@ export async function executeReviewPublishPhase(
     workspacePublishDataList.push({
       wsConfig,
       wsPath: ws.path,
-      isWorkspace: ws.isWorkspace,
       wsPatternContext,
       nextVersionStr: format(nextVersion),
     });

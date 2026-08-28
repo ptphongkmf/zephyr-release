@@ -37,6 +37,7 @@ export async function bootstrapOperation(
   provider: PlatformProvider,
   config: ConfigOutput,
   inputs: InputsOutput,
+  isMonorepoMode: boolean,
 ): Promise<BootstrapResult> {
   logger.stepStart("Starting: Parse and validate current trigger context");
   const triggerContext = validateCurrentOperationTriggerCtx(
@@ -59,6 +60,7 @@ export async function bootstrapOperation(
     provider,
     inputs.triggerBranchName,
     config,
+    isMonorepoMode,
   );
 
   const workingBranchName = await resolveStringTemplate(

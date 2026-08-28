@@ -24,7 +24,6 @@ Some example [config files](./examples/).
   - [release-flow (Optional)](#release-flow-optional)
   - [review (Optional)](#review-optional)
     - [review \> draft (Optional)](#review--draft-optional)
-    - [review \> group-proposals (Optional)](#review--group-proposals-optional)
     - [review \> working-branch-name-template (Optional)](#review--working-branch-name-template-optional)
     - [review \> title-template (Optional)](#review--title-template-optional)
     - [review \> title-template-path (Optional)](#review--title-template-path-optional)
@@ -246,19 +245,6 @@ Type: `boolean`\
 Default: `false`
 
 If enabled, the proposal will be created as draft.
-
-[⬆ Back to top](#table-of-content)
-
-#### review > group-proposals (Optional)
-
-Type: `boolean`\
-Default: `true`
-
-When `true` (default), all workspace changes are grouped into a single release proposal in monorepo mode. All workspace version bumps, changelogs, and file changes are committed together and presented in one PR/MR.
-
-When `false`, each workspace would get its own proposal with its own working branch. *(Note: `false` is not yet supported and will throw an error.)*
-
-This option only has effect in monorepo mode (when [`workspace`](#workspace-optional) is defined). In single-repo mode, it is ignored.
 
 [⬆ Back to top](#table-of-content)
 

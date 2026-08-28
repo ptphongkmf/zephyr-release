@@ -221,7 +221,6 @@ export async function executeAutoReleaseFlow(
       name: wsConfig.name ?? "root",
       nextVersion: format(nextVersion),
       tagName,
-      isWorkspace: ws.isWorkspace,
     });
 
     // postCalculateVersion hook

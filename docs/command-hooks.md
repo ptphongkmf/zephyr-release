@@ -178,4 +178,4 @@ When a hook fires globally:
 2. **Context**: `ZR_NAME` is not set (or empty). Global hooks operate on the aggregated state across all workspaces.
 
 > [!NOTE]
-> If a workspace defines `pre-commit`, `post-commit`, or `post-proposal` in its `command-hooks`, those definitions are silently ignored in grouped proposal mode. Only the root config's definitions for these hooks are used.
+> If a workspace defines `pre-commit`, `post-commit`, or `post-proposal` in its `command-hooks`, those definitions are strictly invalid. These hooks only execute globally, so they must be defined in the root config's `command-hooks`.

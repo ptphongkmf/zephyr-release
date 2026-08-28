@@ -55,7 +55,6 @@ For example, if the root config defines 5 commit types and a workspace defines 2
     - [name-template](#name-template)
   - [release (Optional)](#release-optional)
   - [review (Optional)](#review-optional)
-    - [working-branch-name-template](#working-branch-name-template)
   - [auto (Optional)](#auto-optional)
   - [command-hooks (Optional)](#command-hooks-optional)
 
@@ -180,17 +179,9 @@ Override release creation behavior for this workspace. See [config-options.md > 
 Type: `object`\
 Default: `inherit from root`
 
-Override review/proposal behavior for this workspace. See [config-options.md > review](./config-options.md#review-optional) for the full schema.
-
-#### working-branch-name-template
-
-Type: `string`\
-Default: `zephyr-release/{{ name }}/{{ triggerBranchName }}`
-
-Override the review working branch name template for this workspace. See [config-options.md > review > working-branch-name-template](./config-options.md#review--working-branch-name-template-optional).
-
-> [!NOTE]
-> When `review.groupProposals` is `true` (the default and currently the only supported mode in monorepo), `postCommit` and `postProposal` hooks defined here are **ignored** — only the root config's hooks fire for these global phases.
+Override review/proposal behavior for this workspace. Identical to the root config but only accepts the following properties:
+- [`body-template`](./config-options.md#review--body-template-optional)
+- [`body-template-path`](./config-options.md#review--body-template-path-optional)
 
 [⬆ Back to top](#table-of-content)
 
@@ -219,9 +210,9 @@ Per-workspace command hook overrides. Only per-workspace hooks are active from t
 | `postRelease` | ✅ Per-workspace |
 | `preRun` | ❌ Root only |
 | `postRun` | ❌ Root only |
-| `preCommit` | ❌ Root only (grouped mode) |
-| `postCommit` | ❌ Root only (grouped mode) |
-| `postProposal` | ❌ Root only (grouped mode) |
+| `preCommit` | ❌ Root only |
+| `postCommit` | ❌ Root only |
+| `postProposal` | ❌ Root only |
 
 The `ZR_NAME` environment variable is set to the current workspace name during per-workspace hook execution.
 

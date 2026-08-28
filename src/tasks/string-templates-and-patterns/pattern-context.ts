@@ -36,7 +36,9 @@ export function addCustomPatternContext(
   patternContext: StringPatternContext,
   customPatterns: ConfigOutput["customStringPatterns"],
 ): StringPatternContext {
-  if (!customPatterns || Object.keys(customPatterns).length === 0) return patternContext;
+  if (!customPatterns || Object.keys(customPatterns).length === 0) {
+    return patternContext;
+  }
 
   taskLogger.debug(
     "Custom string pattern context: " +
@@ -54,17 +56,13 @@ export type AddBaseContextConfigParams =
 
 /**
  * Add base project/repo patterns to context.
- *
- * The caller must resolve `workingBranchName` BEFORE calling this,
- * using the partial context built so far. This removes the old circular
- * dependency where createFixedBaseStringPatternContext called
- * resolveStringTemplate while mutating the same global it read from.
  */
 export function addBasePatternContext(
   patternContext: StringPatternContext,
   provider: PlatformProvider,
   triggerBranchName: string,
   config: AddBaseContextConfigParams,
+  isMonorepoMode: boolean,
 ): StringPatternContext {
   const base = {
     name: config.name,
@@ -77,9 +75,11 @@ export function addBasePatternContext(
     triggerBranchName: triggerBranchName,
 
     timeZone: config.timeZone,
+
+    isMonorepo: isMonorepoMode,
   } satisfies Record<
     Exclude<FixedBaseStringPattern, "workingBranchName">,
-    string | number | undefined
+    string | number | boolean | undefined
   >;
 
   taskLogger.debug(
@@ -225,13 +225,10 @@ export function addChangelogPatternContext(
   return { ...patternContext, ...context };
 }
 
-// --- New: releases context ---
-
 export interface ReleaseContextEntry {
   name: string;
   nextVersion: string;
   tagName: string;
-  isWorkspace: boolean;
 }
 
 export function addReleasesPatternContext(

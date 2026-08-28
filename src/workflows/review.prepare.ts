@@ -78,7 +78,7 @@ export async function executeReviewPreparePhase(
 
   // Detect affected workspaces
   let affectedWorkspaces: AffectedWorkspace[];
-  
+
   if (runSettings.isMonorepoMode) {
     logger.stepStart(
       `Starting: Detect affected workspaces (Monorepo mode: ${runSettings.isMonorepoMode})`,
@@ -89,7 +89,7 @@ export async function executeReviewPreparePhase(
       runSettings.inputs.triggerCommitHash,
       runSettings.config.maxCommitsToResolve,
     );
-    
+
     if (affectedWorkspaces.length === 0) {
       logger.stepSkip(
         "No affected workspaces detected — nothing to release",
@@ -100,7 +100,9 @@ export async function executeReviewPreparePhase(
       );
     }
   } else {
-    affectedWorkspaces = runSettings.workspaces.map((ws: ResolvedWorkspace) => ({
+    affectedWorkspaces = runSettings.workspaces.map((
+      ws: ResolvedWorkspace,
+    ) => ({
       ...ws,
       lastReleaseHash: undefined,
       lastReleaseTagName: undefined,
@@ -222,7 +224,6 @@ export async function executeReviewPreparePhase(
       name: wsConfig.name ?? "root",
       nextVersion: format(nextVersion),
       tagName,
-      isWorkspace: ws.isWorkspace,
     });
 
     // postCalculateVersion hook

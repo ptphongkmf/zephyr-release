@@ -206,25 +206,25 @@ export const CommandHooksPatchSchema = v.pipe(
         v.unwrap(CommandHooksSchema.entries.postCalculateVersion),
       ),
 
-      preCommit: v.optional(v.unwrap(CommandHooksSchema.entries.preCommit)),
-      postCommit: v.optional(v.unwrap(CommandHooksSchema.entries.postCommit)),
-      postProposal: v.optional(
-        v.unwrap(CommandHooksSchema.entries.postProposal),
-      ),
-
       preTag: v.optional(v.unwrap(CommandHooksSchema.entries.preTag)),
       preRelease: v.optional(v.unwrap(CommandHooksSchema.entries.preRelease)),
       postRelease: v.optional(v.unwrap(CommandHooksSchema.entries.postRelease)),
 
       postRun: v.optional(v.unwrap(CommandHooksSchema.entries.postRun)),
-    } satisfies Record<keyof CommandHooksOutput, unknown>,
+    } satisfies Record<
+      keyof Omit<
+        CommandHooksOutput,
+        "preCommit" | "postCommit" | "postProposal"
+      >,
+      unknown
+    >,
   ),
   v.metadata({
     description: commandHooksDesc,
   }),
 );
 
-export type CommandHookKind = Exclude<
-  keyof CommandHooksOutput,
+export type CommandHookKind = keyof Omit<
+  CommandHooksOutput,
   "timeout" | "continueOnError" | "stdoutOverrideFormat"
 >;

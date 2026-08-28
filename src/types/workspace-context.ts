@@ -5,6 +5,4 @@ export interface ResolvedWorkspace {
   path: string;
   /** Fully merged config (root defaults + workspace overrides) */
   config: ConfigOutput;
-  /** Whether this is a workspace member (true) or root/single-repo (false) */
-  isWorkspace: boolean;
 }

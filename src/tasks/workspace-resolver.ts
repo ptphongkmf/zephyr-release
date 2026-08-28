@@ -11,7 +11,7 @@ import {
 
 /**
  * Resolves workspace configs by deep-merging root config with per-workspace overrides.
- * For single-repo, returns a single-item array with isWorkspace=false.
+ * For single-repo, returns a single-item array.
  */
 export function resolveWorkspaces(
   rootConfig: ConfigOutput,
@@ -23,7 +23,6 @@ export function resolveWorkspaces(
     return [{
       path: ".",
       config: rootConfig,
-      isWorkspace: false,
     }];
   }
 
@@ -37,7 +36,6 @@ export function resolveWorkspaces(
     return {
       path,
       config: mergedConfig,
-      isWorkspace: true,
     };
   });
 }
@@ -62,10 +60,6 @@ function deepMergeWorkspaceConfig(
   // (check against the member config, not the merged result)
   if (!member.tag?.nameTemplate) {
     merged.tag.nameTemplate = DEFAULT_WORKSPACE_TAG_NAME_TEMPLATE;
-  }
-  if (!member.review?.workingBranchNameTemplate) {
-    merged.review.workingBranchNameTemplate =
-      DEFAULT_WORKSPACE_WORKING_BRANCH_NAME_TEMPLATE;
   }
 
   const result = v.safeParse(ConfigSchema, merged);
