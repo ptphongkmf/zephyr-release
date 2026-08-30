@@ -6,7 +6,6 @@ import type { ResolvedWorkspace } from "../types/workspace-context.ts";
 import { formatValibotIssues } from "../utils/formatters/valibot.ts";
 import {
   DEFAULT_WORKSPACE_TAG_NAME_TEMPLATE,
-  DEFAULT_WORKSPACE_WORKING_BRANCH_NAME_TEMPLATE,
 } from "../constants/defaults/string-templates.ts";
 
 /**

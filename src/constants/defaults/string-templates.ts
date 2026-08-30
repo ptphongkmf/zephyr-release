@@ -53,6 +53,3 @@ export const DEFAULT_RELEASE_BODY_TEMPLATE = liquid`{{ changelogRelease }}`;
 // Workspace (monorepo) defaults
 export const DEFAULT_WORKSPACE_TAG_NAME_TEMPLATE =
   liquid`{{ name }}-v{{ nextVersion }}`;
-
-export const DEFAULT_WORKSPACE_WORKING_BRANCH_NAME_TEMPLATE =
-  "zephyr-release/{{ name }}/{{ triggerBranchName }}";

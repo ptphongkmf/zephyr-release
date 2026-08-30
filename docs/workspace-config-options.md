@@ -58,7 +58,6 @@ For example, if the root config defines 5 commit types and a workspace defines 2
   - [auto (Optional)](#auto-optional)
   - [command-hooks (Optional)](#command-hooks-optional)
 
-
 ## Properties
 
 ### name (Required)
@@ -66,21 +65,24 @@ For example, if the root config defines 5 commit types and a workspace defines 2
 Type: `string`
 
 The workspace member name. Used in:
+
 - Tag names (via `{{name}}` in templates)
 - Environment variables (`ZR_NAME`, `ZR__<name>__*`)
 - GitHub Actions outputs (`zr--<name>--*`)
 - Release-As footer parsing (`name@version`)
 
 For env/output variable naming, characters not valid in shell identifiers are replaced with underscore:
+
 - Env vars: any character not matching `[a-zA-Z0-9_]` → `_`
 - Output keys: any character not matching `[a-zA-Z0-9_-]` → `_`
 
 Original casing and structure are preserved ("least surprise" principle).
 
 **Examples:**
-| Name | Env key | Output key |
-|---|---|---|
-| `core` | `ZR__core__NEXT_VERSION` | `zr--core--next-version` |
+
+| Name         | Env key                        | Output key                     |
+| ------------ | ------------------------------ | ------------------------------ |
+| `core`       | `ZR__core__NEXT_VERSION`       | `zr--core--next-version`       |
 | `@scope/pkg` | `ZR___scope_pkg__NEXT_VERSION` | `zr--@scope_pkg--next-version` |
 
 [⬆ Back to top](#table-of-content)
@@ -145,7 +147,11 @@ Override changelog generation behavior for this workspace. See [config-options.m
 Type: `object`\
 Default: `inherit from root`
 
-Override commit message templates for this workspace. See [config-options.md > commit](./config-options.md#commit-optional).
+Override commit configurations for this workspace. Identical to [config-options.md > commit](./config-options.md#commit-optional) but only supports the following keys:
+
+- [`local-changes-to-commit`](./config-options.md#commit--local-changes-to-commit-optional)
+- [`body-template`](./config-options.md#commit--body-template-optional)
+- [`body-template-path`](./config-options.md#commit--body-template-path-optional)
 
 [⬆ Back to top](#table-of-content)
 
@@ -180,6 +186,7 @@ Type: `object`\
 Default: `inherit from root`
 
 Override review/proposal behavior for this workspace. Identical to the root config but only accepts the following properties:
+
 - [`body-template`](./config-options.md#review--body-template-optional)
 - [`body-template-path`](./config-options.md#review--body-template-path-optional)
 
@@ -201,18 +208,18 @@ Default: `inherit from root`
 
 Per-workspace command hook overrides. Only per-workspace hooks are active from this config:
 
-| Hook | Fires from workspace config? |
-|---|---|
-| `preCalculateVersion` | ✅ Per-workspace |
-| `postCalculateVersion` | ✅ Per-workspace |
-| `preTag` | ✅ Per-workspace |
-| `preRelease` | ✅ Per-workspace |
-| `postRelease` | ✅ Per-workspace |
-| `preRun` | ❌ Root only |
-| `postRun` | ❌ Root only |
-| `preCommit` | ❌ Root only |
-| `postCommit` | ❌ Root only |
-| `postProposal` | ❌ Root only |
+| Hook                   | Fires from workspace config? |
+| ---------------------- | ---------------------------- |
+| `preCalculateVersion`  | ✅ Per-workspace              |
+| `postCalculateVersion` | ✅ Per-workspace              |
+| `preTag`               | ✅ Per-workspace              |
+| `preRelease`           | ✅ Per-workspace              |
+| `postRelease`          | ✅ Per-workspace              |
+| `preRun`               | ❌ Root only                  |
+| `postRun`              | ❌ Root only                  |
+| `preCommit`            | ❌ Root only                  |
+| `postCommit`           | ❌ Root only                  |
+| `postProposal`         | ❌ Root only                  |
 
 The `ZR_NAME` environment variable is set to the current workspace name during per-workspace hook execution.
 

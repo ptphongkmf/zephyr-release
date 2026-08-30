@@ -7,7 +7,6 @@ import {
   DEFAULT_PROPOSAL_HEADER_TEMPLATE,
   DEFAULT_PROPOSAL_TITLE_TEMPLATE,
   DEFAULT_WORKING_BRANCH_NAME_TEMPLATE,
-  DEFAULT_WORKSPACE_WORKING_BRANCH_NAME_TEMPLATE,
 } from "../../../constants/defaults/string-templates.ts";
 import { ReviewLabelsSchema } from "./components/review-labels.ts";
 
