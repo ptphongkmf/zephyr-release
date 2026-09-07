@@ -55,18 +55,20 @@ function deepMergeWorkspaceConfig(
     deepMerge(root, member, { arrays: "replace" }),
   );
 
-  // Apply monorepo tag/branch defaults if user didn't explicitly set them
-  // (check against the member config, not the merged result)
-  if (!member.tag?.nameTemplate) {
-    merged.tag.nameTemplate = DEFAULT_WORKSPACE_TAG_NAME_TEMPLATE;
-  }
-
   const result = v.safeParse(ConfigSchema, merged);
   if (!result.success) {
     throw new Error(
       `Failed to merge workspace config for "${member.name}" at "${workspacePath}": ` +
         formatValibotIssues(result.issues),
     );
+  }
+
+  // Apply monorepo tag defaults if the member did not explicitly set them.
+  // We mutate result.output because deepMerge<T, U>'s recursive conditional type
+  // hits TS instantiation limits on complex schemas, falling back to a looser type
+  // where merged.tag becomes possibly undefined. result.output is safely typed.
+  if (!member.tag?.nameTemplate) {
+    result.output.tag.nameTemplate = DEFAULT_WORKSPACE_TAG_NAME_TEMPLATE;
   }
 
   return result.output;

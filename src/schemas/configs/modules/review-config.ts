@@ -169,17 +169,62 @@ export const ReviewConfigSchema = v.pipe(
 type _ReviewConfigInput = v.InferInput<typeof ReviewConfigSchema>;
 export type ReviewConfigOutput = v.InferOutput<typeof ReviewConfigSchema>;
 
+
+const memberTemplatePathDesc = (field: string) =>
+  `Path to text file containing the ${field} template. Overrides the inline template when both are provided.\n` +
+  `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+  "This path is always relative to the repository root, even in monorepo mode.";
+
 export const ReviewConfigPatchSchema = v.pipe(
   v.object(
     {
-      bodyTemplate: v.pipe(
-        v.optional(reviewBodyTemplateSchema),
+      memberHeaderTemplate: v.pipe(
+        v.optional(v.string()),
         v.metadata({
-          description: reviewBodyTemplateDesc + "Default: inherit from root",
+          description:
+            "String template for the per-workspace section header in the release proposal body.\n" +
+            "Rendered before the member body markers. Appears in the PR only — not extracted for the GitHub Release.\n" +
+            "Allowed patterns: all fixed and run-computed string patterns for this workspace.",
         }),
       ),
-      bodyTemplatePath: v.optional(
-        v.unwrap(ReviewConfigSchema.entries.bodyTemplatePath),
+      memberHeaderTemplatePath: v.pipe(
+        v.optional(trimNonEmptyStringSchema),
+        v.metadata({
+          description: memberTemplatePathDesc("member header"),
+        }),
+      ),
+
+      memberBodyTemplate: v.pipe(
+        v.optional(v.string()),
+        v.metadata({
+          description:
+            "String template for the per-workspace section body in the release proposal body.\n" +
+            "Wrapped in per-workspace markers and extracted on publish as the GitHub Release content.\n" +
+            "Allowed patterns: all fixed and run-computed string patterns for this workspace.\n" +
+            "Default: `{{ changelogRelease }}`",
+        }),
+      ),
+      memberBodyTemplatePath: v.pipe(
+        v.optional(trimNonEmptyStringSchema),
+        v.metadata({
+          description: memberTemplatePathDesc("member body"),
+        }),
+      ),
+
+      memberFooterTemplate: v.pipe(
+        v.optional(v.string()),
+        v.metadata({
+          description:
+            "String template for the per-workspace section footer in the release proposal body.\n" +
+            "Rendered after the member body markers. Appears in the PR only — not extracted for the GitHub Release.\n" +
+            "Allowed patterns: all fixed and run-computed string patterns for this workspace.",
+        }),
+      ),
+      memberFooterTemplatePath: v.pipe(
+        v.optional(trimNonEmptyStringSchema),
+        v.metadata({
+          description: memberTemplatePathDesc("member footer"),
+        }),
       ),
     } satisfies Record<
       keyof Omit<
@@ -190,12 +235,21 @@ export const ReviewConfigPatchSchema = v.pipe(
         | "titleTemplatePath"
         | "headerTemplate"
         | "headerTemplatePath"
+        | "bodyTemplate"
+        | "bodyTemplatePath"
         | "footerTemplate"
         | "footerTemplatePath"
         | "labels"
         | "assignees"
         | "reviewers"
-      >,
+      > & {
+        memberHeaderTemplate: unknown;
+        memberHeaderTemplatePath: unknown;
+        memberBodyTemplate: unknown;
+        memberBodyTemplatePath: unknown;
+        memberFooterTemplate: unknown;
+        memberFooterTemplatePath: unknown;
+      },
       unknown
     >,
   ),
@@ -203,3 +257,4 @@ export const ReviewConfigPatchSchema = v.pipe(
     description: reviewConfigDesc,
   }),
 );
+

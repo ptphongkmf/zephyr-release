@@ -180,17 +180,16 @@ Some example [config files](./examples/).
       - [\> post-release \> same properties as command-hooks \> pre-run](#-post-release--same-properties-as-command-hooks--pre-run)
     - [command-hooks \> post-run (Optional)](#command-hooks--post-run-optional)
       - [\> post-run \> same properties as command-hooks \> pre-run](#-post-run--same-properties-as-command-hooks--pre-run)
-  - [workspace (Optional)](#workspace-optional)
 - [Type Definitions](#type-definitions)
   - [AutoStrategy](#autostrategy)
   - [SemverExtension](#semverextension)
+  - [workspace (Optional)](#workspace-optional)
 
 ## Properties
 
 ### name (Optional)
 
-Type: `string`\
-Default: `""`
+Type: `string`
 
 The project name used in [string templates](./string-templates-and-patterns.md) (available as `{{ name }}`).
 
@@ -236,6 +235,9 @@ Type: `object`\
 **Properties:** [`draft`](#review--draft-optional), [`working-branch-name-template`](#review--working-branch-name-template-optional), [`title-template`](#review--title-template-optional), [`title-template-path`](#review--title-template-path-optional), [`header-template`](#review--header-template-optional), [`header-template-path`](#review--header-template-path-optional), [`body-template`](#review--body-template-optional), [`body-template-path`](#review--body-template-path-optional), [`footer-template`](#review--footer-template-optional), [`footer-template-path`](#review--footer-template-path-optional), [`labels`](#review--labels-optional), [`assignees`](#review--assignees-optional), [`reviewers`](#review--reviewers-optional)
 
 Configuration specific to the `"review"` release flow. Defines how release proposals (such as PRs, MRs, ...) are generated, formatted, and tracked.
+
+> [!NOTE]
+> In monorepo mode, per-workspace proposal body content is configured via `review.member-body-template` and related fields on each workspace member, not via the root `body-template`. See [workspace-config-options.md > review](./workspace-config-options.md#review-optional).
 
 [⬆ Back to top](#table-of-content)
 
@@ -1298,13 +1300,12 @@ Allowed patterns to use in template are: [all string patterns](./string-template
 
 Type: `string | string[]`
 
-Additional glob pattern(s) to match existing tags when searching for the last release. 
+Additional glob pattern(s) to match existing tags when searching for the last release.
 Zephyr Release automatically derives a match pattern from your `name-template` (e.g. `{{ name }}-v{{ nextVersion }}` becomes `*-v*`), so you usually don't need to configure this.
 
 Use `match-patterns` only if you are migrating from a different tag naming convention and need Zephyr Release to also recognize your old tags as release boundaries.
 
 Example: `["v*", "release-*"]`
-
 
 #### tag > type (Optional)
 

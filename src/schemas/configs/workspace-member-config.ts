@@ -41,6 +41,7 @@ type WorkspaceMemberFields =
   >
   & BaseLifecycleConfigOutput
   & {
+    title?: string;
     bumpStrategy: unknown;
     changelog: unknown;
     commit: unknown;
@@ -59,6 +60,18 @@ export const WorkspaceMemberConfigSchema = v.pipe(
             "Workspace member name. Required. Used in tags, env vars, and outputs.\n" +
             "For env/output variable naming, characters invalid in shell identifiers are replaced " +
             "with underscore (see export-variables docs for the exact rules).",
+        }),
+      ),
+
+      // Optional display title for the workspace section heading in the proposal body.
+      // If omitted, the `name` value is used as the heading.
+      title: v.pipe(
+        v.optional(trimNonEmptyStringSchema),
+        v.metadata({
+          description:
+            "Display title for this workspace's section heading in the release proposal body.\n" +
+            "The proposal body always uses this value as the heading; falls back to `name` if not set.\n" +
+            "Does not affect tags, env vars, branch names, or any other computed value.",
         }),
       ),
 

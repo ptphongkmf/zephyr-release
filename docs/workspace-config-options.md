@@ -44,6 +44,7 @@ For example, if the root config defines 5 commit types and a workspace defines 2
 
 - [Properties](#properties)
   - [name (Required)](#name-required)
+  - [title (Optional)](#title-optional)
   - [initial-version (Optional)](#initial-version-optional)
   - [version-files (Required)](#version-files-required)
   - [commit-types (Optional)](#commit-types-optional)
@@ -55,6 +56,12 @@ For example, if the root config defines 5 commit types and a workspace defines 2
     - [name-template](#name-template)
   - [release (Optional)](#release-optional)
   - [review (Optional)](#review-optional)
+    - [review > member-header-template (Optional)](#review--member-header-template-optional)
+    - [review > member-header-template-path (Optional)](#review--member-header-template-path-optional)
+    - [review > member-body-template (Optional)](#review--member-body-template-optional)
+    - [review > member-body-template-path (Optional)](#review--member-body-template-path-optional)
+    - [review > member-footer-template (Optional)](#review--member-footer-template-optional)
+    - [review > member-footer-template-path (Optional)](#review--member-footer-template-path-optional)
   - [auto (Optional)](#auto-optional)
   - [command-hooks (Optional)](#command-hooks-optional)
 
@@ -84,6 +91,17 @@ Original casing and structure are preserved ("least surprise" principle).
 | ------------ | ------------------------------ | ------------------------------ |
 | `core`       | `ZR__core__NEXT_VERSION`       | `zr--core--next-version`       |
 | `@scope/pkg` | `ZR___scope_pkg__NEXT_VERSION` | `zr--@scope_pkg--next-version` |
+
+[⬆ Back to top](#table-of-content)
+
+### title (Optional)
+
+Type: `string`
+
+Display title for this workspace's section heading in the release proposal body.\
+The proposal body always uses this value as the heading; falls back to `name` if not set.
+
+Does not affect tag names, env vars, branch names, or any other computed value — it is purely cosmetic.
 
 [⬆ Back to top](#table-of-content)
 
@@ -185,10 +203,76 @@ Override release creation behavior for this workspace. See [config-options.md > 
 Type: `object`\
 Default: `inherit from root`
 
-Override review/proposal behavior for this workspace. Identical to the root config but only accepts the following properties:
+Override review/proposal behavior for this workspace. Accepts the following per-workspace properties:
 
-- [`body-template`](./config-options.md#review--body-template-optional)
-- [`body-template-path`](./config-options.md#review--body-template-path-optional)
+- [`review > member-header-template`](#review--member-header-template-optional)
+- [`review > member-header-template-path`](#review--member-header-template-path-optional)
+- [`review > member-body-template`](#review--member-body-template-optional)
+- [`review > member-body-template-path`](#review--member-body-template-path-optional)
+- [`review > member-footer-template`](#review--member-footer-template-optional)
+- [`review > member-footer-template-path`](#review--member-footer-template-path-optional)
+
+[⬆ Back to top](#table-of-content)
+
+#### review > member-header-template (Optional)
+
+Type: `string`
+
+String template for the per-workspace section header in the release proposal body.\
+Rendered **before** the member body markers. Appears in the PR only — **not** extracted for the GitHub Release.\
+Allowed patterns: all fixed and run-computed string patterns for this workspace.
+
+[⬆ Back to top](#table-of-content)
+
+#### review > member-header-template-path (Optional)
+
+Type: `string`
+
+Path to text file containing the member header template. Overrides `member-header-template` when both are provided.\
+To customize whether this file is fetched locally or remotely, see [source mode](./input-options.md#source-mode-optional).
+
+[⬆ Back to top](#table-of-content)
+
+#### review > member-body-template (Optional)
+
+Type: `string`\
+Default: `{{ changelogRelease }}`
+
+String template for the per-workspace section body in the release proposal body.\
+Wrapped in per-workspace markers and **extracted on publish** as the GitHub Release content.\
+Allowed patterns: all fixed and run-computed string patterns for this workspace.
+
+> [!IMPORTANT]
+> This is the content that ends up in the GitHub Release notes. If you override this template, make sure it contains
+> the changelog content you want to publish (e.g., keep `{{ changelogRelease }}` or your custom changelog pattern).
+
+[⬆ Back to top](#table-of-content)
+
+#### review > member-body-template-path (Optional)
+
+Type: `string`
+
+Path to text file containing the member body template. Overrides `member-body-template` when both are provided.\
+To customize whether this file is fetched locally or remotely, see [source mode](./input-options.md#source-mode-optional).
+
+[⬆ Back to top](#table-of-content)
+
+#### review > member-footer-template (Optional)
+
+Type: `string`
+
+String template for the per-workspace section footer in the release proposal body.\
+Rendered **after** the member body markers. Appears in the PR only — **not** extracted for the GitHub Release.\
+Allowed patterns: all fixed and run-computed string patterns for this workspace.
+
+[⬆ Back to top](#table-of-content)
+
+#### review > member-footer-template-path (Optional)
+
+Type: `string`
+
+Path to text file containing the member footer template. Overrides `member-footer-template` when both are provided.\
+To customize whether this file is fetched locally or remotely, see [source mode](./input-options.md#source-mode-optional).
 
 [⬆ Back to top](#table-of-content)
 
@@ -210,16 +294,16 @@ Per-workspace command hook overrides. Only per-workspace hooks are active from t
 
 | Hook                   | Fires from workspace config? |
 | ---------------------- | ---------------------------- |
-| `preCalculateVersion`  | ✅ Per-workspace              |
-| `postCalculateVersion` | ✅ Per-workspace              |
-| `preTag`               | ✅ Per-workspace              |
-| `preRelease`           | ✅ Per-workspace              |
-| `postRelease`          | ✅ Per-workspace              |
-| `preRun`               | ❌ Root only                  |
-| `postRun`              | ❌ Root only                  |
-| `preCommit`            | ❌ Root only                  |
-| `postCommit`           | ❌ Root only                  |
-| `postProposal`         | ❌ Root only                  |
+| `preCalculateVersion`  | ✅ Per-workspace             |
+| `postCalculateVersion` | ✅ Per-workspace             |
+| `preTag`               | ✅ Per-workspace             |
+| `preRelease`           | ✅ Per-workspace             |
+| `postRelease`          | ✅ Per-workspace             |
+| `preRun`               | ❌ Root only                 |
+| `postRun`              | ❌ Root only                 |
+| `preCommit`            | ❌ Root only                 |
+| `postCommit`           | ❌ Root only                 |
+| `postProposal`         | ❌ Root only                 |
 
 The `ZR_NAME` environment variable is set to the current workspace name during per-workspace hook execution.
 
