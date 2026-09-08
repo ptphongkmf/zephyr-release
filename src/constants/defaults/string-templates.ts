@@ -36,7 +36,7 @@ export const DEFAULT_PROPOSAL_TITLE_TEMPLATE =
 
 export const DEFAULT_PROPOSAL_HEADER_TEMPLATE = "# 🤖 Release Proposal";
 
-export const DEFAULT_PROPOSAL_BODY_TEMPLATE = liquid`{{ changelogRelease }}`;
+export const DEFAULT_PROPOSAL_BODY_TEMPLATE = liquid`{{ releases | format_proposal_body }}`;
 
 export const DEFAULT_PROPOSAL_FOOTER_TEMPLATE =
   "---\n*This proposal was generated with [Zephyr Release](https://github.com/ptphongkmf/zephyr-release)*";

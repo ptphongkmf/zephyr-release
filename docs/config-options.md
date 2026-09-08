@@ -305,7 +305,7 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 Type: `string`\
 Default: [`DEFAULT_PROPOSAL_BODY_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for proposal body, using with string patterns like {{ changelogRelease }}.\
+String template for proposal body, using with string patterns like {{ releases | format_proposal_body }}.\
 Allowed patterns to use are: all fixed and dynamic string patterns.
 
 [⬆ Back to top](#table-of-content)

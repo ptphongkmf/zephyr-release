@@ -8,4 +8,8 @@ export const CHANGELOG_MARKERS = {
 export const PROPOSAL_MARKERS = {
   bodyStart: "<!-- PROPOSAL-CHANGELOG-RELEASE-START -->",
   bodyEnd: "<!-- PROPOSAL-CHANGELOG-RELEASE-END -->",
+  namedBodyStart: (tagName: string) =>
+    `<!-- PROPOSAL-CHANGELOG-RELEASE-START:${tagName} -->`,
+  namedBodyEnd: (tagName: string) =>
+    `<!-- PROPOSAL-CHANGELOG-RELEASE-END:${tagName} -->`,
 } as const;

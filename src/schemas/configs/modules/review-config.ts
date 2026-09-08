@@ -12,7 +12,7 @@ import { ReviewLabelsSchema } from "./components/review-labels.ts";
 
 const reviewBodyTemplateSchema = v.string();
 const reviewBodyTemplateDesc =
-  "String template for proposal body, using with string patterns like {{ changelogRelease }}.\n" +
+  "String template for proposal body, using with string patterns like {{ releases | format_proposal_body }}.\n" +
   "Allowed patterns to use are: all fixed and dynamic string patterns.\n";
 
 const reviewConfigDesc =
