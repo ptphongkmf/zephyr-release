@@ -26,6 +26,10 @@ const majorVersionDesc = "Strategy for bumping major version (x.2.3).\n";
 const minorVersionDesc = "Strategy for bumping minor version (1.x.3).\n";
 const patchVersionDesc = "Strategy for bumping patch version (1.2.x).\n";
 
+const prereleaseVersionDesc =
+  "Strategy for bumping prerelease version (1.2.3-x.x).\n";
+const buildMetadataDesc = "Strategy for bumping build metadata (1.2.3+x.x).\n";
+
 const bumpStrategyConfigDesc =
   "Configuration options to calculate the next version number.";
 
@@ -87,13 +91,13 @@ export const BumpStrategyConfigSchema = v.pipe(
     prerelease: v.pipe(
       v.optional(BumpRuleExtensionSchema, {}),
       v.metadata({
-        description: "Strategy for bumping prerelease version (1.2.3-x.x).",
+        description: prereleaseVersionDesc,
       }),
     ),
     build: v.pipe(
       v.optional(BumpRuleExtensionSchema, {}),
       v.metadata({
-        description: "Strategy for bumping build metadata (1.2.3+x.x).",
+        description: buildMetadataDesc,
       }),
     ),
   }),
@@ -144,11 +148,17 @@ export const BumpStrategyConfigPatchSchema = v.pipe(
         }),
       ),
 
-      prerelease: v.optional(
-        v.unwrap(BumpStrategyConfigSchema.entries.prerelease),
+      prerelease: v.pipe(
+        v.optional(BumpRuleExtensionPatchSchema),
+        v.metadata({
+          description: prereleaseVersionDesc + "Default: inherit from root",
+        }),
       ),
-      build: v.optional(
-        v.unwrap(BumpStrategyConfigSchema.entries.build),
+      build: v.pipe(
+        v.optional(BumpRuleExtensionPatchSchema),
+        v.metadata({
+          description: buildMetadataDesc + "Default: inherit from root",
+        }),
       ),
     } satisfies Record<keyof BumpStrategyConfigOutput, unknown>,
   ),
