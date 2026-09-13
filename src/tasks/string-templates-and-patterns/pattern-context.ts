@@ -229,6 +229,12 @@ export interface ReleaseContextEntry {
   name: string;
   nextVersion: string;
   tagName: string;
+  title?: string; // TODO: should it not be optional?
+  changelogRelease?: string;
+  memberHeader?: string;
+  memberBody?: string;
+  memberFooter?: string;
+  memberBlock?: string;
 }
 
 export function addReleasesPatternContext(

@@ -127,6 +127,14 @@ Only available in "auto" and "review" release flow propose operation. Can be und
   - `name`: `string`; Project name
   - `nextVersion`: `string`; The next calculated semantic version
   - `tagName`: `string`; The tag name for this release
+  - `title`: `string | undefined`; Display title for this member (defaults to name).
+  - `changelogRelease`: `string | undefined`; Raw changelog string for this member without markers.
+    > [!NOTE]
+    > `releases[i].changelogRelease` differs from the flat `{{ changelogRelease }}` pattern (which only holds the last evaluated workspace's value at root). Use this field in custom root templates if you need per-workspace changelogs.
+  - `memberHeader`: `string | undefined`; Pre-resolved header (PR-only content).
+  - `memberBody`: `string | undefined`; Pre-resolved body content (no markers).
+  - `memberFooter`: `string | undefined`; Pre-resolved footer (PR-only content).
+  - `memberBlock`: `string | undefined`; Fully assembled block: header + START MARKER + body + END MARKER + footer.
 
 #### Dynamic String Patterns
 
