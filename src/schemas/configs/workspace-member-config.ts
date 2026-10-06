@@ -2,8 +2,7 @@ import * as v from "@valibot/valibot";
 import {
   allowedReleaseAsCommitTypesDesc,
   allowedReleaseAsCommitTypesSchema,
-  BaseCoreConfigOutput,
-  BaseLifecycleConfigOutput,
+  type BaseConfigOutput,
   commitTypesDesc,
   commitTypesSchema,
   initialVersionDesc,
@@ -12,15 +11,15 @@ import {
   versionFilesSchema,
 } from "./base-config.ts";
 import {
-  BumpStrategyConfigPatchSchema,
+  BumpStrategyConfigWorkspaceMemberSchema,
 } from "./modules/bump-strategy-config.ts";
-import { ChangelogConfigPatchSchema } from "./modules/changelog-config.ts";
-import { CommitConfigPatchSchema } from "./modules/commit-config.ts";
-import { TagConfigPatchSchema } from "./modules/tag-config.ts";
-import { ReleaseConfigPatchSchema } from "./modules/release-config.ts";
-import { ReviewConfigPatchSchema } from "./modules/review-config.ts";
-import { AutoConfigPatchSchema } from "./modules/auto-config.ts";
-import { CommandHooksPatchSchema } from "./modules/components/command-hook.ts";
+import { ChangelogConfigWorkspaceMemberSchema } from "./modules/changelog-config.ts";
+import { CommitConfigWorkspaceMemberSchema } from "./modules/commit-config.ts";
+import { TagConfigWorkspaceMemberSchema } from "./modules/tag-config.ts";
+import { ReleaseConfigWorkspaceMemberSchema } from "./modules/release-config.ts";
+import { ReviewConfigWorkspaceMemberSchema } from "./modules/review-config.ts";
+import { AutoConfigWorkspaceMemberSchema } from "./modules/auto-config.ts";
+import { CommandHooksWorkspaceMemberSchema } from "./modules/components/command-hook.ts";
 import { trimNonEmptyStringSchema } from "../string.ts";
 
 // Cherry-pick from BaseCoreConfigSchema — include per-workspace fields only
@@ -32,21 +31,15 @@ import { trimNonEmptyStringSchema } from "../string.ts";
 
 type WorkspaceMemberFields =
   & Omit<
-    BaseCoreConfigOutput,
+    BaseConfigOutput,
     | "timeZone"
     | "customStringPatterns"
     | "releaseFlow"
     | "maxCommitsToResolve"
     | "resolveUntilCommitHash"
   >
-  & BaseLifecycleConfigOutput
   & {
     title?: string;
-    bumpStrategy: unknown;
-    changelog: unknown;
-    commit: unknown;
-    tag: unknown;
-    release: unknown;
   };
 
 export const WorkspaceMemberConfigSchema = v.pipe(
@@ -77,8 +70,8 @@ export const WorkspaceMemberConfigSchema = v.pipe(
 
       // Per-workspace review overrides
       // PRs are always grouped globally even in monorepo mode, so PR-level configs are root-only.
-      review: v.optional(ReviewConfigPatchSchema),
-      auto: v.optional(AutoConfigPatchSchema),
+      review: v.optional(ReviewConfigWorkspaceMemberSchema),
+      auto: v.optional(AutoConfigWorkspaceMemberSchema),
 
       // Per-workspace overrides (partially inherit from root via deepMerge)
       initialVersion: v.pipe(
@@ -114,18 +107,18 @@ export const WorkspaceMemberConfigSchema = v.pipe(
         }),
       ),
 
-      bumpStrategy: v.optional(BumpStrategyConfigPatchSchema),
-      changelog: v.optional(ChangelogConfigPatchSchema),
-      commit: v.optional(CommitConfigPatchSchema),
-      tag: v.optional(TagConfigPatchSchema),
-      release: v.optional(ReleaseConfigPatchSchema),
+      bumpStrategy: v.optional(BumpStrategyConfigWorkspaceMemberSchema),
+      changelog: v.optional(ChangelogConfigWorkspaceMemberSchema),
+      commit: v.optional(CommitConfigWorkspaceMemberSchema),
+      tag: v.optional(TagConfigWorkspaceMemberSchema),
+      release: v.optional(ReleaseConfigWorkspaceMemberSchema),
 
       // Per-workspace command hooks (merged with root via deepMerge — field-level inheritance)
       // Hooks that fire per-workspace: preCalculateVersion, postCalculateVersion,
       // preTag, preRelease, postRelease
       // Hooks that fire globally only (omitted here): preRun, preCommit, postCommit, postProposal, postRun
       commandHooks: v.pipe(
-        v.optional(CommandHooksPatchSchema),
+        v.optional(CommandHooksWorkspaceMemberSchema),
         v.metadata({
           description:
             "Per-workspace command hook overrides. Merged with root command-hooks via field-level inheritance.\n" +

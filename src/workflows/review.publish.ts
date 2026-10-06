@@ -26,6 +26,7 @@ import type { OperationRunSettings } from "../types/operation-context.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import type { ProviderProposal } from "../types/providers/proposal.ts";
 import type { ProviderRelease } from "../types/providers/release.ts";
+import { invariant } from "../utils/invariant.ts";
 import { executeHookWithOverride } from "./hook-runner.ts";
 
 export async function executeReviewPublishPhase(
@@ -65,11 +66,13 @@ export async function executeReviewPublishPhase(
 
   for (const ws of workspaces) {
     const wsConfig = ws.config;
-    const wsLabel = runSettings.isMonorepoMode ? `[${wsConfig.name}] ` : "";
+    let wsLabel = "";
 
     if (runSettings.isMonorepoMode) {
+      invariant(wsConfig.name, "Workspace name is required in monorepo mode");
+      wsLabel = `[${wsConfig.name}] `;
       logger.subHeading(`Workspace: ${wsConfig.name}`);
-      provider.setEnv("ZR_NAME", wsConfig.name ?? "");
+      provider.setEnv("ZR_NAME", wsConfig.name);
     }
 
     // Get version from version file
@@ -120,6 +123,7 @@ export async function executeReviewPublishPhase(
     const tagName = wsPatternContext.tagName as string;
     releaseEntries.push({
       name: wsConfig.name ?? "root",
+      title: wsConfig.title,
       nextVersion: format(nextVersion),
       tagName,
     });
@@ -163,15 +167,21 @@ export async function executeReviewPublishPhase(
 
     for (const wsData of workspacePublishDataList) {
       const { wsConfig } = wsData;
-      const wsLabel = runSettings.isMonorepoMode ? `[${wsConfig.name}] ` : "";
+      let wsLabel = "";
+
+      if (runSettings.isMonorepoMode) {
+        invariant(wsConfig.name, "Workspace name is required in monorepo mode");
+        wsLabel = `[${wsConfig.name}] `;
+      }
       let wsPatternCtx = wsData.wsPatternContext;
 
       // Apply releases context
       wsPatternCtx = addReleasesPatternContext(wsPatternCtx, releaseEntries);
 
       if (runSettings.isMonorepoMode) {
+        invariant(wsConfig.name, "Workspace name is required in monorepo mode");
         logger.subHeading(`Workspace: ${wsConfig.name}`);
-        provider.setEnv("ZR_NAME", wsConfig.name ?? "");
+        provider.setEnv("ZR_NAME", wsConfig.name);
       }
 
       // preTag hook

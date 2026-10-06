@@ -1,31 +1,11 @@
 import * as v from "@valibot/valibot";
-import {
-  BaseCoreConfigSchema,
-  BaseLifecycleConfigSchema,
-} from "./base-config.ts";
-import { BumpStrategyConfigSchema } from "./modules/bump-strategy-config.ts";
-import { ReleaseConfigSchema } from "./modules/release-config.ts";
-import { ChangelogConfigSchema } from "./modules/changelog-config.ts";
-import { CommitConfigSchema } from "./modules/commit-config.ts";
-import { TagConfigSchema } from "./modules/tag-config.ts";
+import { BaseConfigSchema } from "./base-config.ts";
 import { WorkspaceMemberConfigSchema } from "./workspace-member-config.ts";
 import { trimNonEmptyStringSchema } from "../string.ts";
 
 export const ConfigSchema = v.pipe(
   v.object({
-    ...BaseCoreConfigSchema.entries,
-
-    bumpStrategy: v.optional(BumpStrategyConfigSchema, {}),
-
-    changelog: v.optional(ChangelogConfigSchema, {}),
-
-    commit: v.optional(CommitConfigSchema, {}),
-
-    tag: v.optional(TagConfigSchema, {}),
-
-    release: v.optional(ReleaseConfigSchema, {}),
-
-    ...BaseLifecycleConfigSchema.entries,
+    ...BaseConfigSchema.entries,
 
     workspace: v.pipe(
       v.optional(

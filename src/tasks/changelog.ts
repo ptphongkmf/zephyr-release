@@ -2,8 +2,8 @@ import { toTitleCase } from "@std/text/unstable-to-title-case";
 import type { ResolvedCommit } from "./commit.ts";
 import { getTextFile } from "./file.ts";
 import { FileNotFoundError } from "../errors/file.ts";
-import type { ConfigOutput } from "../schemas/configs/config.ts";
-import type { ChangelogConfigOutput } from "../schemas/configs/modules/changelog-config.ts";
+import type { ResolvedConfig } from "../schemas/configs/resolved-config.ts";
+import type { ChangelogConfigResolvedOutput } from "../schemas/configs/modules/changelog-config.ts";
 import type { InputsOutput } from "../schemas/inputs/inputs.ts";
 import { resolveStringTemplate } from "./string-templates-and-patterns/resolve-template.ts";
 import type { StringPatternContext } from "./string-templates-and-patterns/pattern-context.ts";
@@ -24,10 +24,10 @@ type GenerateChangelogReleaseInputsParams = Pick<
 >;
 
 type GenerateChangelogReleaseConfigParams =
-  & Pick<ConfigOutput, "commitTypes">
+  & Pick<ResolvedConfig, "commitTypes">
   & {
     changelog: Pick<
-      ChangelogConfigOutput,
+      ChangelogConfigResolvedOutput,
       | "commitGroupMode"
       | "commitSortOrder"
       | "releaseHeaderTemplate"
@@ -71,13 +71,13 @@ export async function generatePrepareChangelogReleaseContent(
   provider: PlatformProvider,
   resolvedCommits: ResolvedCommit[],
   inputs: GenerateChangelogReleaseInputsParams,
-  config: GenerateChangelogReleaseConfigParams,
+  resolvedConfig: GenerateChangelogReleaseConfigParams,
   patternContext: StringPatternContext,
 ): Promise<GeneratePrepareReleaseContentResult> {
   const [releaseHeader, releaseBody, releaseFooter] = await Promise.all([
-    resolveReleaseHeader(provider, inputs, config, patternContext),
-    resolveReleaseBody(provider, resolvedCommits, inputs, config, patternContext),
-    resolveReleaseFooter(provider, inputs, config, patternContext),
+    resolveReleaseHeader(provider, inputs, resolvedConfig, patternContext),
+    resolveReleaseBody(provider, resolvedCommits, inputs, resolvedConfig, patternContext),
+    resolveReleaseFooter(provider, inputs, resolvedConfig, patternContext),
   ]);
 
   return {
@@ -103,7 +103,7 @@ export async function generatePublishChangelogReleaseContent(
   provider: PlatformProvider,
   proposalChangelogRelease: string,
   inputs: GenerateChangelogReleaseInputsParams,
-  config: GenerateChangelogReleaseConfigParams,
+  resolvedConfig: GenerateChangelogReleaseConfigParams,
   patternContext: StringPatternContext,
 ): Promise<GeneratePublishReleaseContentResult | undefined> {
   try {
@@ -112,7 +112,7 @@ export async function generatePublishChangelogReleaseContent(
       releaseBodyOverridePath,
       releaseBodyOverrideAlt,
       releaseBodyOverrideAltPath,
-    } = config.changelog;
+    } = resolvedConfig.changelog;
 
     if (
       releaseBodyOverride ||
@@ -121,9 +121,9 @@ export async function generatePublishChangelogReleaseContent(
       releaseBodyOverrideAltPath
     ) {
       const [releaseHeader, releaseBody, releaseFooter] = await Promise.all([
-        resolveReleaseHeader(provider, inputs, config, patternContext),
-        resolveReleaseBody(provider, undefined, inputs, config, patternContext),
-        resolveReleaseFooter(provider, inputs, config, patternContext),
+        resolveReleaseHeader(provider, inputs, resolvedConfig, patternContext),
+        resolveReleaseBody(provider, undefined, inputs, resolvedConfig, patternContext),
+        resolveReleaseFooter(provider, inputs, resolvedConfig, patternContext),
       ]);
 
       return {
@@ -161,7 +161,7 @@ interface ResolvedReleaseText {
 async function resolveReleaseHeader(
   provider: PlatformProvider,
   inputs: GenerateChangelogReleaseInputsParams,
-  config: GenerateChangelogReleaseConfigParams,
+  resolvedConfig: GenerateChangelogReleaseConfigParams,
   patternContext: StringPatternContext,
 ): Promise<ResolvedReleaseText> {
   const {
@@ -169,7 +169,7 @@ async function resolveReleaseHeader(
     releaseHeaderTemplatePath,
     releaseHeaderTemplateAlt,
     releaseHeaderTemplateAltPath,
-  } = config.changelog;
+  } = resolvedConfig.changelog;
 
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
   const getTextOpts = { provider, workspacePath, ref: triggerCommitHash };
@@ -222,7 +222,7 @@ async function resolveReleaseBody(
   provider: PlatformProvider,
   resolvedCommits: ResolvedCommit[] | undefined,
   inputs: GenerateChangelogReleaseInputsParams,
-  config: GenerateChangelogReleaseConfigParams,
+  resolvedConfig: GenerateChangelogReleaseConfigParams,
   patternContext: StringPatternContext,
 ): Promise<ResolvedReleaseText> {
   const {
@@ -230,7 +230,7 @@ async function resolveReleaseBody(
     releaseBodyOverridePath,
     releaseBodyOverrideAlt,
     releaseBodyOverrideAltPath,
-  } = config.changelog;
+  } = resolvedConfig.changelog;
 
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
   const getTextOpts = { provider, workspacePath, ref: triggerCommitHash };
@@ -279,7 +279,7 @@ async function resolveReleaseBody(
     provider,
     resolvedCommits,
     inputs,
-    config,
+    resolvedConfig,
     patternContext,
   );
 
@@ -292,7 +292,7 @@ async function resolveReleaseBody(
 async function resolveReleaseFooter(
   provider: PlatformProvider,
   inputs: GenerateChangelogReleaseInputsParams,
-  config: GenerateChangelogReleaseConfigParams,
+  resolvedConfig: GenerateChangelogReleaseConfigParams,
   patternContext: StringPatternContext,
 ): Promise<Partial<ResolvedReleaseText>> {
   const {
@@ -300,7 +300,7 @@ async function resolveReleaseFooter(
     releaseFooterTemplatePath,
     releaseFooterTemplateAlt,
     releaseFooterTemplateAltPath,
-  } = config.changelog;
+  } = resolvedConfig.changelog;
 
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
   const getTextOpts = { provider, workspacePath, ref: triggerCommitHash };
@@ -365,7 +365,7 @@ async function generateReleaseBodyBasedOnCommits(
   provider: PlatformProvider,
   resolvedCommits: ResolvedCommit[],
   inputs: GenerateChangelogReleaseInputsParams,
-  config: GenerateChangelogReleaseConfigParams,
+  resolvedConfig: GenerateChangelogReleaseConfigParams,
   patternContext: StringPatternContext,
 ): Promise<ResolvedReleaseText> {
   const {
@@ -388,7 +388,7 @@ async function generateReleaseBodyBasedOnCommits(
       releaseBreakingSectionEntryTemplateAlt,
       releaseBreakingSectionEntryTemplateAltPath,
     },
-  } = config;
+  } = resolvedConfig;
 
   const baseSectionGroups = new Map<string, SectionGroupData>();
   const altSectionGroups = new Map<string, SectionGroupData>();
@@ -715,7 +715,7 @@ function createCommitExtraPatterns(
 }
 
 type PrepareChangelogParams = Pick<
-  ChangelogConfigOutput,
+  ChangelogConfigResolvedOutput,
   | "path"
   | "fileHeaderTemplate"
   | "fileHeaderTemplatePath"

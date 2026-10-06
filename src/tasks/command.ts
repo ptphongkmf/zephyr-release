@@ -3,7 +3,7 @@ import process from "node:process";
 import { taskLogger } from "./logger.ts";
 import type {
   CommandHookKind,
-  CommandHooksOutput,
+  CommandHooksResolvedOutput,
 } from "../schemas/configs/modules/components/command-hook.ts";
 import { failedNonCriticalTasks } from "../main.ts";
 import type { ConfigFileFormatWithAuto } from "../constants/file-formats.ts";
@@ -33,7 +33,7 @@ const MAX_STDOUT_BUFFER_BYTES = 10 * 1024 * 1024;
 
 /** @throws if `continueOnError` is false and command fails */
 export async function runCommands(
-  commandHooks: CommandHooksOutput | undefined,
+  commandHooks: CommandHooksResolvedOutput | undefined,
   kind: CommandHookKind,
 ): Promise<RunCommandsResult> {
   const commands = commandHooks?.[kind];

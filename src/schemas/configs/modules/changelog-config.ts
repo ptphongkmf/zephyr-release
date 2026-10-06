@@ -427,9 +427,9 @@ export const ChangelogConfigSchema = v.pipe(
 );
 
 type _ChangelogConfigInput = v.InferInput<typeof ChangelogConfigSchema>;
-export type ChangelogConfigOutput = v.InferOutput<typeof ChangelogConfigSchema>;
+type ChangelogConfigOutput = v.InferOutput<typeof ChangelogConfigSchema>;
 
-export const ChangelogConfigPatchSchema = v.pipe(
+export const ChangelogConfigWorkspaceMemberSchema = v.pipe(
   v.object(
     {
       writeToFile: v.pipe(
@@ -469,7 +469,7 @@ export const ChangelogConfigPatchSchema = v.pipe(
         }),
       ),
       fileHeaderTemplatePath: v.optional(
-        v.unwrap(ChangelogConfigSchema.entries.fileHeaderTemplatePath),
+        ChangelogConfigSchema.entries.fileHeaderTemplatePath,
       ),
       fileReleaseTemplate: v.pipe(
         v.optional(changelogFileReleaseTemplateSchema),
@@ -479,13 +479,13 @@ export const ChangelogConfigPatchSchema = v.pipe(
         }),
       ),
       fileReleaseTemplatePath: v.optional(
-        v.unwrap(ChangelogConfigSchema.entries.fileReleaseTemplatePath),
+        ChangelogConfigSchema.entries.fileReleaseTemplatePath,
       ),
       fileFooterTemplate: v.optional(
-        v.unwrap(ChangelogConfigSchema.entries.fileFooterTemplate),
+        ChangelogConfigSchema.entries.fileFooterTemplate,
       ),
       fileFooterTemplatePath: v.optional(
-        v.unwrap(ChangelogConfigSchema.entries.fileFooterTemplatePath),
+        ChangelogConfigSchema.entries.fileFooterTemplatePath,
       ),
 
       releaseHeaderTemplate: v.pipe(
@@ -496,7 +496,7 @@ export const ChangelogConfigPatchSchema = v.pipe(
         }),
       ),
       releaseHeaderTemplatePath: v.optional(
-        v.unwrap(ChangelogConfigSchema.entries.releaseHeaderTemplatePath),
+        ChangelogConfigSchema.entries.releaseHeaderTemplatePath,
       ),
       releaseSectionHeadingTemplate: v.pipe(
         v.optional(changelogReleaseSectionHeadingTemplateSchema),
@@ -506,9 +506,7 @@ export const ChangelogConfigPatchSchema = v.pipe(
         }),
       ),
       releaseSectionHeadingTemplatePath: v.optional(
-        v.unwrap(
-          ChangelogConfigSchema.entries.releaseSectionHeadingTemplatePath,
-        ),
+        ChangelogConfigSchema.entries.releaseSectionHeadingTemplatePath,
       ),
       releaseSectionEntryTemplate: v.pipe(
         v.optional(changelogReleaseSectionEntryTemplateSchema),
@@ -518,9 +516,7 @@ export const ChangelogConfigPatchSchema = v.pipe(
         }),
       ),
       releaseSectionEntryTemplatePath: v.optional(
-        v.unwrap(
-          ChangelogConfigSchema.entries.releaseSectionEntryTemplatePath,
-        ),
+        ChangelogConfigSchema.entries.releaseSectionEntryTemplatePath,
       ),
       releaseBreakingSectionHeading: v.pipe(
         v.optional(changelogReleaseBreakingSectionHeadingSchema),
@@ -537,31 +533,26 @@ export const ChangelogConfigPatchSchema = v.pipe(
         }),
       ),
       releaseBreakingSectionEntryTemplatePath: v.optional(
-        v.unwrap(
-          ChangelogConfigSchema.entries
-            .releaseBreakingSectionEntryTemplatePath,
-        ),
+        ChangelogConfigSchema.entries.releaseBreakingSectionEntryTemplatePath,
       ),
       releaseBodyOverride: v.optional(
-        v.unwrap(ChangelogConfigSchema.entries.releaseBodyOverride),
+        ChangelogConfigSchema.entries.releaseBodyOverride,
       ),
       releaseBodyOverridePath: v.optional(
-        v.unwrap(ChangelogConfigSchema.entries.releaseBodyOverridePath),
+        ChangelogConfigSchema.entries.releaseBodyOverridePath,
       ),
       releaseFooterTemplate: v.optional(
-        v.unwrap(ChangelogConfigSchema.entries.releaseFooterTemplate),
+        ChangelogConfigSchema.entries.releaseFooterTemplate,
       ),
       releaseFooterTemplatePath: v.optional(
-        v.unwrap(ChangelogConfigSchema.entries.releaseFooterTemplatePath),
+        ChangelogConfigSchema.entries.releaseFooterTemplatePath,
       ),
 
       releaseHeaderTemplateAlt: v.optional(
-        v.unwrap(ChangelogConfigSchema.entries.releaseHeaderTemplateAlt),
+        ChangelogConfigSchema.entries.releaseHeaderTemplateAlt,
       ),
       releaseHeaderTemplateAltPath: v.optional(
-        v.unwrap(
-          ChangelogConfigSchema.entries.releaseHeaderTemplateAltPath,
-        ),
+        ChangelogConfigSchema.entries.releaseHeaderTemplateAltPath,
       ),
       releaseSectionHeadingTemplateAlt: v.pipe(
         v.optional(changelogReleaseSectionHeadingTemplateAltSchema),
@@ -571,50 +562,34 @@ export const ChangelogConfigPatchSchema = v.pipe(
         }),
       ),
       releaseSectionHeadingTemplateAltPath: v.optional(
-        v.unwrap(
-          ChangelogConfigSchema.entries.releaseSectionHeadingTemplateAltPath,
-        ),
+        ChangelogConfigSchema.entries.releaseSectionHeadingTemplateAltPath,
       ),
       releaseSectionEntryTemplateAlt: v.optional(
-        v.unwrap(
-          ChangelogConfigSchema.entries.releaseSectionEntryTemplateAlt,
-        ),
+        ChangelogConfigSchema.entries.releaseSectionEntryTemplateAlt,
       ),
       releaseSectionEntryTemplateAltPath: v.optional(
-        v.unwrap(
-          ChangelogConfigSchema.entries.releaseSectionEntryTemplateAltPath,
-        ),
+        ChangelogConfigSchema.entries.releaseSectionEntryTemplateAltPath,
       ),
       releaseBreakingSectionHeadingAlt: v.optional(
-        v.unwrap(
-          ChangelogConfigSchema.entries.releaseBreakingSectionHeadingAlt,
-        ),
+        ChangelogConfigSchema.entries.releaseBreakingSectionHeadingAlt,
       ),
       releaseBreakingSectionEntryTemplateAlt: v.optional(
-        v.unwrap(
-          ChangelogConfigSchema.entries
-            .releaseBreakingSectionEntryTemplateAlt,
-        ),
+        ChangelogConfigSchema.entries.releaseBreakingSectionEntryTemplateAlt,
       ),
       releaseBreakingSectionEntryTemplateAltPath: v.optional(
-        v.unwrap(
-          ChangelogConfigSchema.entries
-            .releaseBreakingSectionEntryTemplateAltPath,
-        ),
+        ChangelogConfigSchema.entries.releaseBreakingSectionEntryTemplateAltPath,
       ),
       releaseBodyOverrideAlt: v.optional(
-        v.unwrap(ChangelogConfigSchema.entries.releaseBodyOverrideAlt),
+        ChangelogConfigSchema.entries.releaseBodyOverrideAlt,
       ),
       releaseBodyOverrideAltPath: v.optional(
-        v.unwrap(ChangelogConfigSchema.entries.releaseBodyOverrideAltPath),
+        ChangelogConfigSchema.entries.releaseBodyOverrideAltPath,
       ),
       releaseFooterTemplateAlt: v.optional(
-        v.unwrap(ChangelogConfigSchema.entries.releaseFooterTemplateAlt),
+        ChangelogConfigSchema.entries.releaseFooterTemplateAlt,
       ),
       releaseFooterTemplateAltPath: v.optional(
-        v.unwrap(
-          ChangelogConfigSchema.entries.releaseFooterTemplateAltPath,
-        ),
+        ChangelogConfigSchema.entries.releaseFooterTemplateAltPath,
       ),
     } satisfies Record<keyof ChangelogConfigOutput, unknown>,
   ),
@@ -622,3 +597,5 @@ export const ChangelogConfigPatchSchema = v.pipe(
     description: changelogConfigDesc,
   }),
 );
+
+export type ChangelogConfigResolvedOutput = ChangelogConfigOutput;

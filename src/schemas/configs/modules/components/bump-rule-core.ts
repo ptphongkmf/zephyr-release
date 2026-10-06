@@ -45,9 +45,9 @@ export const BumpRuleCoreSchema = v.object({
 });
 
 export type BumpRuleInput = v.InferInput<typeof BumpRuleCoreSchema>;
-export type BumpRuleOutput = v.InferOutput<typeof BumpRuleCoreSchema>;
+type BumpRuleOutput = v.InferOutput<typeof BumpRuleCoreSchema>;
 
-export const BumpRuleCorePatchSchema = v.object(
+export const BumpRuleCoreWorkspaceMemberSchema = v.object(
   {
     types: BumpRuleCoreSchema.entries.types,
     countBreakingAs: v.pipe(
@@ -64,3 +64,5 @@ export const BumpRuleCorePatchSchema = v.object(
     ),
   } satisfies Record<keyof BumpRuleOutput, unknown>,
 );
+
+export type BumpRuleCoreResolvedOutput = BumpRuleOutput;

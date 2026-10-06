@@ -126,7 +126,7 @@ interface ReleaseContextEntry {
   nextVersion: string;
   tagName: string;
   // New:
-  title?: string;            // (A) section heading in PR body
+  title: string;            // (A) section heading in PR body
   changelogRelease?: string; // (B) raw changelog text, no markers
   memberHeader?: string;     // (C) resolved header string, PR-only
   memberBody?: string;       // (D) resolved body content, no markers
@@ -210,7 +210,7 @@ Implementation: scan the PR body for all `<!-- PROPOSAL-CHANGELOG-RELEASE-START:
 
 ### `format_proposal_body` filter registration
 
-Registered in `transformers.ts`. Input validation: must receive an array of objects with at least `memberBlock` (string) and `title` (string). Single-entry array: output `memberBlock` only (no heading). Multi-entry array: output `## {title}\n\n{memberBlock}` per entry, joined by `\n\n`.
+Registered in `transformers.ts`. Input validation: must receive an array of objects with at least `memberBlock` (string) and `title` (string). Access LiquidJS context via `this.context.getSync(["isMonorepo"])` to determine if running in monorepo mode. If `isMonorepo === true`, output `## {title}\n\n{memberBlock}` per entry. If false, output `memberBlock` only (no heading). Join all entries by `\n\n`.
 
 ### Member template resolution order (workspace loop)
 
@@ -322,6 +322,14 @@ Each phase is self-contained and can be executed independently. After each schem
 
 ---
 
+### Phase C.1 — Fix merged workspace config schema (mid-process patch)
+
+Discovered during Phase C: `deepMergeWorkspaceConfig` re-validates through `ConfigSchema`, which strips workspace-only fields (`title`, `review.member*Template`). This also renames `*PatchSchema` to `*WorkspaceMemberSchema` and audits `v.unwrap()` usage.
+
+Full plan: [plan-3-error-merged-config-type.md](./plan-3-error-merged-config-type.md)
+
+---
+
 ### Phase D — Workspace loop: member template resolution and `releaseEntries` population
 
 **Files to change:**
@@ -385,4 +393,3 @@ Each phase is self-contained and can be executed independently. After each schem
 - `docs/config-options.md` — verify the updated `review.bodyTemplate` default value entry is accurate.
 
 **Verification:** Manual review of all four docs for accuracy and consistency with the implemented changes.
-

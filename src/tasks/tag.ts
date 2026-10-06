@@ -2,7 +2,7 @@ import { getTextFile } from "./file.ts";
 import { resolveStringTemplate } from "./string-templates-and-patterns/resolve-template.ts";
 import type { StringPatternContext } from "./string-templates-and-patterns/pattern-context.ts";
 import { TaggerDateOptions } from "../constants/release-tag-options.ts";
-import type { TagConfigOutput } from "../schemas/configs/modules/tag-config.ts";
+import type { TagConfigResolvedOutput } from "../schemas/configs/modules/tag-config.ts";
 import type { InputsOutput } from "../schemas/inputs/inputs.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import type { TaggerRequest } from "../types/tag.ts";
@@ -14,7 +14,7 @@ type CreateTagInputsParams = Pick<
 
 interface CreateTagConfigParams {
   tag: Pick<
-    TagConfigOutput,
+    TagConfigResolvedOutput,
     | "nameTemplate"
     | "type"
     | "messageTemplate"

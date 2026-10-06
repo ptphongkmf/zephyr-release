@@ -110,9 +110,9 @@ export const TagConfigSchema = v.pipe(
 );
 
 type _TagConfigInput = v.InferInput<typeof TagConfigSchema>;
-export type TagConfigOutput = v.InferOutput<typeof TagConfigSchema>;
+type TagConfigOutput = v.InferOutput<typeof TagConfigSchema>;
 
-export const TagConfigPatchSchema = v.pipe(
+export const TagConfigWorkspaceMemberSchema = v.pipe(
   v.object(
     {
       createTag: v.pipe(
@@ -130,7 +130,7 @@ export const TagConfigPatchSchema = v.pipe(
         }),
       ),
       matchPatterns: v.optional(
-        v.unwrap(TagConfigSchema.entries.matchPatterns),
+        TagConfigSchema.entries.matchPatterns,
       ),
 
       type: v.pipe(
@@ -147,11 +147,11 @@ export const TagConfigPatchSchema = v.pipe(
         }),
       ),
       messageTemplatePath: v.optional(
-        v.unwrap(TagConfigSchema.entries.messageTemplatePath),
+        TagConfigSchema.entries.messageTemplatePath,
       ),
 
       tagger: v.optional(
-        v.unwrap(TagConfigSchema.entries.tagger),
+        TagConfigSchema.entries.tagger,
       ),
     } satisfies Record<keyof TagConfigOutput, unknown>,
   ),
@@ -159,3 +159,5 @@ export const TagConfigPatchSchema = v.pipe(
     description: tagConfigDesc,
   }),
 );
+
+export type TagConfigResolvedOutput = TagConfigOutput;

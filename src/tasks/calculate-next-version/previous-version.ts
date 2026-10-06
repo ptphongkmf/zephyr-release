@@ -1,5 +1,5 @@
 import type { SemVer } from "@std/semver";
-import type { ConfigOutput } from "../../schemas/configs/config.ts";
+import type { ResolvedConfig } from "../../schemas/configs/resolved-config.ts";
 import type { InputsOutput } from "../../schemas/inputs/inputs.ts";
 import type { PlatformProvider } from "../../types/providers/platform-provider.ts";
 import {
@@ -14,7 +14,7 @@ type GetCurrentVersionInputsParams = Pick<
 >;
 
 type GetCurrentVersionConfigParams = Pick<
-  ConfigOutput,
+  ResolvedConfig,
   "versionFiles"
 >;
 
@@ -22,11 +22,11 @@ type GetCurrentVersionConfigParams = Pick<
 export async function getCurrentVersion(
   provider: PlatformProvider,
   inputs: GetCurrentVersionInputsParams,
-  config: GetCurrentVersionConfigParams,
+  resolvedConfig: GetCurrentVersionConfigParams,
   workspaceRelativePath: string = ".",
 ): Promise<SemVer | undefined> {
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
-  const { versionFiles } = config;
+  const { versionFiles } = resolvedConfig;
 
   taskLogger.info("Getting current version from primary version files...");
   const primaryVersionFile = getPrimaryVersionFile(versionFiles);

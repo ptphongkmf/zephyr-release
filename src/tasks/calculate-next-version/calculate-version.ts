@@ -2,14 +2,14 @@ import { canParse, format, parse, type SemVer } from "@std/semver";
 import type { Commit } from "conventional-commits-parser";
 import type { ResolvedCommitsResult } from "../commit.ts";
 import { taskLogger } from "../logger.ts";
-import type { ConfigOutput } from "../../schemas/configs/config.ts";
+import type { ResolvedConfig } from "../../schemas/configs/resolved-config.ts";
 import { AllowReleaseAsOptions } from "../../constants/release-as-options.ts";
 import { calculateNextCoreSemVer } from "./core-calculations.ts";
 import { calculateNextExtensionsSemVer } from "./extension-calculations.ts";
 import { SafeExit } from "../../errors/safe-exit.ts";
 
 type CalculateNextVersionConfigParams = Pick<
-  ConfigOutput,
+  ResolvedConfig,
   | "timeZone"
   | "initialVersion"
   | "commitTypes"
@@ -20,7 +20,7 @@ type CalculateNextVersionConfigParams = Pick<
 /** @throws */
 export function calculateNextVersion(
   resolvedCommitsResult: ResolvedCommitsResult,
-  config: CalculateNextVersionConfigParams,
+  resolvedConfig: CalculateNextVersionConfigParams,
   currentVersion: SemVer | undefined,
 ): SemVer {
   const { resolvedTriggerCommit, entries } = resolvedCommitsResult;
@@ -30,7 +30,7 @@ export function calculateNextVersion(
     commitTypes,
     allowedReleaseAsCommitTypes,
     bumpStrategy,
-  } = config;
+  } = resolvedConfig;
 
   taskLogger.info(
     "Checking if there is release-as trigger (manual version set)...",

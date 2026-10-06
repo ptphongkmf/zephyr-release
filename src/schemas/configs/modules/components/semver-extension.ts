@@ -129,6 +129,8 @@ export const SemverExtensionSchema = v.variant("type", [
 type _SemverExtensionInput = v.InferInput<
   typeof SemverExtensionSchema
 >;
-export type SemverExtensionOutput = v.InferOutput<
+type SemverExtensionOutput = v.InferOutput<
   typeof SemverExtensionSchema
 >;
+
+export type SemverExtensionResolvedOutput = SemverExtensionOutput;

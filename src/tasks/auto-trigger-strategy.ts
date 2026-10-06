@@ -1,19 +1,19 @@
 import { SafeExit } from "../errors/safe-exit.ts";
-import type { ConfigOutput } from "../schemas/configs/config.ts";
-import type { AutoConfigOutput } from "../schemas/configs/modules/auto-config.ts";
+import type { ResolvedConfig } from "../schemas/configs/resolved-config.ts";
+import type { AutoConfigResolvedOutput } from "../schemas/configs/modules/auto-config.ts";
 import type { ResolvedCommit } from "./commit.ts";
 
-type evaluateTriggerStrategyConfigParams = Pick<ConfigOutput, "commitTypes"> & {
-  auto: Pick<AutoConfigOutput, "triggerStrategy">;
+type evaluateTriggerStrategyConfigParams = Pick<ResolvedConfig, "commitTypes"> & {
+  auto: Pick<AutoConfigResolvedOutput, "triggerStrategy">;
 };
 
 /** @throws {SafeExit} */
 export function evaluateAutoReleaseFlowTriggerStrategy(
   resolvedCommits: ResolvedCommit[],
-  config: evaluateTriggerStrategyConfigParams,
+  resolvedConfig: evaluateTriggerStrategyConfigParams,
 ) {
-  const { commitTypes } = config;
-  const { triggerStrategy } = config.auto;
+  const { commitTypes } = resolvedConfig;
+  const { triggerStrategy } = resolvedConfig.auto;
 
   let result = false;
 

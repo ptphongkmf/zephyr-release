@@ -5,7 +5,7 @@ import {
   type ZonedDateTime,
   ZoneId,
 } from "@js-joda/core";
-import type { ConfigOutput } from "../../schemas/configs/config.ts";
+import type { ResolvedConfig } from "../../schemas/configs/resolved-config.ts";
 import type { PlatformProvider } from "../../types/providers/platform-provider.ts";
 import { taskLogger } from "../logger.ts";
 import { startTime } from "../../main.ts";
@@ -19,7 +19,7 @@ import type {
   FixedTagStringPattern,
 } from "../../types/string-patterns.ts";
 import { resolveStringTemplate } from "./resolve-template.ts";
-import type { ReviewConfigOutput } from "../../schemas/configs/modules/review-config.ts";
+import type { ReviewConfigResolvedOutput } from "../../schemas/configs/modules/review-config.ts";
 import { jsonValueNormalizer } from "../../utils/transformers/json.ts";
 
 // --- Type ---
@@ -34,7 +34,7 @@ export function createEmptyPatternContext(): StringPatternContext {
 
 export function addCustomPatternContext(
   patternContext: StringPatternContext,
-  customPatterns: ConfigOutput["customStringPatterns"],
+  customPatterns: ResolvedConfig["customStringPatterns"],
 ): StringPatternContext {
   if (!customPatterns || Object.keys(customPatterns).length === 0) {
     return patternContext;
@@ -49,9 +49,9 @@ export function addCustomPatternContext(
 }
 
 export type AddBaseContextConfigParams =
-  & Pick<ConfigOutput, "name" | "timeZone">
+  & Pick<ResolvedConfig, "name" | "timeZone">
   & {
-    review: Pick<ReviewConfigOutput, "workingBranchNameTemplate">;
+    review: Pick<ReviewConfigResolvedOutput, "workingBranchNameTemplate">;
   };
 
 /**
@@ -61,11 +61,11 @@ export function addBasePatternContext(
   patternContext: StringPatternContext,
   provider: PlatformProvider,
   triggerBranchName: string,
-  config: AddBaseContextConfigParams,
+  resolvedConfig: AddBaseContextConfigParams,
   isMonorepoMode: boolean,
 ): StringPatternContext {
   const base = {
-    name: config.name,
+    name: resolvedConfig.name,
     host: provider.getHost(),
     namespace: provider.getNamespace(),
     repository: provider.getRepositoryName(),
@@ -74,7 +74,7 @@ export function addBasePatternContext(
 
     triggerBranchName: triggerBranchName,
 
-    timeZone: config.timeZone,
+    timeZone: resolvedConfig.timeZone,
 
     isMonorepo: isMonorepoMode,
   } satisfies Record<
@@ -225,17 +225,8 @@ export function addChangelogPatternContext(
   return { ...patternContext, ...context };
 }
 
-export interface ReleaseContextEntry {
-  name: string;
-  nextVersion: string;
-  tagName: string;
-  title?: string; // TODO: should it not be optional?
-  changelogRelease?: string;
-  memberHeader?: string;
-  memberBody?: string;
-  memberFooter?: string;
-  memberBlock?: string;
-}
+import type { ReleaseContextEntry } from "../../types/release-context.ts";
+export type { ReleaseContextEntry } from "../../types/release-context.ts";
 
 export function addReleasesPatternContext(
   patternContext: StringPatternContext,

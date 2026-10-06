@@ -2,7 +2,7 @@ import { taskLogger } from "./logger.ts";
 import type { InputsOutput } from "../schemas/inputs/inputs.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import type { ProviderProposal } from "../types/providers/proposal.ts";
-import type { ReviewConfigOutput } from "../schemas/configs/modules/review-config.ts";
+import type { ReviewConfigResolvedOutput } from "../schemas/configs/modules/review-config.ts";
 import { getTextFile } from "./file.ts";
 import { resolveStringTemplate } from "./string-templates-and-patterns/resolve-template.ts";
 import type { StringPatternContext } from "./string-templates-and-patterns/pattern-context.ts";
@@ -58,7 +58,7 @@ export async function findOpenProposal(
 
 interface CreateProposalContentConfigParams {
   review: Pick<
-    ReviewConfigOutput,
+    ReviewConfigResolvedOutput,
     | "headerTemplate"
     | "headerTemplatePath"
     | "bodyTemplate"
@@ -136,7 +136,7 @@ export async function createProposalContent(
 
 interface CreateOrUpdateProposalConfigParams {
   review: Pick<
-    ReviewConfigOutput,
+    ReviewConfigResolvedOutput,
     | "draft"
     | "titleTemplate"
     | "titleTemplatePath"

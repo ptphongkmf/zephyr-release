@@ -54,11 +54,11 @@ export const BumpRuleExtensionSchema = v.object({
 });
 
 type _BumpRuleExtensionInput = v.InferInput<typeof BumpRuleExtensionSchema>;
-export type BumpRuleExtensionOutput = v.InferOutput<
+type BumpRuleExtensionOutput = v.InferOutput<
   typeof BumpRuleExtensionSchema
 >;
 
-export const BumpRuleExtensionPatchSchema = v.object(
+export const BumpRuleExtensionWorkspaceMemberSchema = v.object(
   {
     enabled: v.pipe(
       v.optional(extensionEnabledSchema),
@@ -79,3 +79,5 @@ export const BumpRuleExtensionPatchSchema = v.object(
     extensions: BumpRuleExtensionSchema.entries.extensions,
   } satisfies Record<keyof BumpRuleExtensionOutput, unknown>,
 );
+
+export type BumpRuleExtensionResolvedOutput = BumpRuleExtensionOutput;

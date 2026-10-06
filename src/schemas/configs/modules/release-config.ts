@@ -149,9 +149,9 @@ export const ReleaseConfigSchema = v.pipe(
 );
 
 type _ReleaseConfigInput = v.InferInput<typeof ReleaseConfigSchema>;
-export type ReleaseConfigOutput = v.InferOutput<typeof ReleaseConfigSchema>;
+type ReleaseConfigOutput = v.InferOutput<typeof ReleaseConfigSchema>;
 
-export const ReleaseConfigPatchSchema = v.pipe(
+export const ReleaseConfigWorkspaceMemberSchema = v.pipe(
   v.object(
     {
       createRelease: v.pipe(
@@ -188,13 +188,13 @@ export const ReleaseConfigPatchSchema = v.pipe(
         }),
       ),
       titleTemplatePath: v.optional(
-        v.unwrap(ReleaseConfigSchema.entries.titleTemplatePath),
+        ReleaseConfigSchema.entries.titleTemplatePath,
       ),
       headerTemplate: v.optional(
-        v.unwrap(ReleaseConfigSchema.entries.headerTemplate),
+        ReleaseConfigSchema.entries.headerTemplate,
       ),
       headerTemplatePath: v.optional(
-        v.unwrap(ReleaseConfigSchema.entries.headerTemplatePath),
+        ReleaseConfigSchema.entries.headerTemplatePath,
       ),
       bodyTemplate: v.pipe(
         v.optional(releaseBodyTemplateSchema),
@@ -203,17 +203,17 @@ export const ReleaseConfigPatchSchema = v.pipe(
         }),
       ),
       bodyTemplatePath: v.optional(
-        v.unwrap(ReleaseConfigSchema.entries.bodyTemplatePath),
+        ReleaseConfigSchema.entries.bodyTemplatePath,
       ),
       footerTemplate: v.optional(
-        v.unwrap(ReleaseConfigSchema.entries.footerTemplate),
+        ReleaseConfigSchema.entries.footerTemplate,
       ),
       footerTemplatePath: v.optional(
-        v.unwrap(ReleaseConfigSchema.entries.footerTemplatePath),
+        ReleaseConfigSchema.entries.footerTemplatePath,
       ),
 
       assets: v.optional(
-        v.unwrap(ReleaseConfigSchema.entries.assets),
+        ReleaseConfigSchema.entries.assets,
       ),
     } satisfies Record<keyof ReleaseConfigOutput, unknown>,
   ),
@@ -221,3 +221,5 @@ export const ReleaseConfigPatchSchema = v.pipe(
     description: releaseConfigDesc,
   }),
 );
+
+export type ReleaseConfigResolvedOutput = ReleaseConfigOutput;

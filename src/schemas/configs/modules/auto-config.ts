@@ -27,9 +27,9 @@ export const AutoConfigSchema = v.pipe(
 );
 
 type _AutoConfigInput = v.InferInput<typeof AutoConfigSchema>;
-export type AutoConfigOutput = v.InferOutput<typeof AutoConfigSchema>;
+type AutoConfigOutput = v.InferOutput<typeof AutoConfigSchema>;
 
-export const AutoConfigPatchSchema = v.pipe(
+export const AutoConfigWorkspaceMemberSchema = v.pipe(
   v.object(
     {
       triggerStrategy: v.pipe(
@@ -45,3 +45,5 @@ export const AutoConfigPatchSchema = v.pipe(
     description: autoConfigDesc,
   }),
 );
+
+export type AutoConfigResolvedOutput = AutoConfigOutput;

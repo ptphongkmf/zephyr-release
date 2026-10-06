@@ -124,10 +124,10 @@ Only available in "auto" and "review" release flow propose operation. Can be und
 ##### Releases
 
 - `{{ releases }}`: Array of release objects. In monorepo mode, contains one entry per workspace. In single-repo mode, contains a single entry. Each release object contains:
-  - `name`: `string`; Project name
+  - `name`: `string`; Project name. Defaults to `"root"` in single-repo mode when [`name`](./config-options.md#name-optional) is not configured.
   - `nextVersion`: `string`; The next calculated semantic version
   - `tagName`: `string`; The tag name for this release
-  - `title`: `string | undefined`; Display title for this member (defaults to name).
+  - `title`: `string`; Display title for this member (defaults to name).
   - `changelogRelease`: `string | undefined`; Raw changelog string for this member without markers.
     > [!NOTE]
     > `releases[i].changelogRelease` differs from the flat `{{ changelogRelease }}` pattern (which only holds the last evaluated workspace's value at root). Use this field in custom root templates if you need per-workspace changelogs.
@@ -211,9 +211,9 @@ Custom transformers.
   - commit: [`ResolvedCommit`](../src/tasks/commit.ts#L34-L41) or [`an object with shape { references: { prefix: string, issue: string }[] }`](../src/tasks/string-templates-and-patterns/transformers.ts)
   - Usage: `{{ text | parse_references: commit }}`
 
-- `format_releases: separator`: Formats an array of release objects into a single string. It extracts the `tagName` from each release and joins them. It strictly requires an array of objects with the shape `{ tagName: string }`. Usually, this is the built-in `{{ releases }}` object, but you can provide a custom pattern if desired.
+- `format_release_tags: separator`: Formats an array of release objects into a single string by extracting and joining the `tagName` from each release. It strictly requires an array of objects with the shape `{ tagName: string }`. Usually, this is the built-in `{{ releases }}` object, but you can provide a custom pattern if desired.
   - separator (optional): `string`, `DEFAULT: ", "`
-  - Usage: `{{ releases | format_releases: " and " }}`
+  - Usage: `{{ releases | format_release_tags: " and " }}`
 
 ### LiquidJS built-in Transformers
 
