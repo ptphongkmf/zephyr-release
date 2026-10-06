@@ -51,4 +51,4 @@ export const CommandSchema = v.pipe(
 );
 
 type _CommandInput = v.InferInput<typeof CommandSchema>;
-export type CommandOutput = v.InferOutput<typeof CommandSchema>;
+type _CommandOutput = v.InferOutput<typeof CommandSchema>;

@@ -11,6 +11,11 @@ import { trimNonEmptyStringSchema } from "../string.ts";
 import { ReleaseFlows } from "../../constants/release-flows.ts";
 import { ReviewConfigSchema } from "./modules/review-config.ts";
 import { AutoConfigSchema } from "./modules/auto-config.ts";
+import { BumpStrategyConfigSchema } from "./modules/bump-strategy-config.ts";
+import { ChangelogConfigSchema } from "./modules/changelog-config.ts";
+import { CommitConfigSchema } from "./modules/commit-config.ts";
+import { TagConfigSchema } from "./modules/tag-config.ts";
+import { ReleaseConfigSchema } from "./modules/release-config.ts";
 
 export const initialVersionSchema = v.pipe(v.string(), v.regex(SEMVER_REGEX));
 export const initialVersionDesc =
@@ -49,7 +54,7 @@ export const allowedReleaseAsCommitTypesDesc =
   'Use "<ALL>" to accept any commit type; use "<COMMIT_TYPES>" to use the list defined in `commitTypes`. You can combine "<COMMIT_TYPES>" with other types (for example: ["<COMMIT_TYPES>","docs"]).\n' +
   `About 'release-as': ${DOCS_EXT_REF_TOKEN}?tab=readme-ov-file#force-a-specific-version \n`;
 
-export const BaseCoreConfigSchema = v.object({
+export const BaseConfigSchema = v.object({
   name: v.pipe(
     v.optional(v.pipe(v.string(), v.trim())),
     v.metadata({
@@ -145,12 +150,17 @@ export const BaseCoreConfigSchema = v.object({
       examples: ["<COMMIT_TYPES>", ["<COMMIT_TYPES>", "chore", "ci", "cd"]],
     }),
   ),
-});
 
-type _BaseCoreConfigInput = v.InferInput<typeof BaseCoreConfigSchema>;
-export type BaseCoreConfigOutput = v.InferOutput<typeof BaseCoreConfigSchema>;
+  bumpStrategy: v.optional(BumpStrategyConfigSchema, {}),
 
-export const BaseLifecycleConfigSchema = v.object({
+  changelog: v.optional(ChangelogConfigSchema, {}),
+
+  commit: v.optional(CommitConfigSchema, {}),
+
+  tag: v.optional(TagConfigSchema, {}),
+
+  release: v.optional(ReleaseConfigSchema, {}),
+
   commandHooks: v.pipe(
     v.optional(CommandHooksSchema, {}),
     v.metadata({
@@ -159,7 +169,5 @@ export const BaseLifecycleConfigSchema = v.object({
   ),
 });
 
-type _BaseLifecycleConfigInput = v.InferInput<typeof BaseLifecycleConfigSchema>;
-export type BaseLifecycleConfigOutput = v.InferOutput<
-  typeof BaseLifecycleConfigSchema
->;
+type _BaseConfigInput = v.InferInput<typeof BaseConfigSchema>;
+export type BaseConfigOutput = v.InferOutput<typeof BaseConfigSchema>;

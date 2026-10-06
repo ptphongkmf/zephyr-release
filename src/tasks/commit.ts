@@ -10,20 +10,20 @@ import { taskLogger } from "./logger.ts";
 import { prepareVersionFilesToCommit } from "./version-files/version-file.ts";
 import type { InputsOutput } from "../schemas/inputs/inputs.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
-import type { ConfigOutput } from "../schemas/configs/config.ts";
+import type { ResolvedConfig } from "../schemas/configs/resolved-config.ts";
 import {
   NESTED_CLEANING_REGEX,
   NESTED_COMMIT,
   ZEPHYR_RELEASE_COMMIT_SIGN,
 } from "../constants/commit.ts";
 import type { ProviderCommit } from "../types/providers/commit.ts";
-import type { ChangelogConfigOutput } from "../schemas/configs/modules/changelog-config.ts";
+import type { ChangelogConfigResolvedOutput } from "../schemas/configs/modules/changelog-config.ts";
 import { prepareChangelogFileToCommit } from "./changelog.ts";
 import { execSync } from "node:child_process";
 import { getTextFile } from "./file.ts";
 import { resolveStringTemplate } from "./string-templates-and-patterns/resolve-template.ts";
 import type { StringPatternContext } from "./string-templates-and-patterns/pattern-context.ts";
-import type { CommitConfigOutput } from "../schemas/configs/modules/commit-config.ts";
+import type { CommitConfigResolvedOutput } from "../schemas/configs/modules/commit-config.ts";
 import { BranchOutOfDateError } from "../errors/providers/branch.ts";
 import { SafeExit } from "../errors/safe-exit.ts";
 import { VERSION } from "../version.ts";
@@ -39,11 +39,11 @@ type ResolveCommitsInputsParams = Pick<
 
 type ResolveCommitsConfigParams =
   & Pick<
-    ConfigOutput,
+    ResolvedConfig,
     "commitTypes" | "maxCommitsToResolve" | "resolveUntilCommitHash"
   >
   & {
-    tag: Pick<ConfigOutput["tag"], "nameTemplate" | "matchPatterns">;
+    tag: Pick<ResolvedConfig["tag"], "nameTemplate" | "matchPatterns">;
   };
 
 /**
@@ -154,18 +154,18 @@ export interface ResolvedCommitsResult {
 export async function resolveCommitsFromTriggerToLastRelease(
   provider: PlatformProvider,
   inputs: ResolveCommitsInputsParams,
-  config: ResolveCommitsConfigParams,
+  resolvedConfig: ResolveCommitsConfigParams,
   stopHashOverride?: string,
   pathFilter?: string,
 ): Promise<ResolvedCommitsResult> {
   const { triggerCommitHash } = inputs;
-  const { commitTypes, maxCommitsToResolve, resolveUntilCommitHash } = config;
+  const { commitTypes, maxCommitsToResolve, resolveUntilCommitHash } = resolvedConfig;
 
   let stopHash = stopHashOverride ?? resolveUntilCommitHash;
   if (!stopHash) {
     const matchPatterns = buildMatchPatterns(
-      config.tag.nameTemplate,
-      config.tag.matchPatterns,
+      resolvedConfig.tag.nameTemplate,
+      resolvedConfig.tag.matchPatterns,
     );
     const lastRelease = await provider.findLastReleaseTag(matchPatterns);
     stopHash = lastRelease?.hash;
@@ -326,9 +326,9 @@ type PrepareChangesInputsParams = Pick<
 >;
 
 type PrepareChangesConfigParams = {
-  versionFiles: ConfigOutput["versionFiles"];
+  versionFiles: ResolvedConfig["versionFiles"];
   changelog: Pick<
-    ChangelogConfigOutput,
+    ChangelogConfigResolvedOutput,
     | "writeToFile"
     | "path"
     | "fileHeaderTemplate"
@@ -338,7 +338,7 @@ type PrepareChangesConfigParams = {
     | "fileFooterTemplate"
     | "fileFooterTemplatePath"
   >;
-  commit: Pick<CommitConfigOutput, "localChangesToCommit">;
+  commit: Pick<CommitConfigResolvedOutput, "localChangesToCommit">;
 };
 
 /**
@@ -358,13 +358,13 @@ export function resolveWorkspaceFilePath(
 export async function prepareChangesToCommit(
   provider: PlatformProvider,
   inputs: PrepareChangesInputsParams,
-  config: PrepareChangesConfigParams,
+  resolvedConfig: PrepareChangesConfigParams,
   nextVersion: SemVer,
   patternContext: StringPatternContext,
   workspaceRelativePath: string = ".",
 ): Promise<Map<string, string | null>> {
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
-  const { versionFiles, changelog, commit } = config;
+  const { versionFiles, changelog, commit } = resolvedConfig;
   const { localChangesToCommit } = commit;
   const { writeToFile, path } = changelog;
 
@@ -497,9 +497,9 @@ type CommitChangesInputsParams = Pick<
 >;
 
 interface CommitChangesConfigParams {
-  releaseFlow: ConfigOutput["releaseFlow"];
+  releaseFlow: ResolvedConfig["releaseFlow"];
   commit: Pick<
-    CommitConfigOutput,
+    CommitConfigResolvedOutput,
     | "headerTemplate"
     | "headerTemplatePath"
     | "bodyTemplate"
@@ -513,7 +513,7 @@ interface CommitChangesConfigParams {
 export async function commitChangesToBranch(
   provider: PlatformProvider,
   inputs: CommitChangesInputsParams,
-  config: CommitChangesConfigParams,
+  resolvedConfig: CommitChangesConfigParams,
   commitData: {
     baseTreeHash: string;
     changesToCommit: Map<string, string | null>;
@@ -523,7 +523,7 @@ export async function commitChangesToBranch(
   patternContext: StringPatternContext,
 ) {
   const { triggerCommitHash, workspacePath, sourceMode } = inputs;
-  const { releaseFlow } = config;
+  const { releaseFlow } = resolvedConfig;
   const {
     headerTemplate,
     headerTemplatePath,
@@ -531,7 +531,7 @@ export async function commitChangesToBranch(
     bodyTemplatePath,
     footerTemplate,
     footerTemplatePath,
-  } = config.commit;
+  } = resolvedConfig.commit;
   const { baseTreeHash, changesToCommit, targetBranchName, force } = commitData;
 
   const resolvedChangesToCommit = new Map<string, string | null>();

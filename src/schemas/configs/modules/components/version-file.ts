@@ -46,4 +46,6 @@ export const VersionFileSchema = v.object({
 });
 
 type _VersionFileInput = v.InferInput<typeof VersionFileSchema>;
-export type VersionFileOutput = v.InferOutput<typeof VersionFileSchema>;
+type VersionFileOutput = v.InferOutput<typeof VersionFileSchema>;
+
+export type VersionFileResolvedOutput = VersionFileOutput;

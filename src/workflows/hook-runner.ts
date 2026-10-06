@@ -1,6 +1,6 @@
 import type {
   CommandHookKind,
-  CommandHooksOutput,
+  CommandHooksResolvedOutput,
 } from "../schemas/configs/modules/components/command-hook.ts";
 import type { OperationRunSettings } from "../types/operation-context.ts";
 import type { StringPatternContext } from "../tasks/string-templates-and-patterns/pattern-context.ts";
@@ -46,7 +46,7 @@ export interface HookRunnerResult {
 export async function executeHookWithOverride(
   provider: PlatformProvider,
   hookKind: CommandHookKind,
-  commandHooks: CommandHooksOutput | undefined,
+  commandHooks: CommandHooksResolvedOutput | undefined,
   runSettings: OperationRunSettings,
   patternContext: StringPatternContext,
   options: HookRunnerOptions = {},

@@ -1,6 +1,10 @@
 import { deepMerge } from "@std/collections";
 import * as v from "@valibot/valibot";
-import { type ConfigOutput, ConfigSchema } from "../schemas/configs/config.ts";
+import { type ConfigOutput } from "../schemas/configs/config.ts";
+import {
+  type ResolvedConfig,
+  ResolvedConfigSchema,
+} from "../schemas/configs/resolved-config.ts";
 import type { WorkspaceMemberConfigOutput } from "../schemas/configs/workspace-member-config.ts";
 import type { ResolvedWorkspace } from "../types/workspace-context.ts";
 import { formatValibotIssues } from "../utils/formatters/valibot.ts";
@@ -18,10 +22,14 @@ export function resolveWorkspaces(
   const workspaceEntries = rootConfig.workspace;
 
   if (!workspaceEntries) {
-    // Single-repo mode
+    // Single-repo mode. ResolvedConfig is a superset of ConfigOutput with workspace-only
+    // fields added as optional; rootConfig satisfies it since those fields are undefined.
     return [{
       path: ".",
-      config: rootConfig,
+      config: {
+        ...rootConfig,
+        title: rootConfig.name ?? "root",
+      },
     }];
   }
 
@@ -42,7 +50,9 @@ export function resolveWorkspaces(
 /**
  * Deep-merge root config with workspace member overrides.
  * Workspace values take precedence. Root-only fields are preserved.
- * Always re-validates through ConfigSchema (never type-cast).
+ * Re-validates through ResolvedConfigSchema (not ConfigSchema) to preserve
+ * workspace-only fields like `title` and `review.member*Template` that
+ * ConfigSchema would strip as unknown keys.
  *
  * @throws if the merged config fails Valibot validation
  */
@@ -50,12 +60,14 @@ function deepMergeWorkspaceConfig(
   root: ConfigOutput,
   member: WorkspaceMemberConfigOutput,
   workspacePath: string,
-): ConfigOutput {
+): ResolvedConfig {
   const merged = structuredClone(
     deepMerge(root, member, { arrays: "replace" }),
   );
 
-  const result = v.safeParse(ConfigSchema, merged);
+  merged.title = merged.title ?? merged.name;
+
+  const result = v.safeParse(ResolvedConfigSchema, merged);
   if (!result.success) {
     throw new Error(
       `Failed to merge workspace config for "${member.name}" at "${workspacePath}": ` +

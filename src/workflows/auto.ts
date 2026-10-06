@@ -48,6 +48,7 @@ import {
   detectAffectedWorkspaces,
 } from "../tasks/workspace-detection.ts";
 import type { ResolvedWorkspace } from "../types/workspace-context.ts";
+import { invariant } from "../utils/invariant.ts";
 
 interface AutoWorkflowOptions {
   workingBranchResult: WorkingBranchResult;
@@ -119,11 +120,13 @@ export async function executeAutoReleaseFlow(
 
   for (const ws of affectedWorkspaces) {
     const wsConfig = ws.config;
-    const wsLabel = runSettings.isMonorepoMode ? `[${wsConfig.name}] ` : "";
+    let wsLabel = "";
 
     if (runSettings.isMonorepoMode) {
+      invariant(wsConfig.name, "Workspace name is required in monorepo mode");
+      wsLabel = `[${wsConfig.name}] `;
       logger.subHeading(`Workspace: ${wsConfig.name}`);
-      provider.setEnv("ZR_NAME", wsConfig.name ?? "");
+      provider.setEnv("ZR_NAME", wsConfig.name);
     }
 
     // Get current version
@@ -219,6 +222,7 @@ export async function executeAutoReleaseFlow(
     const tagName = wsPatternContext.tagName as string;
     releaseEntries.push({
       name: wsConfig.name ?? "root",
+      title: wsConfig.title,
       nextVersion: format(nextVersion),
       tagName,
     });
@@ -420,15 +424,21 @@ export async function executeAutoReleaseFlow(
 
     for (const wsData of workspaceReleaseDataList) {
       const wsConfig = wsData.workspace.config;
-      const wsLabel = runSettings.isMonorepoMode ? `[${wsConfig.name}] ` : "";
+      let wsLabel = "";
+
+      if (runSettings.isMonorepoMode) {
+        invariant(wsConfig.name, "Workspace name is required in monorepo mode");
+        wsLabel = `[${wsConfig.name}] `;
+      }
       let wsPatternCtx = wsData.patternContext;
 
       // Re-apply releases context to each workspace's pattern context
       wsPatternCtx = addReleasesPatternContext(wsPatternCtx, releaseEntries);
 
       if (runSettings.isMonorepoMode) {
+        invariant(wsConfig.name, "Workspace name is required in monorepo mode");
         logger.subHeading(`Workspace: ${wsConfig.name}`);
-        provider.setEnv("ZR_NAME", wsConfig.name ?? "");
+        provider.setEnv("ZR_NAME", wsConfig.name);
       }
 
       // preTag hook

@@ -1,8 +1,8 @@
 import type { SemVer } from "@std/semver";
-import type { BumpStrategyConfigOutput } from "../../schemas/configs/modules/bump-strategy-config.ts";
+import type { BumpStrategyConfigResolvedOutput } from "../../schemas/configs/modules/bump-strategy-config.ts";
 import { startTime } from "../../main.ts";
-import type { BumpRuleExtensionOutput } from "../../schemas/configs/modules/components/bump-rule-extension.ts";
-import type { SemverExtensionOutput } from "../../schemas/configs/modules/components/semver-extension.ts";
+import type { BumpRuleExtensionResolvedOutput } from "../../schemas/configs/modules/components/bump-rule-extension.ts";
+import type { SemverExtensionResolvedOutput } from "../../schemas/configs/modules/components/semver-extension.ts";
 import {
   SemverExtensionDateFormatMap,
   SemverExtensionResetOnOptions,
@@ -20,7 +20,7 @@ interface VersionChangeContext {
 export function calculateNextExtensionsSemVer(
   currentSemVer: SemVer,
   nextCoreSemVer: SemVer,
-  strategy: BumpStrategyConfigOutput,
+  strategy: BumpStrategyConfigResolvedOutput,
   baseTimeZone: string,
 ): SemVer {
   const extensionSemVer = { ...currentSemVer };
@@ -74,7 +74,7 @@ export function calculateNextExtensionsSemVer(
  */
 function detectSemVerExtensionSignificantChange(
   currentSemVerExtensionValues: (string | number)[] | undefined,
-  rule: BumpRuleExtensionOutput,
+  rule: BumpRuleExtensionResolvedOutput,
 ): boolean {
   const currentExtensions = currentSemVerExtensionValues?.map(String) ?? [];
 
@@ -105,7 +105,7 @@ function detectSemVerExtensionSignificantChange(
 
 function resolveExtensionList(
   SemVerExtensionValues: (string | number)[] | undefined,
-  rule: BumpRuleExtensionOutput,
+  rule: BumpRuleExtensionResolvedOutput,
   versionChangeCtx: VersionChangeContext,
   baseTimeZone: string,
 ): string[] {
@@ -161,7 +161,7 @@ function resolveExtensionList(
 }
 
 function resolveExtensionItem(
-  item: SemverExtensionOutput,
+  item: SemverExtensionResolvedOutput,
   previousValue: string | undefined,
   versionChangeCtx: VersionChangeContext,
   structureChanged: boolean,
@@ -202,7 +202,7 @@ function resolveExtensionItem(
 }
 
 function resolveIncremental(
-  item: Extract<SemverExtensionOutput, { type: "incremental" }>,
+  item: Extract<SemverExtensionResolvedOutput, { type: "incremental" }>,
   previousValue: string | undefined,
   versionChangeCtx: VersionChangeContext,
   structureChanged: boolean,

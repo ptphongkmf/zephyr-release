@@ -41,6 +41,7 @@ import {
   type AffectedWorkspace,
   detectAffectedWorkspaces,
 } from "../tasks/workspace-detection.ts";
+import { invariant } from "../utils/invariant.ts";
 import type { ResolvedWorkspace } from "../types/workspace-context.ts";
 
 /** Per-workspace result accumulated during Phase 1 */
@@ -122,11 +123,13 @@ export async function executeReviewPreparePhase(
 
   for (const ws of affectedWorkspaces) {
     const wsConfig = ws.config;
-    const wsLabel = runSettings.isMonorepoMode ? `[${wsConfig.name}] ` : "";
+    let wsLabel = "";
 
     if (runSettings.isMonorepoMode) {
+      invariant(wsConfig.name, "Workspace name is required in monorepo mode");
+      wsLabel = `[${wsConfig.name}] `;
       logger.subHeading(`Workspace: ${wsConfig.name}`);
-      provider.setEnv("ZR_NAME", wsConfig.name ?? "");
+      provider.setEnv("ZR_NAME", wsConfig.name);
     }
 
     // Get current version
@@ -222,6 +225,7 @@ export async function executeReviewPreparePhase(
     const tagName = wsPatternContext.tagName as string;
     releaseEntries.push({
       name: wsConfig.name ?? "root",
+      title: wsConfig.title,
       nextVersion: format(nextVersion),
       tagName,
     });

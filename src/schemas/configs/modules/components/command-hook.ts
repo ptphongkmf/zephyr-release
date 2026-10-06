@@ -171,9 +171,9 @@ export const CommandHooksSchema = v.object({
 });
 
 type _CommandHooksInput = v.InferInput<typeof CommandHooksSchema>;
-export type CommandHooksOutput = v.InferOutput<typeof CommandHooksSchema>;
+type CommandHooksOutput = v.InferOutput<typeof CommandHooksSchema>;
 
-export const CommandHooksPatchSchema = v.pipe(
+export const CommandHooksWorkspaceMemberSchema = v.pipe(
   v.object(
     {
       timeout: v.pipe(
@@ -224,7 +224,11 @@ export const CommandHooksPatchSchema = v.pipe(
   }),
 );
 
+
+
 export type CommandHookKind = keyof Omit<
   CommandHooksOutput,
   "timeout" | "continueOnError" | "stdoutOverrideFormat"
 >;
+
+export type CommandHooksResolvedOutput = CommandHooksOutput;

@@ -1,13 +1,13 @@
 import type { SemVer } from "@std/semver";
 import type { ResolvedCommit } from "../commit.ts";
-import type { BumpStrategyConfigOutput } from "../../schemas/configs/modules/bump-strategy-config.ts";
-import type { BumpRuleOutput } from "../../schemas/configs/modules/components/bump-rule-core.ts";
+import type { BumpStrategyConfigResolvedOutput } from "../../schemas/configs/modules/bump-strategy-config.ts";
+import type { BumpRuleCoreResolvedOutput } from "../../schemas/configs/modules/components/bump-rule-core.ts";
 import { countBreakingAsOptions } from "../../constants/bump-rules.ts";
 
 export function calculateNextCoreSemVer(
   currentSemVer: SemVer,
   entries: ResolvedCommit[],
-  strategy: BumpStrategyConfigOutput,
+  strategy: BumpStrategyConfigResolvedOutput,
 ): SemVer {
   // 1. ANALYSIS PHASE: collect raw data
   const rawCounts = {
@@ -100,7 +100,7 @@ export function calculateNextCoreSemVer(
  */
 function getBumpRuleCounts(
   entry: ResolvedCommit,
-  rule: BumpRuleOutput,
+  rule: BumpRuleCoreResolvedOutput,
 ): { commits: number; directBumps: number } {
   // Priority 1: Breaking Changes
   if (entry.isBreaking) {

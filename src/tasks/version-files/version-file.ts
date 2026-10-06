@@ -1,7 +1,7 @@
 import { canParse, parse, type SemVer } from "@std/semver";
 import { taskLogger } from "../logger.ts";
-import type { ConfigOutput } from "../../schemas/configs/config.ts";
-import type { VersionFileOutput } from "../../schemas/configs/modules/components/version-file.ts";
+import type { ResolvedConfig } from "../../schemas/configs/resolved-config.ts";
+import type { VersionFileResolvedOutput } from "../../schemas/configs/modules/components/version-file.ts";
 import type { InputsOutput } from "../../schemas/inputs/inputs.ts";
 import type { PlatformProvider } from "../../types/providers/platform-provider.ts";
 import { getTextFile } from "../file.ts";
@@ -18,8 +18,8 @@ import { parseRegExpFromSelector } from "../../utils/parsers/regex.ts";
 
 /** @throws */
 export function getPrimaryVersionFile(
-  versionFiles: ConfigOutput["versionFiles"],
-): VersionFileOutput {
+  versionFiles: ResolvedConfig["versionFiles"],
+): VersionFileResolvedOutput {
   const primaryFile = versionFiles.find((vf) => vf.primary) ?? versionFiles[0];
 
   if (!primaryFile) {
@@ -36,7 +36,7 @@ export function getPrimaryVersionFile(
 
 /** @throws */
 export async function getVersionSemVerFromVersionFile(
-  versionFile: VersionFileOutput,
+  versionFile: VersionFileResolvedOutput,
   sourceMode: InputsOutput["sourceMode"],
   provider: PlatformProvider,
   workspacePath: string,
@@ -86,7 +86,7 @@ export async function getVersionSemVerFromVersionFile(
 
 export async function prepareVersionFilesToCommit(
   provider: PlatformProvider,
-  versionFiles: ConfigOutput["versionFiles"],
+  versionFiles: ResolvedConfig["versionFiles"],
   sourceMode: InputsOutput["sourceMode"],
   workspacePath: string,
   nextVersion: string,

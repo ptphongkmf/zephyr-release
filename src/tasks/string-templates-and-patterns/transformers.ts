@@ -131,12 +131,12 @@ export function registerTransformersToTemplateEngine(
   );
 
   liquidEngine.registerFilter(
-    "format_releases",
+    "format_release_tags",
     (releases: unknown, separator?: unknown) => {
       const parsedReleases = v.safeParse(parseFormatReleasesSchema, releases);
       if (!parsedReleases.success) {
         throw new Error(
-          `Filter "format_releases" input is invalid: requires an array of objects with a string "tagName" property.`,
+          `Filter "format_release_tags" input is invalid: requires an array of objects with a string "tagName" property.`,
         );
       }
 

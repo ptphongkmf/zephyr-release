@@ -360,11 +360,11 @@ JSON array of all workspace data objects. Each object contains: `name`, `nextVer
 
 #### affectedWorkspaces
 
-JSON array of affected workspace names (workspaces with changes since their last release).
+JSON array of affected workspace names (workspaces with changes since their last release). In single-repo mode without a `name` configured, the name defaults to `"root"`.
 
 - Output: `zr-affected-workspaces`
 - Env: `ZR_AFFECTED_WORKSPACES`
-- Value: `["core","cli"]`
+- Value: `["core","cli"]` (monorepo) or `["root"]` (single-repo without name) or `["myapp"]` (single-repo with name)
 
 ### Per-Workspace Namespaced Variables
 

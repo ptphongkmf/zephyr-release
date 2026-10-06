@@ -167,15 +167,9 @@ export const ReviewConfigSchema = v.pipe(
 );
 
 type _ReviewConfigInput = v.InferInput<typeof ReviewConfigSchema>;
-export type ReviewConfigOutput = v.InferOutput<typeof ReviewConfigSchema>;
+type ReviewConfigOutput = v.InferOutput<typeof ReviewConfigSchema>;
 
-
-const memberTemplatePathDesc = (field: string) =>
-  `Path to text file containing the ${field} template. Overrides the inline template when both are provided.\n` +
-  `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
-  "This path is always relative to the repository root, even in monorepo mode.";
-
-export const ReviewConfigPatchSchema = v.pipe(
+export const ReviewConfigWorkspaceMemberSchema = v.pipe(
   v.object(
     {
       memberHeaderTemplate: v.pipe(
@@ -190,7 +184,10 @@ export const ReviewConfigPatchSchema = v.pipe(
       memberHeaderTemplatePath: v.pipe(
         v.optional(trimNonEmptyStringSchema),
         v.metadata({
-          description: memberTemplatePathDesc("member header"),
+          description:
+            "Path to text file containing the member header template. Overrides the inline template when both are provided.\n" +
+            `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+            "This path is always relative to the repository root, even in monorepo mode.",
         }),
       ),
 
@@ -207,7 +204,10 @@ export const ReviewConfigPatchSchema = v.pipe(
       memberBodyTemplatePath: v.pipe(
         v.optional(trimNonEmptyStringSchema),
         v.metadata({
-          description: memberTemplatePathDesc("member body"),
+          description:
+            "Path to text file containing the member body template. Overrides the inline template when both are provided.\n" +
+            `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+            "This path is always relative to the repository root, even in monorepo mode.",
         }),
       ),
 
@@ -223,7 +223,10 @@ export const ReviewConfigPatchSchema = v.pipe(
       memberFooterTemplatePath: v.pipe(
         v.optional(trimNonEmptyStringSchema),
         v.metadata({
-          description: memberTemplatePathDesc("member footer"),
+          description:
+            "Path to text file containing the member footer template. Overrides the inline template when both are provided.\n" +
+            `To customize whether this file is fetched locally or remotely, see source mode: ${DOCS_EXT_REF_TOKEN}/docs/input-options.md#source-mode-optional\n` +
+            "This path is always relative to the repository root, even in monorepo mode.",
         }),
       ),
     } satisfies Record<
@@ -258,3 +261,20 @@ export const ReviewConfigPatchSchema = v.pipe(
   }),
 );
 
+type ReviewConfigWorkspaceMemberOutput = v.InferOutput<
+  typeof ReviewConfigWorkspaceMemberSchema
+>;
+
+export const ReviewConfigResolvedSchema = v.object(
+  {
+    ...ReviewConfigSchema.entries,
+    ...ReviewConfigWorkspaceMemberSchema.entries,
+  } satisfies Record<
+    keyof ReviewConfigOutput | keyof ReviewConfigWorkspaceMemberOutput,
+    unknown
+  >,
+);
+
+export type ReviewConfigResolvedOutput = v.InferOutput<
+  typeof ReviewConfigResolvedSchema
+>;

@@ -98,20 +98,20 @@ export const CommitConfigSchema = v.pipe(
 );
 
 type _CommitConfigInput = v.InferInput<typeof CommitConfigSchema>;
-export type CommitConfigOutput = v.InferOutput<typeof CommitConfigSchema>;
+type CommitConfigOutput = v.InferOutput<typeof CommitConfigSchema>;
 
-export const CommitConfigPatchSchema = v.pipe(
+export const CommitConfigWorkspaceMemberSchema = v.pipe(
   v.object(
     {
       localChangesToCommit: v.optional(
-        v.unwrap(CommitConfigSchema.entries.localChangesToCommit),
+        CommitConfigSchema.entries.localChangesToCommit,
       ),
 
       bodyTemplate: v.optional(
-        v.unwrap(CommitConfigSchema.entries.bodyTemplate),
+        CommitConfigSchema.entries.bodyTemplate,
       ),
       bodyTemplatePath: v.optional(
-        v.unwrap(CommitConfigSchema.entries.bodyTemplatePath),
+        CommitConfigSchema.entries.bodyTemplatePath,
       ),
     } satisfies Record<
       keyof Omit<
@@ -128,3 +128,5 @@ export const CommitConfigPatchSchema = v.pipe(
     description: commitConfigDesc,
   }),
 );
+
+export type CommitConfigResolvedOutput = CommitConfigOutput;

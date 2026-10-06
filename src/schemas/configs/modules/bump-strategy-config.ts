@@ -1,10 +1,10 @@
 import * as v from "@valibot/valibot";
 import {
-  BumpRuleCorePatchSchema,
+  BumpRuleCoreWorkspaceMemberSchema,
   BumpRuleCoreSchema,
 } from "./components/bump-rule-core.ts";
 import {
-  BumpRuleExtensionPatchSchema,
+  BumpRuleExtensionWorkspaceMemberSchema,
   BumpRuleExtensionSchema,
 } from "./components/bump-rule-extension.ts";
 import {
@@ -107,11 +107,11 @@ export const BumpStrategyConfigSchema = v.pipe(
 );
 
 type _BumpStrategyConfigInput = v.InferInput<typeof BumpStrategyConfigSchema>;
-export type BumpStrategyConfigOutput = v.InferOutput<
+type BumpStrategyConfigOutput = v.InferOutput<
   typeof BumpStrategyConfigSchema
 >;
 
-export const BumpStrategyConfigPatchSchema = v.pipe(
+export const BumpStrategyConfigWorkspaceMemberSchema = v.pipe(
   v.object(
     {
       treatMajorAsMinorPreStable: v.pipe(
@@ -130,32 +130,32 @@ export const BumpStrategyConfigPatchSchema = v.pipe(
       ),
 
       major: v.pipe(
-        v.optional(BumpRuleCorePatchSchema),
+        v.optional(BumpRuleCoreWorkspaceMemberSchema),
         v.metadata({
           description: majorVersionDesc + "Default: inherit from root",
         }),
       ),
       minor: v.pipe(
-        v.optional(BumpRuleCorePatchSchema),
+        v.optional(BumpRuleCoreWorkspaceMemberSchema),
         v.metadata({
           description: minorVersionDesc + "Default: inherit from root",
         }),
       ),
       patch: v.pipe(
-        v.optional(BumpRuleCorePatchSchema),
+        v.optional(BumpRuleCoreWorkspaceMemberSchema),
         v.metadata({
           description: patchVersionDesc + "Default: inherit from root",
         }),
       ),
 
       prerelease: v.pipe(
-        v.optional(BumpRuleExtensionPatchSchema),
+        v.optional(BumpRuleExtensionWorkspaceMemberSchema),
         v.metadata({
           description: prereleaseVersionDesc + "Default: inherit from root",
         }),
       ),
       build: v.pipe(
-        v.optional(BumpRuleExtensionPatchSchema),
+        v.optional(BumpRuleExtensionWorkspaceMemberSchema),
         v.metadata({
           description: buildMetadataDesc + "Default: inherit from root",
         }),
@@ -166,3 +166,5 @@ export const BumpStrategyConfigPatchSchema = v.pipe(
     description: bumpStrategyConfigDesc,
   }),
 );
+
+export type BumpStrategyConfigResolvedOutput = BumpStrategyConfigOutput;

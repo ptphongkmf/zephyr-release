@@ -2,8 +2,8 @@ import fsPromises from "node:fs/promises";
 import fs from "node:fs";
 import { contentType } from "@std/media-types";
 import { extname } from "@std/path";
-import type { TagConfigOutput } from "../schemas/configs/modules/tag-config.ts";
-import type { ReleaseConfigOutput } from "../schemas/configs/modules/release-config.ts";
+import type { TagConfigResolvedOutput } from "../schemas/configs/modules/tag-config.ts";
+import type { ReleaseConfigResolvedOutput } from "../schemas/configs/modules/release-config.ts";
 import type { InputsOutput } from "../schemas/inputs/inputs.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import { getTextFile } from "./file.ts";
@@ -21,9 +21,9 @@ type CreateReleaseInputsParams = Pick<
 >;
 
 interface CreateReleaseConfigParams {
-  tag: Pick<TagConfigOutput, "nameTemplate">;
+  tag: Pick<TagConfigResolvedOutput, "nameTemplate">;
   release: Pick<
-    ReleaseConfigOutput,
+    ReleaseConfigResolvedOutput,
     | "prerelease"
     | "draft"
     | "setLatest"

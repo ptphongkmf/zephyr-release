@@ -267,7 +267,7 @@ Allowed patterns to use are: fixed base string patterns.
 Type: `string`\
 Default: [`DEFAULT_PROPOSAL_TITLE_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for proposal title, using with string patterns like `{{ releases | format_releases }}`.\
+String template for proposal title, using with string patterns like `{{ releases | format_release_tags }}`.\
 Allowed patterns to use are: [all fixed and dynamic string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
@@ -1215,7 +1215,7 @@ To include all changes, you can use a glob pattern such as `"**/*"`.
 Type: `string`\
 Default: [`DEFAULT_COMMIT_HEADER_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for commit header, using with string patterns like `{{ releases | format_releases }}`. You can optionally include a CI skip token here (or body/footer) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` for GitHub, GitLab, and Bitbucket).\
+String template for commit header, using with string patterns like `{{ releases | format_release_tags }}`. You can optionally include a CI skip token here (or body/footer) to prevent downstream pipeline runs (e.g., `[skip ci]` or `[ci skip]` for GitHub, GitLab, and Bitbucket).\
 Allowed patterns to use are: [all fixed and dynamic string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
