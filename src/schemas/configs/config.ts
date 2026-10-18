@@ -9,7 +9,10 @@ export const ConfigSchema = v.pipe(
 
     workspace: v.pipe(
       v.optional(
-        v.record(trimNonEmptyStringSchema, WorkspaceMemberConfigSchema),
+        v.pipe(
+          v.record(trimNonEmptyStringSchema, WorkspaceMemberConfigSchema),
+          v.minEntries(1),
+        ),
       ),
       v.metadata({
         description:
