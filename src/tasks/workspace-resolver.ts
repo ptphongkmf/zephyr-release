@@ -24,6 +24,7 @@ export function resolveWorkspaces(
   if (!workspaceEntries) {
     // Single-repo mode. ResolvedConfig is a superset of ConfigOutput with workspace-only
     // fields added as optional; rootConfig satisfies it since those fields are undefined.
+    // TODO: even for sinle repo, alsy make it go throug deepMergeWorkspaceConfig
     return [{
       path: ".",
       config: {
@@ -64,8 +65,6 @@ function deepMergeWorkspaceConfig(
   const merged = structuredClone(
     deepMerge(root, member, { arrays: "replace" }),
   );
-
-  merged.title = merged.title ?? merged.name;
 
   const result = v.safeParse(ResolvedConfigSchema, merged);
   if (!result.success) {
