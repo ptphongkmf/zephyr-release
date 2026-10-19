@@ -29,3 +29,10 @@ in auto mode, add a logic that force to trigger release with a footer (different
 ### 🛡️ Safety: Command Hook Stdout Capture Limit
 When capturing stdout for config overrides (e.g. `stdio: ["inherit", "pipe", "inherit"]`), add a hard memory limit (e.g., 50MB or 100MB) to the captured string.
 If the command output exceeds this limit, kill the child process (`SIGKILL`) and throw a clear error in Zephyr Release to prevent Node.js Out-Of-Memory (OOM) crashes from runaway hook scripts.
+
+### Future TODO
+- why synchronizeRuntimeStateAfterOverride return pattern context?? is 
+synchronizeRuntimeStateAfterOverride and hook-runner kinda repetitve with each other? or drafiting? or... causeb they both mergin config and stuff?
+
+- in future, when refacotr to feautre slice, some fn that is currnelt calling other fn should be fix
+for exaple: `resolveWorkspaceMemberBlock` from `src\tasks\proposal.ts`
