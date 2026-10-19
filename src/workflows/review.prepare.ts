@@ -25,6 +25,7 @@ import {
   type ReleaseContextEntry,
 } from "../tasks/string-templates-and-patterns/pattern-context.ts";
 import { generatePrepareChangelogReleaseContent } from "../tasks/changelog.ts";
+import { resolveWorkspaceMemberBlock } from "../tasks/proposal.ts";
 import {
   exportPostCalculateVersionVariables,
   exportPostCommitVariables,
@@ -221,14 +222,7 @@ export async function executeReviewPreparePhase(
       `${wsLabel}Finished: Create fixed version and tag string pattern context`,
     );
 
-    // Collect release entry
     const tagName = wsPatternContext.tagName as string;
-    releaseEntries.push({
-      name: wsConfig.name ?? "root",
-      title: wsConfig.title,
-      nextVersion: format(nextVersion),
-      tagName,
-    });
 
     // postCalculateVersion hook
     logger.debugStepStart(
@@ -282,6 +276,35 @@ export async function executeReviewPreparePhase(
     logger.debugStepFinish(
       `${wsLabel}Finished: Create dynamic changelog string pattern context`,
     );
+
+    // Resolve member templates and populate release entry
+    logger.debugStepStart(
+      `${wsLabel}Starting: Resolve member templates`,
+    );
+    const { memberHeader, memberBody, memberFooter, memberBlock } =
+      await resolveWorkspaceMemberBlock(
+        provider,
+        runSettings.inputs,
+        wsConfig,
+        tagName,
+        wsPatternContext,
+      );
+    logger.debugStepFinish(
+      `${wsLabel}Finished: Resolve member templates`,
+    );
+
+    // Push fully populated release entry
+    releaseEntries.push({
+      name: wsConfig.name ?? "root",
+      title: wsConfig.title,
+      nextVersion: format(nextVersion),
+      tagName,
+      changelogRelease: changelogReleaseResult.release,
+      memberHeader,
+      memberBody,
+      memberFooter,
+      memberBlock,
+    });
 
     // Prepare changes to commit (workspace-relative paths)
     logger.stepStart(

@@ -2,6 +2,7 @@ import * as v from "@valibot/valibot";
 import { DOCS_EXT_REF_TOKEN } from "../../token.ts";
 import { trimNonEmptyStringSchema } from "../../string.ts";
 import {
+  DEFAULT_MEMBER_BODY_TEMPLATE,
   DEFAULT_PROPOSAL_BODY_TEMPLATE,
   DEFAULT_PROPOSAL_FOOTER_TEMPLATE,
   DEFAULT_PROPOSAL_HEADER_TEMPLATE,
@@ -192,13 +193,13 @@ export const ReviewConfigWorkspaceMemberSchema = v.pipe(
       ),
 
       memberBodyTemplate: v.pipe(
-        v.optional(v.string()),
+        v.optional(v.string(), DEFAULT_MEMBER_BODY_TEMPLATE),
         v.metadata({
           description:
             "String template for the per-workspace section body in the release proposal body.\n" +
             "Wrapped in per-workspace markers and extracted on publish as the GitHub Release content.\n" +
             "Allowed patterns: all fixed and run-computed string patterns for this workspace.\n" +
-            "Default: `{{ changelogRelease }}`",
+            `Default: ${JSON.stringify(DEFAULT_MEMBER_BODY_TEMPLATE)}`,
         }),
       ),
       memberBodyTemplatePath: v.pipe(

@@ -94,9 +94,15 @@ export async function createProposalContent(
       headerTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );
-    proposalHeader = await resolveStringTemplate(proposalHeaderTemplate, patternContext);
+    proposalHeader = await resolveStringTemplate(
+      proposalHeaderTemplate,
+      patternContext,
+    );
   } else {
-    proposalHeader = await resolveStringTemplate(headerTemplate, patternContext);
+    proposalHeader = await resolveStringTemplate(
+      headerTemplate,
+      patternContext,
+    );
   }
 
   let proposalBody: string;
@@ -106,7 +112,10 @@ export async function createProposalContent(
       bodyTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );
-    proposalBody = await resolveStringTemplate(proposalBodyTemplate, patternContext);
+    proposalBody = await resolveStringTemplate(
+      proposalBodyTemplate,
+      patternContext,
+    );
   } else {
     proposalBody = await resolveStringTemplate(bodyTemplate, patternContext);
   }
@@ -124,14 +133,124 @@ export async function createProposalContent(
       footerTemplatePath,
       { provider, workspacePath: workspacePath, ref: triggerCommitHash },
     );
-    proposalFooter = await resolveStringTemplate(proposalFooterTemplate, patternContext);
+    proposalFooter = await resolveStringTemplate(
+      proposalFooterTemplate,
+      patternContext,
+    );
   } else {
-    proposalFooter = await resolveStringTemplate(footerTemplate, patternContext);
+    proposalFooter = await resolveStringTemplate(
+      footerTemplate,
+      patternContext,
+    );
   }
 
   return [proposalHeader, proposalBodyWithMarkers, proposalFooter].filter(
     Boolean,
   ).join("\n\n");
+}
+
+export interface WorkspaceMemberBlockResult {
+  memberHeader: string | undefined;
+  memberBody: string;
+  memberFooter: string | undefined;
+  memberBlock: string;
+}
+
+interface ResolveWorkspaceMemberBlockConfigParams {
+  review: Pick<
+    ReviewConfigResolvedOutput,
+    | "memberHeaderTemplate"
+    | "memberHeaderTemplatePath"
+    | "memberBodyTemplate"
+    | "memberBodyTemplatePath"
+    | "memberFooterTemplate"
+    | "memberFooterTemplatePath"
+  >;
+}
+
+/** @throws */
+export async function resolveWorkspaceMemberBlock(
+  provider: PlatformProvider,
+  inputs: Pick<
+    InputsOutput,
+    "triggerCommitHash" | "sourceMode" | "workspacePath"
+  >,
+  resolvedConfig: ResolveWorkspaceMemberBlockConfigParams,
+  tagName: string,
+  patternContext: StringPatternContext,
+): Promise<WorkspaceMemberBlockResult> {
+  const { triggerCommitHash, sourceMode, workspacePath } = inputs;
+  const getTextOpts = { provider, workspacePath, ref: triggerCommitHash };
+
+  const {
+    memberHeaderTemplate,
+    memberHeaderTemplatePath,
+    memberBodyTemplate,
+    memberBodyTemplatePath,
+    memberFooterTemplate,
+    memberFooterTemplatePath,
+  } = resolvedConfig.review;
+
+  // Resolve member header (optional — undefined if not configured)
+  let memberHeader: string | undefined;
+  if (memberHeaderTemplatePath) {
+    const tpl = await getTextFile(
+      sourceMode.overrides[memberHeaderTemplatePath] ?? sourceMode.mode,
+      memberHeaderTemplatePath,
+      getTextOpts,
+    );
+    memberHeader = await resolveStringTemplate(tpl, patternContext);
+  } else if (memberHeaderTemplate !== undefined) {
+    memberHeader = await resolveStringTemplate(
+      memberHeaderTemplate,
+      patternContext,
+    );
+  }
+
+  // Resolve member body (defaults to {{ changelogRelease }} when not configured)
+  let memberBody: string;
+  if (memberBodyTemplatePath) {
+    const tpl = await getTextFile(
+      sourceMode.overrides[memberBodyTemplatePath] ?? sourceMode.mode,
+      memberBodyTemplatePath,
+      getTextOpts,
+    );
+    memberBody = await resolveStringTemplate(tpl, patternContext);
+  } else {
+    memberBody = await resolveStringTemplate(
+      memberBodyTemplate,
+      patternContext,
+    );
+  }
+
+  // Resolve member footer (optional — undefined if not configured)
+  let memberFooter: string | undefined;
+  if (memberFooterTemplatePath) {
+    const tpl = await getTextFile(
+      sourceMode.overrides[memberFooterTemplatePath] ?? sourceMode.mode,
+      memberFooterTemplatePath,
+      getTextOpts,
+    );
+    memberFooter = await resolveStringTemplate(tpl, patternContext);
+  } else if (memberFooterTemplate !== undefined) {
+    memberFooter = await resolveStringTemplate(
+      memberFooterTemplate,
+      patternContext,
+    );
+  }
+
+  // Wrap body in named per-workspace markers, join with optional header/footer
+  const namedBodyWithMarkers = [
+    PROPOSAL_MARKERS.namedBodyStart(tagName),
+    memberBody,
+    PROPOSAL_MARKERS.namedBodyEnd(tagName),
+  ].join("\n");
+
+  const memberBlock = [memberHeader, namedBodyWithMarkers, memberFooter]
+    .filter(Boolean)
+    .join("\n\n");
+
+  return { memberHeader, memberBody, memberFooter, memberBlock };
 }
 
 interface CreateOrUpdateProposalConfigParams {
@@ -171,7 +290,10 @@ export async function createOrUpdateProposal(
   } = proposalData;
   const { draft, titleTemplate } = config.review;
 
-  const proposalTitle = await resolveStringTemplate(titleTemplate, patternContext);
+  const proposalTitle = await resolveStringTemplate(
+    titleTemplate,
+    patternContext,
+  );
   const proposalContent = await createProposalContent(
     provider,
     inputs,

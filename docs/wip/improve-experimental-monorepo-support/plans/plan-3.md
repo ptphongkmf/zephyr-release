@@ -298,7 +298,9 @@ Each phase is self-contained and can be executed independently. After each schem
 **Files to change:**
 
 - `src/constants/markers.ts` — add `namedBodyStart(tagName: string)` and `namedBodyEnd(tagName: string)` helpers alongside existing `PROPOSAL_MARKERS`
-- `src/constants/defaults/string-templates.ts` — change `DEFAULT_PROPOSAL_BODY_TEMPLATE` from `{{ changelogRelease }}` to `{{ releases | format_proposal_body }}`
+- `src/constants/defaults/string-templates.ts`:
+  - Change `DEFAULT_PROPOSAL_BODY_TEMPLATE` from `{{ changelogRelease }}` to `{{ releases | format_proposal_body }}`
+  - Add `` DEFAULT_MEMBER_BODY_TEMPLATE = liquid`{{ changelogRelease }}` ``
 
 **Doc update (Phase B-docs):**
 
@@ -334,9 +336,16 @@ Full plan: [plan-3-error-merged-config-type.md](./plan-3-error-merged-config-typ
 
 **Files to change:**
 
+- `src/tasks/proposal.ts`:
+  - Implement pure helper `resolveWorkspaceMemberBlock(provider, inputs, resolvedConfig, tagName, patternContext)`:
+    - Resolves `memberBodyTemplatePath` if provided, otherwise `memberBodyTemplate ?? DEFAULT_MEMBER_BODY_TEMPLATE`
+    - Wraps resolved body in named markers: `PROPOSAL_MARKERS.namedBodyStart(tagName)` ... `PROPOSAL_MARKERS.namedBodyEnd(tagName)`
+    - Resolves optional `memberHeaderTemplate` / `memberHeaderTemplatePath` and `memberFooterTemplate` / `memberFooterTemplatePath`
+    - Assembles `memberBlock = [memberHeader, namedBodyWithMarkers, memberFooter].filter(Boolean).join("\n\n")`
+    - Returns `{ memberHeader, memberBody, memberFooter, memberBlock }`
 - `src/workflows/review.prepare.ts`:
   - Move `releaseEntries.push()` to after changelog generation and member template resolution
-  - After changelog context is built, resolve `memberBodyTemplate` (or path), wrap in named markers, resolve `memberHeaderTemplate` and `memberFooterTemplate` (or paths), assemble `memberBlock`
+  - Call `resolveWorkspaceMemberBlock`
   - Push fully populated `ReleaseContextEntry` (with all new fields including `memberBlock`) to `releaseEntries`
 
 **Verification:** `deno task check`
