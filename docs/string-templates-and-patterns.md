@@ -215,6 +215,19 @@ Custom transformers.
   - separator (optional): `string`, `DEFAULT: ", "`
   - Usage: `{{ releases | format_release_tags: " and " }}`
 
+- `format_proposal_body`: Formats an array of release objects into the full release proposal (PR/MR) body. Strictly requires an array of objects with the shape `{ title: string, memberBlock: string }` (usually the built-in `{{ releases }}` object).
+  - In single-repo mode (`isMonorepo` is false), outputs `memberBlock` directly without section headings.
+  - In monorepo mode (`isMonorepo` is true), outputs each workspace section prefixed with a `## {title}` heading:
+  
+    ```markdown
+    ## {title}
+
+    {memberBlock}
+    ```
+
+    Multiple workspace sections are joined by double newlines (`\n\n`).
+  - Usage: `{{ releases | format_proposal_body }}`
+
 ### LiquidJS built-in Transformers
 
 As mentioned above, Zephyr Release uses LiquidJS under the hood. Therefore there are also built-in transformers (called **filters** in LiquidJS) you can use directly in templates.
