@@ -1,6 +1,7 @@
 import { escape } from "@std/regexp";
 import { liquidEngine } from "./resolve-template.ts";
 import * as v from "@valibot/valibot";
+import type { Context } from "liquidjs";
 import type { PlatformProvider } from "../../types/providers/platform-provider.ts";
 
 export function registerTransformersToTemplateEngine(
@@ -145,9 +146,41 @@ export function registerTransformersToTemplateEngine(
       return parsedReleases.output.map((r) => r.tagName).join(sep);
     },
   );
+
+  liquidEngine.registerFilter(
+    "format_proposal_body",
+    function (this: { context: Context }, releases: unknown) {
+      const parsedReleases = v.safeParse(
+        parseProposalBodyReleasesSchema,
+        releases,
+      );
+      if (!parsedReleases.success) {
+        throw new Error(
+          `Filter "format_proposal_body" input is invalid: requires an array of objects with "title" (string) and "memberBlock" (string) properties.`,
+        );
+      }
+
+      const isMonorepo = Boolean(this.context?.getSync(["isMonorepo"]));
+
+      if (isMonorepo) {
+        return parsedReleases.output
+          .map((entry) => `## ${entry.title}\n\n${entry.memberBlock}`)
+          .join("\n\n");
+      }
+
+      return parsedReleases.output[0]?.memberBlock ?? "";
+    },
+  );
 }
 
 const parseFormatReleasesSchema = v.array(v.object({ tagName: v.string() }));
+
+const parseProposalBodyReleasesSchema = v.array(
+  v.object({
+    title: v.string(),
+    memberBlock: v.string(),
+  }),
+);
 
 const parseReferencesCommitSchema = v.object({
   references: v.array(v.object({ prefix: v.string(), issue: v.string() })),

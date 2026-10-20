@@ -30,7 +30,7 @@ export function resolveWorkspaces(
       config: {
         ...rootConfig,
         title: rootConfig.name ?? "root",
-      },
+      } as any, // TODO: remove any, handle this the correct way
     }];
   }
 
