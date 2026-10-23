@@ -1,6 +1,6 @@
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import type { ResolvedWorkspace } from "../types/workspace-context.ts";
-import { buildMatchPatterns } from "./string-templates-and-patterns/match-patterns.ts";
+import { buildTagMatchPatterns } from "./tag.ts";
 import { taskLogger } from "./logger.ts";
 
 export interface AffectedWorkspace extends ResolvedWorkspace {
@@ -26,7 +26,7 @@ export async function detectAffectedWorkspaces(
   // Step 1: Find the last release tag for each workspace (parallel)
   const workspacesWithRelease = await Promise.all(
     workspaces.map(async (ws) => {
-      const patterns = buildMatchPatterns(
+      const patterns = buildTagMatchPatterns(
         ws.config.tag.nameTemplate,
         ws.config.tag.matchPatterns,
       );

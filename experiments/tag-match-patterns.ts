@@ -1,8 +1,8 @@
 import picomatch from "picomatch";
 import {
-  buildMatchPatterns,
+  buildTagMatchPatterns,
   templateToMatchPattern,
-} from "../src/tasks/string-templates-and-patterns/match-patterns.ts";
+} from "../src/tasks/tag.ts";
 
 console.log("=== templateToMatchPattern ===\n");
 
@@ -55,7 +55,7 @@ for (const { glob, tag, expected } of globCases) {
 console.log("\n=== buildMatchPatterns ===\n");
 
 // Test 1: No user patterns — auto-derived only
-const p1 = buildMatchPatterns("v{{ nextVersion }}");
+const p1 = buildTagMatchPatterns("v{{ nextVersion }}");
 console.log(`  Auto-derived only (1 pattern): ${p1.length} patterns`);
 console.log(
   `    matches "v1.0.0": ${p1.some((p) => p.test("v1.0.0"))} ${
@@ -69,7 +69,7 @@ console.log(
 );
 
 // Test 2: With user patterns
-const p2 = buildMatchPatterns("v{{ nextVersion }}", ["release-*"]);
+const p2 = buildTagMatchPatterns("v{{ nextVersion }}", ["release-*"]);
 console.log(`\n  With user patterns (2 unique): ${p2.length} patterns`);
 console.log(
   `    matches "v1.0.0": ${p2.some((p) => p.test("v1.0.0"))} ${
@@ -83,7 +83,7 @@ console.log(
 );
 
 // Test 3: Deduplication — user provides same as auto-derived
-const p3 = buildMatchPatterns("v{{ nextVersion }}", ["v*"]);
+const p3 = buildTagMatchPatterns("v{{ nextVersion }}", ["v*"]);
 console.log(
   `\n  Dedup (user = auto-derived): ${p3.length} pattern(s) ${
     p3.length === 1 ? "✅" : "❌ expected 1"

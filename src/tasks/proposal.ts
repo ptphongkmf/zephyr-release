@@ -3,9 +3,11 @@ import type { InputsOutput } from "../schemas/inputs/inputs.ts";
 import type { PlatformProvider } from "../types/providers/platform-provider.ts";
 import type { ProviderProposal } from "../types/providers/proposal.ts";
 import type { ReviewConfigResolvedOutput } from "../schemas/configs/modules/review-config.ts";
+import type { TagConfigResolvedOutput } from "../schemas/configs/modules/tag-config.ts";
 import { getTextFile } from "./file.ts";
 import { resolveStringTemplate } from "./string-templates-and-patterns/resolve-template.ts";
 import type { StringPatternContext } from "./string-templates-and-patterns/pattern-context.ts";
+import { buildTagMatchPatterns } from "./tag.ts";
 import { PROPOSAL_MARKERS } from "../constants/markers.ts";
 
 type FindProposalInputsParams = Pick<
@@ -325,28 +327,52 @@ export async function createOrUpdateProposal(
 
 export function extractChangelogFromProposal(
   mergedProposal: ProviderProposal,
-): string | undefined {
-  const changelogReleaseStartIndex = mergedProposal.body.indexOf(
-    PROPOSAL_MARKERS.bodyStart,
-  );
-  const changelogReleaseEndIndex = mergedProposal.body.lastIndexOf(
-    PROPOSAL_MARKERS.bodyEnd,
+): Map<string, string> {
+  const changelogMap = new Map<string, string>();
+  const matches = mergedProposal.body.matchAll(
+    PROPOSAL_MARKERS.namedBodyRegex,
   );
 
-  if (changelogReleaseStartIndex === -1 || changelogReleaseEndIndex === -1) {
-    return undefined;
+  for (const match of matches) {
+    const tagName = match[1];
+    const body = match[2];
+    if (tagName && body !== undefined) {
+      changelogMap.set(tagName, body.trim());
+    }
   }
 
-  const changelogRelease = mergedProposal.body.substring(
-    changelogReleaseStartIndex + PROPOSAL_MARKERS.bodyStart.length,
-    changelogReleaseEndIndex,
-  ).trim();
-  taskLogger.info(
-    "Extracted changelog release from merged proposal body: " +
-      changelogRelease,
+  if (changelogMap.size > 0) {
+    taskLogger.info(
+      `Extracted changelog release for ${changelogMap.size} workspace(s) from merged proposal body: ` +
+        Array.from(changelogMap.keys()).join(", "),
+    );
+  }
+
+  return changelogMap;
+}
+
+export function findWorkspaceChangelogFromProposal(
+  proposalChangelogMap: Map<string, string>,
+  tagName: string,
+  tagConfig: Pick<TagConfigResolvedOutput, "nameTemplate" | "matchPatterns">,
+): string | undefined {
+  const exactMatch = proposalChangelogMap.get(tagName);
+  if (exactMatch !== undefined) {
+    return exactMatch;
+  }
+
+  const matchPatterns = buildTagMatchPatterns(
+    tagConfig.nameTemplate,
+    tagConfig.matchPatterns,
   );
 
-  return changelogRelease;
+  for (const [key, changelog] of proposalChangelogMap) {
+    if (matchPatterns.some((regex) => regex.test(key))) {
+      return changelog;
+    }
+  }
+
+  return undefined;
 }
 
 export async function addAssigneesToProposal(

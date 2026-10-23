@@ -30,7 +30,7 @@ import { VERSION } from "../version.ts";
 import { breakingChangeKeywords } from "../constants/conventional-commit-parser-options.ts";
 import { NoCommitFoundError } from "../errors/providers/commit.ts";
 import { format, type SemVer } from "@std/semver";
-import { buildMatchPatterns } from "./string-templates-and-patterns/match-patterns.ts";
+import { buildTagMatchPatterns } from "./tag.ts";
 
 type ResolveCommitsInputsParams = Pick<
   InputsOutput,
@@ -159,11 +159,12 @@ export async function resolveCommitsFromTriggerToLastRelease(
   pathFilter?: string,
 ): Promise<ResolvedCommitsResult> {
   const { triggerCommitHash } = inputs;
-  const { commitTypes, maxCommitsToResolve, resolveUntilCommitHash } = resolvedConfig;
+  const { commitTypes, maxCommitsToResolve, resolveUntilCommitHash } =
+    resolvedConfig;
 
   let stopHash = stopHashOverride ?? resolveUntilCommitHash;
   if (!stopHash) {
-    const matchPatterns = buildMatchPatterns(
+    const matchPatterns = buildTagMatchPatterns(
       resolvedConfig.tag.nameTemplate,
       resolvedConfig.tag.matchPatterns,
     );
@@ -381,7 +382,10 @@ export async function prepareChangesToCommit(
       patternContext,
       workspaceRelativePath,
     );
-    changesData.set(normalize(resolveWorkspaceFilePath(path, workspaceRelativePath)), clContent);
+    changesData.set(
+      normalize(resolveWorkspaceFilePath(path, workspaceRelativePath)),
+      clContent,
+    );
   } else {
     taskLogger.info("Changelog config write to file is off. Skipping...");
   }
@@ -399,7 +403,10 @@ export async function prepareChangesToCommit(
     workspaceRelativePath,
   );
   for (const [vfPath, vfContent] of vfChangesData) {
-    changesData.set(normalize(resolveWorkspaceFilePath(vfPath, workspaceRelativePath)), vfContent);
+    changesData.set(
+      normalize(resolveWorkspaceFilePath(vfPath, workspaceRelativePath)),
+      vfContent,
+    );
   }
 
   if (localChangesToCommit) {
@@ -546,7 +553,10 @@ export async function commitChangesToBranch(
       headerTemplatePath,
       { provider, workspacePath, ref: triggerCommitHash },
     );
-    commitHeader = await resolveStringTemplate(headerTemplateFromFile, patternContext);
+    commitHeader = await resolveStringTemplate(
+      headerTemplateFromFile,
+      patternContext,
+    );
   } else {
     commitHeader = await resolveStringTemplate(headerTemplate, patternContext);
   }
@@ -558,7 +568,10 @@ export async function commitChangesToBranch(
       bodyTemplatePath,
       { provider, workspacePath, ref: triggerCommitHash },
     );
-    commitBody = await resolveStringTemplate(bodyTemplateFromFile, patternContext);
+    commitBody = await resolveStringTemplate(
+      bodyTemplateFromFile,
+      patternContext,
+    );
   } else if (bodyTemplate) {
     commitBody = await resolveStringTemplate(bodyTemplate, patternContext);
   }
@@ -570,7 +583,10 @@ export async function commitChangesToBranch(
       footerTemplatePath,
       { provider, workspacePath, ref: triggerCommitHash },
     );
-    commitFooter = await resolveStringTemplate(footerTemplateFromFile, patternContext);
+    commitFooter = await resolveStringTemplate(
+      footerTemplateFromFile,
+      patternContext,
+    );
   } else if (footerTemplate) {
     commitFooter = await resolveStringTemplate(footerTemplate, patternContext);
   }

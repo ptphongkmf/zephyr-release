@@ -6,7 +6,10 @@ import {
 } from "../tasks/export-variables.ts";
 import { updateProposalLabelsOnMerge } from "../tasks/label.ts";
 import { logger } from "../tasks/logger.ts";
-import { extractChangelogFromProposal } from "../tasks/proposal.ts";
+import {
+  extractChangelogFromProposal,
+  findWorkspaceChangelogFromProposal,
+} from "../tasks/proposal.ts";
 import { attachReleaseAssets, createRelease } from "../tasks/release.ts";
 import {
   addChangelogPatternContext,
@@ -45,12 +48,12 @@ export async function executeReviewPublishPhase(
   // Phase 1: Per-workspace version extraction and pattern context
   // ═══════════════════════════════════════════════════════════════════
 
-  // Extract changelog from proposal (shared for all workspaces in grouped mode)
-  logger.stepStart("Starting: Generate changelog release content");
-  const proposalChangelogRelease = extractChangelogFromProposal(
+  // Extract changelog from proposal
+  logger.stepStart("Starting: Extract changelog from proposal");
+  const proposalChangelogs = extractChangelogFromProposal(
     associatedProposalForCommit,
   );
-  logger.stepFinish("Finished: Generate changelog release content");
+  logger.stepFinish("Finished: Extract changelog from proposal");
 
   const releaseEntries: ReleaseContextEntry[] = [];
   const workspaces = runSettings.workspaces;
@@ -97,15 +100,6 @@ export async function executeReviewPublishPhase(
       `${wsLabel}Finished: Extract next version from primary version file`,
     );
 
-    // Build per-workspace changelog
-    const changelogReleaseResult = await generatePublishChangelogReleaseContent(
-      provider,
-      proposalChangelogRelease ?? "",
-      runSettings.inputs,
-      wsConfig,
-      patternContext,
-    );
-
     // Build per-workspace pattern context
     logger.debugStepStart(
       `${wsLabel}Starting: Create fixed next version and tag string pattern context`,
@@ -130,6 +124,22 @@ export async function executeReviewPublishPhase(
 
     logger.debugStepFinish(
       `${wsLabel}Finished: Create fixed next version and tag string pattern context`,
+    );
+
+    // Lookup extracted changelog for this workspace
+    const wsChangelog = findWorkspaceChangelogFromProposal(
+      proposalChangelogs,
+      tagName,
+      wsConfig.tag,
+    );
+
+    // Build per-workspace changelog
+    const changelogReleaseResult = await generatePublishChangelogReleaseContent(
+      provider,
+      wsChangelog ?? "",
+      runSettings.inputs,
+      wsConfig,
+      wsPatternContext,
     );
 
     logger.debugStepStart(

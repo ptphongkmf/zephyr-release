@@ -12,4 +12,7 @@ export const PROPOSAL_MARKERS = {
     `<!-- PROPOSAL-CHANGELOG-RELEASE-START:${tagName} -->`,
   namedBodyEnd: (tagName: string) =>
     `<!-- PROPOSAL-CHANGELOG-RELEASE-END:${tagName} -->`,
+  namedBodyRegex:
+    /<!-- PROPOSAL-CHANGELOG-RELEASE-START:([^\s>]+) -->([\s\S]*?)<!-- PROPOSAL-CHANGELOG-RELEASE-END:\1 -->/g,
 } as const;
+
