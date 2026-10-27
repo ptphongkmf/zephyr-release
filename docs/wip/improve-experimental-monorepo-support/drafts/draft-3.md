@@ -732,15 +732,3 @@ These are **not the same pattern**. They exist at different scopes:
 
 Decision: keep both on the entry (user confirmed). They are available to custom template authors who want to re-order or intersperse content around `memberBlock`. The trade-off (slightly fatter entry object) is acceptable.
 
----
-
-### 4. Dynamic String Patterns — label vs. description accuracy
-
-The **label** "Dynamic String Patterns" is correct — these patterns are computed from the run context rather than being static config properties.
-
-The **section description** "may change each time they are used" is only accurate for the `now*` datetime patterns (which are live JavaScript functions evaluated on every access). The changelog patterns (`changelogRelease`, etc.) are computed **once per workspace per run** and then fixed — they do not change on re-access.
-
-**Fix (Phase G):**
-1. Change the section description to: *"These string patterns are computed during the run based on the release context (commits, versions, etc.) and may differ between runs."*
-2. Add a specific note under the `now*` datetime group: *"Unlike other dynamic patterns, these are live-evaluated on every access and may return different values each time they are called within the same run."*
-

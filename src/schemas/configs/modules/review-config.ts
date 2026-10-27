@@ -179,7 +179,7 @@ export const ReviewConfigWorkspaceMemberSchema = v.pipe(
           description:
             "String template for the per-workspace section header in the release proposal body.\n" +
             "Rendered before the member body markers. Appears in the PR only — not extracted for the GitHub Release.\n" +
-            "Allowed patterns: all fixed and run-computed string patterns for this workspace.",
+            "Allowed patterns: all fixed and dynamic string patterns for this workspace.",
         }),
       ),
       memberHeaderTemplatePath: v.pipe(
@@ -198,7 +198,7 @@ export const ReviewConfigWorkspaceMemberSchema = v.pipe(
           description:
             "String template for the per-workspace section body in the release proposal body.\n" +
             "Wrapped in per-workspace markers and extracted on publish as the GitHub Release content.\n" +
-            "Allowed patterns: all fixed and run-computed string patterns for this workspace.\n" +
+            "Allowed patterns: all fixed and dynamic string patterns for this workspace.\n" +
             `Default: ${JSON.stringify(DEFAULT_MEMBER_BODY_TEMPLATE)}`,
         }),
       ),
@@ -218,7 +218,7 @@ export const ReviewConfigWorkspaceMemberSchema = v.pipe(
           description:
             "String template for the per-workspace section footer in the release proposal body.\n" +
             "Rendered after the member body markers. Appears in the PR only — not extracted for the GitHub Release.\n" +
-            "Allowed patterns: all fixed and run-computed string patterns for this workspace.",
+            "Allowed patterns: all fixed and dynamic string patterns for this workspace.",
         }),
       ),
       memberFooterTemplatePath: v.pipe(

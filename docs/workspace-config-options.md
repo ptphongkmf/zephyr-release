@@ -45,6 +45,14 @@ For example, if the root config defines 5 commit types and a workspace defines 2
 - [Properties](#properties)
   - [name (Required)](#name-required)
   - [title (Optional)](#title-optional)
+  - [review (Optional)](#review-optional)
+    - [review \> member-header-template (Optional)](#review--member-header-template-optional)
+    - [review \> member-header-template-path (Optional)](#review--member-header-template-path-optional)
+    - [review \> member-body-template (Optional)](#review--member-body-template-optional)
+    - [review \> member-body-template-path (Optional)](#review--member-body-template-path-optional)
+    - [review \> member-footer-template (Optional)](#review--member-footer-template-optional)
+    - [review \> member-footer-template-path (Optional)](#review--member-footer-template-path-optional)
+  - [auto (Optional)](#auto-optional)
   - [initial-version (Optional)](#initial-version-optional)
   - [version-files (Required)](#version-files-required)
   - [commit-types (Optional)](#commit-types-optional)
@@ -53,16 +61,8 @@ For example, if the root config defines 5 commit types and a workspace defines 2
   - [changelog (Optional)](#changelog-optional)
   - [commit (Optional)](#commit-optional)
   - [tag (Optional)](#tag-optional)
-    - [name-template](#name-template)
+    - [tag \> name-template (Optional)](#tag--name-template-optional)
   - [release (Optional)](#release-optional)
-  - [review (Optional)](#review-optional)
-    - [review > member-header-template (Optional)](#review--member-header-template-optional)
-    - [review > member-header-template-path (Optional)](#review--member-header-template-path-optional)
-    - [review > member-body-template (Optional)](#review--member-body-template-optional)
-    - [review > member-body-template-path (Optional)](#review--member-body-template-path-optional)
-    - [review > member-footer-template (Optional)](#review--member-footer-template-optional)
-    - [review > member-footer-template-path (Optional)](#review--member-footer-template-path-optional)
-  - [auto (Optional)](#auto-optional)
   - [command-hooks (Optional)](#command-hooks-optional)
 
 ## Properties
@@ -102,6 +102,109 @@ Display title for this workspace's section heading in the release proposal body.
 The proposal body always uses this value as the heading; falls back to `name` if not set.
 
 Does not affect tag names, env vars, branch names, or any other computed value — it is purely cosmetic.
+
+[⬆ Back to top](#table-of-content)
+
+### review (Optional)
+
+Type: `object`\
+Default: `inherit from root`
+
+Override review/proposal behavior for this workspace. Accepts the following per-workspace properties:
+
+- [Properties](#properties)
+  - [name (Required)](#name-required)
+  - [title (Optional)](#title-optional)
+  - [review (Optional)](#review-optional)
+    - [review \> member-header-template (Optional)](#review--member-header-template-optional)
+    - [review \> member-header-template-path (Optional)](#review--member-header-template-path-optional)
+    - [review \> member-body-template (Optional)](#review--member-body-template-optional)
+    - [review \> member-body-template-path (Optional)](#review--member-body-template-path-optional)
+    - [review \> member-footer-template (Optional)](#review--member-footer-template-optional)
+    - [review \> member-footer-template-path (Optional)](#review--member-footer-template-path-optional)
+  - [auto (Optional)](#auto-optional)
+  - [initial-version (Optional)](#initial-version-optional)
+  - [version-files (Required)](#version-files-required)
+  - [commit-types (Optional)](#commit-types-optional)
+  - [allowed-release-as-commit-types (Optional)](#allowed-release-as-commit-types-optional)
+  - [bump-strategy (Optional)](#bump-strategy-optional)
+  - [changelog (Optional)](#changelog-optional)
+  - [commit (Optional)](#commit-optional)
+  - [tag (Optional)](#tag-optional)
+    - [tag \> name-template (Optional)](#tag--name-template-optional)
+  - [release (Optional)](#release-optional)
+  - [command-hooks (Optional)](#command-hooks-optional)
+
+[⬆ Back to top](#table-of-content)
+
+#### review > member-header-template (Optional)
+
+Type: `string`
+
+String template for the per-workspace section header in the release proposal body.\
+Rendered **before** the member body markers. Appears in the PR only — **not** extracted for the GitHub Release.\
+Allowed patterns: [all fixed and dynamic string patterns](./string-templates-and-patterns.md#available-string-patterns) for this workspace.
+
+[⬆ Back to top](#table-of-content)
+
+#### review > member-header-template-path (Optional)
+
+Type: `string`
+
+Path to text file containing the member header template. Overrides `member-header-template` when both are provided.\
+To customize whether this file is fetched locally or remotely, see [source mode](./input-options.md#source-mode-optional).
+
+[⬆ Back to top](#table-of-content)
+
+#### review > member-body-template (Optional)
+
+Type: `string`\
+Default: `{{ changelogRelease }}`
+
+String template for the per-workspace section body in the release proposal body.\
+Wrapped in per-workspace markers and **extracted on publish** as the GitHub Release content.\
+Allowed patterns: [all fixed and dynamic string patterns](./string-templates-and-patterns.md#available-string-patterns) for this workspace.
+
+> [!IMPORTANT]
+> This is the content that ends up in the GitHub Release notes. If you override this template, make sure it contains
+> the changelog content you want to publish (e.g., keep `{{ changelogRelease }}` or your custom changelog pattern).
+
+[⬆ Back to top](#table-of-content)
+
+#### review > member-body-template-path (Optional)
+
+Type: `string`
+
+Path to text file containing the member body template. Overrides `member-body-template` when both are provided.\
+To customize whether this file is fetched locally or remotely, see [source mode](./input-options.md#source-mode-optional).
+
+[⬆ Back to top](#table-of-content)
+
+#### review > member-footer-template (Optional)
+
+Type: `string`
+
+String template for the per-workspace section footer in the release proposal body.\
+Rendered **after** the member body markers. Appears in the PR only — **not** extracted for the GitHub Release.\
+Allowed patterns: [all fixed and dynamic string patterns](./string-templates-and-patterns.md#available-string-patterns) for this workspace.
+
+[⬆ Back to top](#table-of-content)
+
+#### review > member-footer-template-path (Optional)
+
+Type: `string`
+
+Path to text file containing the member footer template. Overrides `member-footer-template` when both are provided.\
+To customize whether this file is fetched locally or remotely, see [source mode](./input-options.md#source-mode-optional).
+
+[⬆ Back to top](#table-of-content)
+
+### auto (Optional)
+
+Type: `object`\
+Default: `inherit from root`
+
+Override auto-release trigger strategy for this workspace. See [config-options.md > auto](./config-options.md#auto-optional).
 
 [⬆ Back to top](#table-of-content)
 
@@ -180,10 +283,10 @@ Default: `inherit from root`
 
 Override tag creation behavior for this workspace. See [config-options.md > tag](./config-options.md#tag-optional) for the full schema.
 
-#### name-template
+#### tag > name-template (Optional)
 
 Type: `string`\
-Default: `{{name}}-v{{nextVersion}}`
+Default: `{{ name }}-v{{ nextVersion }}`
 
 Override the tag name template for this workspace. See [config-options.md > tag > name-template](./config-options.md#tag--name-template-optional).
 
@@ -195,93 +298,6 @@ Type: `object`\
 Default: `inherit from root`
 
 Override release creation behavior for this workspace. See [config-options.md > release](./config-options.md#release-optional).
-
-[⬆ Back to top](#table-of-content)
-
-### review (Optional)
-
-Type: `object`\
-Default: `inherit from root`
-
-Override review/proposal behavior for this workspace. Accepts the following per-workspace properties:
-
-- [`review > member-header-template`](#review--member-header-template-optional)
-- [`review > member-header-template-path`](#review--member-header-template-path-optional)
-- [`review > member-body-template`](#review--member-body-template-optional)
-- [`review > member-body-template-path`](#review--member-body-template-path-optional)
-- [`review > member-footer-template`](#review--member-footer-template-optional)
-- [`review > member-footer-template-path`](#review--member-footer-template-path-optional)
-
-[⬆ Back to top](#table-of-content)
-
-#### review > member-header-template (Optional)
-
-Type: `string`
-
-String template for the per-workspace section header in the release proposal body.\
-Rendered **before** the member body markers. Appears in the PR only — **not** extracted for the GitHub Release.\
-Allowed patterns: all fixed and run-computed string patterns for this workspace.
-
-[⬆ Back to top](#table-of-content)
-
-#### review > member-header-template-path (Optional)
-
-Type: `string`
-
-Path to text file containing the member header template. Overrides `member-header-template` when both are provided.\
-To customize whether this file is fetched locally or remotely, see [source mode](./input-options.md#source-mode-optional).
-
-[⬆ Back to top](#table-of-content)
-
-#### review > member-body-template (Optional)
-
-Type: `string`\
-Default: `{{ changelogRelease }}`
-
-String template for the per-workspace section body in the release proposal body.\
-Wrapped in per-workspace markers and **extracted on publish** as the GitHub Release content.\
-Allowed patterns: all fixed and run-computed string patterns for this workspace.
-
-> [!IMPORTANT]
-> This is the content that ends up in the GitHub Release notes. If you override this template, make sure it contains
-> the changelog content you want to publish (e.g., keep `{{ changelogRelease }}` or your custom changelog pattern).
-
-[⬆ Back to top](#table-of-content)
-
-#### review > member-body-template-path (Optional)
-
-Type: `string`
-
-Path to text file containing the member body template. Overrides `member-body-template` when both are provided.\
-To customize whether this file is fetched locally or remotely, see [source mode](./input-options.md#source-mode-optional).
-
-[⬆ Back to top](#table-of-content)
-
-#### review > member-footer-template (Optional)
-
-Type: `string`
-
-String template for the per-workspace section footer in the release proposal body.\
-Rendered **after** the member body markers. Appears in the PR only — **not** extracted for the GitHub Release.\
-Allowed patterns: all fixed and run-computed string patterns for this workspace.
-
-[⬆ Back to top](#table-of-content)
-
-#### review > member-footer-template-path (Optional)
-
-Type: `string`
-
-Path to text file containing the member footer template. Overrides `member-footer-template` when both are provided.\
-To customize whether this file is fetched locally or remotely, see [source mode](./input-options.md#source-mode-optional).
-
-[⬆ Back to top](#table-of-content)
-
-### auto (Optional)
-
-Type: `object`\
-Default: `inherit from root`
-
-Override auto-release trigger strategy for this workspace. See [config-options.md > auto](./config-options.md#auto-optional).
 
 [⬆ Back to top](#table-of-content)
 

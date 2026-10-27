@@ -2,11 +2,11 @@
 
 Documentation for working with string templates and string patterns.
 
-To inject values into your templates, put [patterns](#available-string-patterns) inside `{{ }}` brackets. You can also transform these values using  [transformers](#transformers) with the pipe symbol `|`.
+To inject values into your templates, put [patterns](#available-string-patterns) inside `{{ }}` brackets. You can also transform these values using [transformers](#transformers) with the pipe symbol `|`.
 
 Example:
 
-- [Proposal title template](./config-options.md#review--title-template-optional): `chore: release {{ name | upper }} version {{ nextVersion }}`
+- [Proposal title template](./config-options.md#review--title-template-optional): `chore: release {{ name | upcase }} version {{ nextVersion }}`
 - [Tag template](./config-options.md#tag--name-template-optional): `v{{ nextVersion }}`
 
 <br>
@@ -49,6 +49,7 @@ Available after resolving commits and calculating the versions:
 Available after generating the changelog release content based on the resolved commits:
 
 - changelogRelease, changelogReleaseBody, changelogReleaseAlt, changelogReleaseBodyAlt
+- releases
 
 #### Publish Phase
 
@@ -57,6 +58,7 @@ These patterns become available sequentially when merging a proposal and trigger
 Available after extracting the changelog from the proposal body or re-generating the changelog:
 
 - changelogRelease, changelogReleaseBody, changelogReleaseAlt, changelogReleaseBodyAlt
+- releases
 
 Available after extracting the next version natively from the primary version file in the codebase:
 
@@ -89,7 +91,7 @@ These string patterns are resolved at runtime and remain fixed for the lifetime 
 <br>
 
 - `{{ triggerBranchName }}`: The trigger branch name
-- `{{ workingBranchName }}`: the working branch name
+- `{{ workingBranchName }}`: The working branch name
 
 <br>
 
@@ -119,7 +121,7 @@ Only available in "auto" and "review" release flow propose operation. Can be und
 
 <br>
 
-- `{{ tagName }}`: Tag name (set via [`tag-name-template`](./config-options.md#tag--name-template-optional))
+- `{{ tagName }}`: Tag name (set via [`tag > name-template`](./config-options.md#tag--name-template-optional))
 
 ##### Releases
 
@@ -127,7 +129,7 @@ Only available in "auto" and "review" release flow propose operation. Can be und
   - `name`: `string`; Project name. Defaults to `"root"` in single-repo mode when [`name`](./config-options.md#name-optional) is not configured.
   - `nextVersion`: `string`; The next calculated semantic version
   - `tagName`: `string`; The tag name for this release
-  - `title`: `string`; Display title for this member (defaults to name).
+  - `title`: `string`; Display title for this member. Defaults to `name` (or `"root"` in single-repo mode when [`name`](./config-options.md#name-optional) is not configured).
   - `changelogRelease`: `string | undefined`; Raw changelog string for this member without markers.
     > [!NOTE]
     > `releases[i].changelogRelease` differs from the flat `{{ changelogRelease }}` pattern (which only holds the last evaluated workspace's value at root). Use this field in custom root templates if you need per-workspace changelogs.
@@ -170,7 +172,7 @@ Usage: [`release-section-heading-template`](./config-options.md#changelog--relea
 
 Usage: [`release-section-entry-template`](./config-options.md#changelog--release-section-entry-template-optional) and [`release-breaking-section-entry-template`](./config-options.md#changelog--release-breaking-section-entry-template-optional)
 
-- `{{ commit }}`: The full parsed and resolved commit object. See [ResolvedCommit](../src/tasks/commit.ts#L34-L41) for the structure
+- `{{ commit }}`: The full parsed and resolved commit object. See [ResolvedCommit](../src/tasks/commit.ts#L128-L137) for the structure
 - `{{ hash }}`: string; commit hash
 - `{{ type }}`: string; commit type
 - `{{ scope }}`: string; commit scope
@@ -208,8 +210,8 @@ Custom transformers.
   - Usage: `{{ text | wrap_compare_latest_tag: currentTag, skip }}` or `{{ text | wrap_compare_latest_tag: currentTag }}`
 
 - `format_commit_references: commit`: Formats the current text to find references (like #12) and transforms them into markdown links using the provided commit context. Usually used for [entry template](./config-options.md#changelog--release-section-entry-template-optional)
-  - commit: [`ResolvedCommit`](../src/tasks/commit.ts#L34-L41) or [`an object with shape { references: { prefix: string, issue: string }[] }`](../src/tasks/string-templates-and-patterns/transformers.ts)
-  - Usage: `{{ text | parse_references: commit }}`
+  - commit: [`ResolvedCommit`](../src/tasks/commit.ts#L128-L137) or [`an object with shape { references: { prefix: string, issue: string }[] }`](../src/tasks/string-templates-and-patterns/transformers.ts#L185-L187)
+  - Usage: `{{ text | format_commit_references: commit }}`
 
 - `format_release_tags: separator`: Formats an array of release objects into a single string by extracting and joining the `tagName` from each release. It strictly requires an array of objects with the shape `{ tagName: string }`. Usually, this is the built-in `{{ releases }}` object, but you can provide a custom pattern if desired.
   - separator (optional): `string`, `DEFAULT: ", "`

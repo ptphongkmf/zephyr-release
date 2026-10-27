@@ -5,7 +5,6 @@ import {
 } from "../../../constants/defaults/string-templates.ts";
 import { trimNonEmptyStringSchema } from "../../string.ts";
 
-
 const commitConfigDesc = "Configuration specific to commits.";
 
 export const CommitConfigSchema = v.pipe(
