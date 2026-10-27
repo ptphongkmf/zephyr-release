@@ -286,8 +286,8 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 Type: `string`\
 Default: [`DEFAULT_PROPOSAL_HEADER_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for proposal header, using with string patterns like {{ nextVersion }}.\
-Allowed patterns to use are: all fixed and dynamic string patterns.
+String template for proposal header, using with string patterns like `{{ nextVersion }}`.\
+Allowed patterns to use are: [all fixed and dynamic string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
 
@@ -305,8 +305,8 @@ To customize whether this file is fetched locally or remotely, see [source mode]
 Type: `string`\
 Default: [`DEFAULT_PROPOSAL_BODY_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
-String template for proposal body, using with string patterns like {{ releases | format_proposal_body }}.\
-Allowed patterns to use are: all fixed and dynamic string patterns.
+String template for proposal body, using with string patterns like `{{ releases | format_proposal_body }}`.\
+Allowed patterns to use are: [all fixed and dynamic string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
 
@@ -325,7 +325,7 @@ Type: `string`\
 Default: [`DEFAULT_PROPOSAL_FOOTER_TEMPLATE`](../src/constants/defaults/string-templates.ts)
 
 String template for proposal footer, using with string patterns.\
-Allowed patterns to use are: all fixed and dynamic string patterns.
+Allowed patterns to use are: [all fixed and dynamic string patterns](./string-templates-and-patterns.md#available-string-patterns).
 
 [⬆ Back to top](#table-of-content)
 

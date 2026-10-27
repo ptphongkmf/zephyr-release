@@ -379,23 +379,14 @@ Full plan: [plan-3-error-merged-config-type.md](./plan-3-error-merged-config-typ
 
 ### Phase G — Final doc pass
 
-**Files to change:**
+**Files to validate:**
 
 - `docs/export-variables.md` — verify nothing is affected; no new exported variables in this phase.
 
 - `docs/string-templates-and-patterns.md`:
-
-  - **Restructure the Pattern Details section.** The current `####`/`#####` heading hierarchy inside Pattern Details is over-engineered — it creates useless TOC anchors and the classification scheme (Fixed/Dynamic/Special) is inconsistent with what the words mean. Restructure as follows:
-
-    - **Rename `Dynamic String Patterns` → `Run-Computed Patterns`.** The new description: *"These string patterns are computed during the run based on the release context (commits, versions, etc.) and may differ between runs."* Under the `now*` datetime group specifically, add a callout note: *"Unlike other run-computed patterns, these are live-evaluated on every access and may return a different value each time they are called within the same run."*
-
-    - **Drop all `#####` sub-headings** inside `Fixed String Patterns` and `Run-Computed Patterns` (Base, Datetime, Current Version, Next Version, Releases, Changelog, Datetime (now)). Replace with `<br>` between groups. Lifecycle order within each section is preserved. The `####` top-level category headings (`Fixed String Patterns`, `Run-Computed Patterns`) are kept because they carry behavioral meaning, not just visual grouping.
-
-    - **Rename `Special String Patterns` → `Template-Specific Patterns`.** Keep this as a `####` heading because it describes a fundamentally different access model — these patterns are not lifecycle-gated, they are access-gated (only resolvable inside a specific template type; using them elsewhere throws or returns undefined). The sub-headings within this section (`#####`) can also be flattened to bold labels + `<br>`.
-
-  - **Fix `releases[i].changelogRelease` scope note** — added in Phase C-docs; confirm it clearly states the difference from the flat `{{ changelogRelease }}` pattern.
-  - **Review all new `releases[i].*` docs added in Phase C-docs** for consistency with implemented field names and behavior.
-  - **Confirm `format_proposal_body` doc added in Phase E-docs** is accurate.
+  - **Verify `releases[i].changelogRelease` scope note** — added in Phase C-docs; confirm it clearly states the difference from the flat `{{ changelogRelease }}` pattern.
+  - **Review all `releases[i].*` docs added in Phase C-docs** for consistency with implemented field names and behavior.
+  - **Confirm `format_proposal_body` transformer doc added in Phase E-docs** is accurate.
 
 - `docs/workspace-config-options.md` — review complete state for consistency, especially the new `review.*` member template fields and the `title` field.
 
