@@ -138,6 +138,20 @@ export async function resolveConfig(
     );
   }
 
+  // TO BE REMOVED
+  taskLogger.startGroup("Raw parsed final config (before validation):");
+  taskLogger.info(
+    JSON.stringify(rawParsedFinalConfig, jsonValueNormalizer, 2),
+  );
+  taskLogger.endGroup();
+
+  taskLogger.startGroup("CamelCase parsed final config (before validation):");
+  taskLogger.info(
+    JSON.stringify(parsedFinalConfig, jsonValueNormalizer, 2),
+  );
+  taskLogger.endGroup();
+  // TO BE REMOVED
+
   const resolvedFinalConfigResult = v.safeParse(
     ConfigSchema,
     parsedFinalConfig,
