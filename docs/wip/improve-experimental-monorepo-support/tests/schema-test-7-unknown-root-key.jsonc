@@ -1,0 +1,11 @@
+// EXPECTED: OK (no errors)
+// `RootConfigSchema` uses `v.object` (not `v.strictObject`), so unknown root keys
+// like `unknownKey` (and `$schema` -> `schema` at runtime) are allowed here and stripped at runtime.
+{
+  "$schema": "../../../../schemas/v1/config-v1.camel.json",
+  "versionFiles": {
+    "path": "package.json",
+    "selector": "$.version"
+  },
+  "unknownKey": true
+}

@@ -1,0 +1,11 @@
+// EXPECTED: ERROR (squiggle on `workspace["packages/core"]`, missing `versionFiles`)
+// Invalid monorepo config: workspace member `packages/core` is missing required `versionFiles`.
+// Should flag only the member (no false error on root `versionFiles`).
+{
+  "$schema": "../../../../schemas/v1/config-v1.camel.json",
+  "workspace": {
+    "packages/core": {
+      "name": "core"
+    }
+  }
+}

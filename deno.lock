@@ -17,7 +17,7 @@
     "npm:@croct/json5-parser@~0.2.2": "0.2.2",
     "npm:@js-joda/core@^5.6.5": "5.6.5",
     "npm:@js-joda/timezone@^2.22.0": "2.22.0_@js-joda+core@5.6.5",
-    "npm:@json-schema-tools/traverse@^1.11.0": "1.11.0",
+    "npm:@json-schema-tools/traverse@^1.15.1": "1.15.1",
     "npm:@octokit/action@^8.0.4": "8.0.4_@octokit+core@7.0.6",
     "npm:@octokit/plugin-paginate-graphql@6": "6.0.0_@octokit+core@7.0.6",
     "npm:@octokit/plugin-paginate-rest@14": "14.0.0_@octokit+core@7.0.6",
@@ -132,8 +132,14 @@
         "@js-joda/core"
       ]
     },
-    "@json-schema-tools/traverse@1.11.0": {
-      "integrity": "sha512-GWQRiXXsbt5ZuewItpW2nqB/D0x4pKWi6XXOwoh1wvmsU/tQSq/rKzpgGvOHTe6v30TYDwZYxuwnRnArIsUzLQ=="
+    "@json-schema-tools/meta-schema@1.8.3": {
+      "integrity": "sha512-YfiOLIOq3YV83mqppXg7K4RFvHcajcr/ZlrCX33VcReoVoLJxZbn4UQT5jldwEi8oQBETL+BrotBgOQ4S0JaKg=="
+    },
+    "@json-schema-tools/traverse@1.15.1": {
+      "integrity": "sha512-i5MGGT3Tip2LSDi7L3cO6x0pax8RlqrWaW8RuvIxx3Gy+h+OWS4Du3bRYc1IWX/Baa+fDxC2xNuDcbCNScLOqA==",
+      "dependencies": [
+        "@json-schema-tools/meta-schema"
+      ]
     },
     "@octokit/action@8.0.4_@octokit+core@7.0.6": {
       "integrity": "sha512-1qFYTCrShafc5fQaEbLNUo4xIi/nf98R8iAcJ0ITTCfoRnei9g5Ss9kGkN2tOA7gBlI4HB08Seub4navWXSSbg==",
@@ -432,7 +438,7 @@
       "npm:@croct/json5-parser@~0.2.2",
       "npm:@js-joda/core@^5.6.5",
       "npm:@js-joda/timezone@^2.22.0",
-      "npm:@json-schema-tools/traverse@^1.11.0",
+      "npm:@json-schema-tools/traverse@^1.15.1",
       "npm:@octokit/action@^8.0.4",
       "npm:@octokit/plugin-paginate-graphql@6",
       "npm:@octokit/plugin-paginate-rest@14",

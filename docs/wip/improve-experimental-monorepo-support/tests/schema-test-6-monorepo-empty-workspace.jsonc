@@ -1,0 +1,7 @@
+// EXPECTED: ERROR
+// Invalid monorepo config: `workspace` is empty (violates `minProperties: 1`).
+{
+  "$schema": "../../../../schemas/v1/config-v1.camel.json",
+  "releaseFlow": "review",
+  "workspace": {}
+}

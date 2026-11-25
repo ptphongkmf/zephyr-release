@@ -1,0 +1,25 @@
+// EXPECTED: OK (no errors)
+// Valid monorepo config: no root `versionFiles`, valid `workspace` members each with `name` and `versionFiles`.
+{
+  "$schema": "../../../../schemas/v1/config-v1.camel.json",
+  "releaseFlow": "review",
+  "workspace": {
+    "packages/core": {
+      "name": "core",
+      "title": "Core Library",
+      "versionFiles": {
+        "path": "package.json",
+        "selector": "$.version"
+      }
+    },
+    "packages/cli": {
+      "name": "cli",
+      "versionFiles": [
+        {
+          "path": "package.json",
+          "selector": "$.version"
+        }
+      ]
+    }
+  }
+}
