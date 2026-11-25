@@ -1,0 +1,20 @@
+// EXPECTED: ERROR (squiggle directly on root `versionFiles`)
+// Invalid monorepo config: root `versionFiles` is forbidden when `workspace` is configured
+// (`else: { properties: { versionFiles: false } }`).
+{
+  "$schema": "../../../../schemas/v1/config-v1.camel.json",
+  "releaseFlow": "review",
+  "versionFiles": {
+    "path": "package.json",
+    "selector": "$.version"
+  },
+  "workspace": {
+    "packages/core": {
+      "name": "core",
+      "versionFiles": {
+        "path": "package.json",
+        "selector": "$.version"
+      }
+    }
+  }
+}

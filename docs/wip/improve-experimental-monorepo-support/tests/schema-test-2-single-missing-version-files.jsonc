@@ -1,0 +1,7 @@
+// EXPECTED: ERROR
+// Invalid single-repo config: missing required `versionFiles` (and no `workspace`).
+{
+  "$schema": "../../../../schemas/v1/config-v1.camel.json",
+  "name": "single-repo-missing-vf",
+  "releaseFlow": "review"
+}

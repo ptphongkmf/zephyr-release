@@ -1,0 +1,11 @@
+// EXPECTED: OK (no errors)
+// Valid single-repo config: `versionFiles` is present at root, no `workspace`.
+{
+  "$schema": "../../../../schemas/v1/config-v1.camel.json",
+  "name": "single-repo-app",
+  "releaseFlow": "review",
+  "versionFiles": {
+    "path": "package.json",
+    "selector": "$.version"
+  }
+}

@@ -1,9 +1,14 @@
 import { toCamelCase, toKebabCase, toSnakeCase } from "@std/text";
 import { dirname, join } from "@std/path";
 import { toJsonSchema } from "@valibot/to-json-schema";
-import traverse from "@json-schema-tools/traverse";
-import { ConfigSchema } from "../src/schemas/configs/config.ts";
-import { WorkspaceMemberConfigSchema } from "../src/schemas/configs/workspace-member-config.ts";
+import traverse, {
+  type SyncMutationFunction,
+} from "@json-schema-tools/traverse";
+import {
+  ConfigSchema,
+  ROOT_VERSION_FILES_FORBIDDEN_MSG,
+  ROOT_VERSION_FILES_REQUIRED_MSG,
+} from "../src/schemas/configs/config.ts";
 import { TimeZoneSchema } from "../src/schemas/configs/modules/components/timezone.ts";
 import { DOCS_EXT_REF_TOKEN } from "../src/schemas/token.ts";
 
@@ -30,35 +35,32 @@ const SCHEMA_CONFIG: GenJsonSchemaConfig[] = [
   },
 ];
 
-const WORKSPACE_SCHEMA_CONFIG: GenJsonSchemaConfig[] = [
-  {
-    outputFile: "workspace-config-v1.kebab.json",
-    casingFn: toKebabCase,
-  },
-  {
-    outputFile: "workspace-config-v1.camel.json",
-    casingFn: toCamelCase,
-  },
-  {
-    outputFile: "workspace-config-v1.snake.json",
-    casingFn: toSnakeCase,
-  },
-];
-
 const DOCS_REF_URL = "https://github.com/ptphongkmf/zephyr-release/blob/main";
 
-// Base config json schema based on valibot schema
-const baseSchema = toJsonSchema(ConfigSchema, {
+// Config JSON schema based on valibot schema
+const configSchema = toJsonSchema(ConfigSchema, {
   typeMode: "input",
   definitions: { timeZone: TimeZoneSchema },
   ignoreActions: ["trim", "safe_integer", "to_lower_case"],
-});
+  overrideAction: (ctx) => {
+    if (
+      ctx.valibotAction.type === "partial_check" &&
+      "message" in ctx.valibotAction
+    ) {
+      if (ctx.valibotAction.message === ROOT_VERSION_FILES_REQUIRED_MSG) {
+        return {
+          ...ctx.jsonSchema,
+          if: { not: { required: ["workspace"] } },
+          then: { required: ["versionFiles"] },
+          else: { properties: { versionFiles: false } },
+        };
+      }
 
-// Workspace member config json schema
-const baseWorkspaceSchema = toJsonSchema(WorkspaceMemberConfigSchema, {
-  typeMode: "input",
-  definitions: { timeZone: TimeZoneSchema },
-  ignoreActions: ["trim", "safe_integer", "to_lower_case"],
+      if (ctx.valibotAction.message === ROOT_VERSION_FILES_FORBIDDEN_MSG) {
+        return ctx.jsonSchema;
+      }
+    }
+  },
 });
 
 function createTransformers(casingFn: GenJsonSchemaConfig["casingFn"]) {
@@ -66,12 +68,12 @@ function createTransformers(casingFn: GenJsonSchemaConfig["casingFn"]) {
   // Needed to update `$ref`, `required`, and `description` references consistently.
   const schemaPropertyNameMap = new Map<string, string>();
 
-  function transformKeys(
-    schema: unknown,
-    _isCycle: boolean,
-    _path: string,
-    _parent: unknown,
-  ) {
+  const transformKeys: SyncMutationFunction = (
+    schema,
+    _isCycle,
+    _path,
+    _parent,
+  ) => {
     if (schema && typeof schema === "object") {
       // defs
       if (
@@ -123,17 +125,25 @@ function createTransformers(casingFn: GenJsonSchemaConfig["casingFn"]) {
       ) {
         schema.required = schema.required.map((str) => casingFn(str));
       }
+
+      // conditional keywords skipped by @json-schema-tools/traverse
+      for (const keyword of ["if", "then", "else", "not"] as const) {
+        const sub = schema[keyword];
+        if (sub && typeof sub === "object") {
+          traverse.default(sub, transformKeys, { mutable: true });
+        }
+      }
     }
 
     return schema;
-  }
+  };
 
-  function transformDescriptions(
-    schema: unknown,
-    _isCycle: boolean,
-    _path: string,
-    _parent: unknown,
-  ) {
+  const transformDescriptions: SyncMutationFunction = (
+    schema,
+    _isCycle,
+    _path,
+    _parent,
+  ) => {
     if (schema && typeof schema === "object") {
       // description
       if ("description" in schema && typeof schema.description === "string") {
@@ -154,7 +164,7 @@ function createTransformers(casingFn: GenJsonSchemaConfig["casingFn"]) {
     }
 
     return schema;
-  }
+  };
 
   return { transformKeys, transformDescriptions };
 }
@@ -188,8 +198,5 @@ function generateSchemas(
   }
 }
 
-// Generate root config schemas
-generateSchemas(baseSchema, SCHEMA_CONFIG);
-
-// Generate workspace member config schemas
-generateSchemas(baseWorkspaceSchema, WORKSPACE_SCHEMA_CONFIG);
+// Generate config schemas
+generateSchemas(configSchema, SCHEMA_CONFIG);
